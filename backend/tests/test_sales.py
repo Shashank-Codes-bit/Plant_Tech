@@ -1,6 +1,6 @@
 """Bills: tax-inclusive GST, stock, customers, reports, and the customer's bill link."""
 import invoice_html
-from conftest import Shop
+from conftest import Shop, photo_b64
 
 
 def _order(shop, items, **extra):
@@ -67,6 +67,27 @@ def test_share_link_and_public_bill(client):
     assert "<script>x" not in page.text and "&lt;script&gt;" in page.text  # escaped
     assert page.headers["x-robots-tag"] == "noindex"
     assert client.get("/i/not-a-real-token-123456").status_code == 404
+
+
+def test_shop_logo_on_bill_and_in_login(client):
+    shop = Shop(client)
+    logo = shop.post("/api/upload-base64", {"image_base64": photo_b64(size=(900, 300))}).json()["path"]
+    assert client.put("/api/business", headers=shop.h, json={"logo_path": logo}).status_code == 200
+    assert shop.get("/api/auth/me").json()["business"]["logo_path"] == logo
+    inv = _order(shop, [{"product_id": None, "name": "Seeds", "quantity": 1, "price": 20}]).json()
+    token = shop.get(f"/api/invoices/{inv['id']}/share").json()["token"]
+    for page in (client.get(f"/i/{token}").text, shop.get(f"/api/invoices/{inv['id']}/html").text):
+        assert '<img class="logo" src="data:image/jpeg;base64,' in page
+
+
+def test_search_with_special_characters(client):
+    shop = Shop(client)
+    _order(shop, [{"product_id": None, "name": "Seeds", "quantity": 1, "price": 20}],
+           customer_phone="9811100000", customer_name="A (Regular) + Co")
+    for q in ("+91", "(", "*", "A (Regular", "[x"):
+        assert shop.get("/api/customers", params={"search": q}).status_code == 200
+        assert shop.get("/api/invoices", params={"search": q}).status_code == 200
+    assert len(shop.get("/api/customers", params={"search": "+9198111"}).json()) == 1
 
 
 def test_reports(client):

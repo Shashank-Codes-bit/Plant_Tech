@@ -9,7 +9,7 @@ import { apiGet } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { useCart } from "@/src/cart-context";
 import { OrderRow, OrderSummary } from "@/src/components/order-row";
-import { Badge, Card, EmptyState, ErrorView, Icon, Screen, SectionTitle, T } from "@/src/components/ui";
+import { Badge, Card, EmptyState, ErrorView, Icon, Screen, SectionTitle, T, Thumb } from "@/src/components/ui";
 import { formatCurrency, formatToday } from "@/src/format";
 import { useRefreshOnFocus } from "@/src/hooks/useRefreshOnFocus";
 import { colors, radius, spacing } from "@/src/theme";
@@ -31,6 +31,7 @@ export default function Home() {
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16, paddingBottom: spacing["2xl"] }}
         refreshControl={<RefreshControl refreshing={today.isRefetching} onRefresh={today.refetch} tintColor={colors.green} />}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 4 }}>
+          {!!user?.business?.logo_path && <Thumb path={user.business.logo_path} size={52} icon="store" tint={colors.surface} contain />}
           <View style={{ flex: 1 }}>
             <T v="label">{isOwner ? formatToday() : shop}</T>
             <T v="title" numberOfLines={1}>{isOwner ? shop : t("Hello, {{name}}", { name: user?.name ?? "" })}</T>
@@ -72,12 +73,12 @@ export default function Home() {
               <T v="label">{t("Today's sales")}</T>
               <T v="bold" color={colors.inkSoft}>{d.orders === 1 ? t("1 order") : t("{{n}} orders", { n: d.orders })}</T>
             </View>
-            <T v="amount" testID="home-sales">{formatCurrency(d.sales)}</T>
+            <T v="amount" numberOfLines={1} adjustsFontSizeToFit testID="home-sales">{formatCurrency(d.sales)}</T>
             <View style={{ flexDirection: "row", gap: 8 }}>
               {(["Cash", "UPI", "Card"] as const).map((m) => (
                 <View key={m} style={{ flex: 1, padding: 10, borderRadius: radius.md, backgroundColor: colors.page }}>
                   <T v="label">{t(m)}</T>
-                  <T v="number" style={{ fontSize: 20 }}>{formatCurrency(d.by_method[m])}</T>
+                  <T v="number" numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 20 }}>{formatCurrency(d.by_method[m])}</T>
                 </View>
               ))}
             </View>

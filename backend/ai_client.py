@@ -98,6 +98,15 @@ def square_thumbnail(jpeg: bytes, size: int = 800) -> bytes:
     return buf.getvalue()
 
 
+def fit_thumbnail(jpeg: bytes, size: int = 160) -> bytes:
+    """Shrink to fit inside size x size, keeping the shape (shop logos are often wide)."""
+    img = Image.open(io.BytesIO(jpeg)).convert("RGB")
+    img.thumbnail((size, size))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=88)
+    return buf.getvalue()
+
+
 def _prepare_image(image_base64: str) -> str:
     return base64.standard_b64encode(normalize_photo_b64(image_base64)).decode("ascii")
 

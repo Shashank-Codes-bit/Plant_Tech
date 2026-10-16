@@ -1,15 +1,14 @@
 // A bill. Right after payment (done=1) it leads with "paid" and Send on WhatsApp.
 // WhatsApp: straight to the customer's chat if we have their number, else WhatsApp asks for a contact.
 import { useState } from "react";
-import { Linking, Platform, Pressable, ScrollView, View } from "react-native";
-import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
+import { Linking, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { apiGet, fetchText } from "@/src/api";
+import { apiGet } from "@/src/api";
 import { useAuth } from "@/src/auth";
+import { BillFileResult, downloadBillPdf, shareBillPdf } from "@/src/bill-file";
 import { useToast } from "@/src/components/toast";
 import { BottomBar, Button, ErrorView, Header, Icon, LoadingView, Screen, T } from "@/src/components/ui";
 import { formatCurrency, formatDate, formatPhone, formatQty, formatTime } from "@/src/format";
@@ -24,11 +23,11 @@ export default function Bill() {
   const { id, done } = useLocalSearchParams<{ id: string; done?: string }>();
   const justPaid = done === "1";
   const q = useQuery<Invoice>({ queryKey: ["invoice", id], queryFn: () => apiGet(`/invoices/${id}`) });
-  const [busy, setBusy] = useState<"" | "wa" | "pdf" | "print">("");
+  const [busy, setBusy] = useState<"" | "wa" | "pdf" | "download">("");
   const inv = q.data;
   const home = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)"));
 
-  async function run(kind: "wa" | "pdf" | "print", fn: () => Promise<void>) {
+  async function run(kind: "wa" | "pdf" | "download", fn: () => Promise<unknown>) {
     setBusy(kind);
     try {
       await fn();
@@ -48,18 +47,11 @@ export default function Bill() {
     await Linking.openURL(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`);
   });
 
-  const pdf = () => run("pdf", async () => {
-    const html = await fetchText(`/invoices/${id}/html`);
-    if (Platform.OS === "web" || !(await Sharing.isAvailableAsync())) {
-      await Print.printAsync({ html });
-      return;
-    }
-    const { uri } = await Print.printToFileAsync({ html, width: 420, height: 595 });
-    await Sharing.shareAsync(uri, { mimeType: "application/pdf", UTI: "com.adobe.pdf", dialogTitle: inv!.invoice_number });
-  });
+  const pdf = () => run("pdf", () => shareBillPdf(id, inv!.invoice_number));
 
-  const print = () => run("print", async () => {
-    await Print.printAsync({ html: await fetchText(`/invoices/${id}/html`) });
+  const download = () => run("download", async () => {
+    const r: BillFileResult = await downloadBillPdf(id, inv!.invoice_number);
+    if (r === "saved") toast.show(t("Saved Bill {{no}}.pdf", { no: inv!.invoice_number }), "success");
   });
 
   if (!inv) {
@@ -84,7 +76,7 @@ export default function Bill() {
             <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.green, alignItems: "center", justifyContent: "center", marginBottom: 6 }}>
               <Icon name="check-bold" size={50} color={colors.white} />
             </View>
-            <T v="amount">{t("{{amount}} paid", { amount: formatCurrency(inv.grand_total) })}</T>
+            <T v="amount" numberOfLines={1} adjustsFontSizeToFit>{t("{{amount}} paid", { amount: formatCurrency(inv.grand_total) })}</T>
             <T v="body" color={colors.inkSoft}>{[t(inv.payment_method), t("Bill {{no}}", { no: inv.invoice_number }), formatTime(inv.created_at)].join(" · ")}</T>
             <T v="small">{t("Stock updated automatically")}</T>
           </View>
@@ -101,7 +93,7 @@ export default function Bill() {
         </Pressable>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Button title={t("Share PDF")} icon="file-pdf-box" variant="outline" size="md" style={{ flex: 1 }} onPress={pdf} loading={busy === "pdf"} testID="bill-pdf" />
-          <Button title={t("Print")} icon="printer" variant="outline" size="md" style={{ flex: 1 }} onPress={print} loading={busy === "print"} testID="bill-print" />
+          <Button title={t("Download")} icon="download" variant="outline" size="md" style={{ flex: 1 }} onPress={download} loading={busy === "download"} testID="bill-download" />
         </View>
 
         <View style={{ gap: 8, padding: 16, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, marginTop: 4 }}>

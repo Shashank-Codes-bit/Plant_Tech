@@ -53,7 +53,7 @@ export default function OrderPay() {
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 18 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: "center", padding: 18, borderRadius: radius.xl, backgroundColor: colors.greenTint }}>
           <T v="label" color={colors.greenDark}>{t("Customer pays")}</T>
-          <T v="amount" style={{ fontSize: 52, lineHeight: 58 }} testID="pay-total">{formatCurrency(cart.total)}</T>
+          <T v="amount" numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 52, lineHeight: 58 }} testID="pay-total">{formatCurrency(cart.total)}</T>
           <T v="small" color={colors.greenDark}>
             {[t("{{n}} items", { n: formatQty(cart.count) }),
               cart.gstIncluded > 0.004 ? t("includes GST {{gst}}", { gst: formatCurrency(cart.gstIncluded) }) : ""].filter(Boolean).join(" · ")}

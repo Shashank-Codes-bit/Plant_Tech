@@ -1,4 +1,6 @@
 """Customers of a shop. Saved automatically when a bill has a phone number."""
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -21,7 +23,9 @@ class CustomerIn(BaseModel):
 async def list_customers(search: str = "", user: dict = Depends(auth.require("customers"))):
     q: dict = {"business_id": user["business_id"]}
     if search:
-        q["$or"] = [{"name": {"$regex": search, "$options": "i"}}, {"phone": {"$regex": search.replace(" ", "")}}]
+        # Typed text is matched as text, not as a pattern ("+91", "(" must not break the search).
+        q["$or"] = [{"name": {"$regex": re.escape(search), "$options": "i"}},
+                    {"phone": {"$regex": re.escape(search.replace(" ", ""))}}]
     return await get_db().customers.find(q, {"_id": 0}).sort("name", 1).to_list(5000)
 
 

@@ -34,7 +34,7 @@ export default function Reports() {
           <>
             <View style={{ padding: 16, borderRadius: radius.lg, backgroundColor: colors.greenTint, gap: 2 }}>
               <T v="label" color={colors.greenDark}>{t("Sales · {{period}}", { period })}</T>
-              <T v="amount" testID="report-total">{formatCurrency(r.sales)}</T>
+              <T v="amount" numberOfLines={1} adjustsFontSizeToFit testID="report-total">{formatCurrency(r.sales)}</T>
               <T v="small" color={colors.greenDark}>
                 {r.profit > 0 ? t("{{n}} orders · profit about {{p}}", { n: r.orders, p: formatCurrency(r.profit) }) : t("{{n}} orders", { n: r.orders })}
               </T>

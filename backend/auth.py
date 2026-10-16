@@ -122,5 +122,6 @@ def public_user(user: dict, business: dict | None) -> dict:
             "name": business.get("name", ""),
             "onboarding_done": business.get("onboarding_done", False),
             "gst_registered": business.get("gst_registered", False),
+            "logo_path": business.get("logo_path"),
         } if business else None,
     }

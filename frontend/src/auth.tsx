@@ -18,7 +18,7 @@ export type User = {
   permissions: Record<Permission, boolean>;
   is_admin: boolean;
   has_password: boolean;
-  business: { id: string; name: string; onboarding_done: boolean; gst_registered: boolean } | null;
+  business: { id: string; name: string; onboarding_done: boolean; gst_registered: boolean; logo_path: string | null } | null;
 };
 
 type Session = { token: string; user: User };

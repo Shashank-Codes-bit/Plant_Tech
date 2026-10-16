@@ -2,18 +2,23 @@
 
 Workers see only the orders they made; owners (and workers with the reports permission) see all.
 """
+import base64
 import os
+import re
 import secrets
 from datetime import datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
+import ai_client
 import auth
 import invoice_html
+import storage_client
 from common import IST, date_key, money, new_id, normalize_in_phone, now_ist, now_iso
 from db import get_db
 from routers.products import context, record_stock
@@ -160,7 +165,7 @@ async def list_invoices(day: str = "", search: str = "", limit: int = 200,
     if day:
         q["date_key"] = day
     if search:
-        q["$or"] = [{f: {"$regex": search, "$options": "i"}}
+        q["$or"] = [{f: {"$regex": re.escape(search), "$options": "i"}}
                     for f in ("invoice_number", "customer_name", "customer_phone")]
     invs = await get_db().invoices.find(q, {"_id": 0}).sort("created_at", -1).to_list(min(limit, 1000))
     return [_summary(i) for i in invs]
@@ -190,11 +195,31 @@ async def share_invoice(invoice_id: str, request: Request, user: dict = Depends(
     return {"token": token, "url": f"{base}/i/{token}"}
 
 
+_logo_cache: dict[str, str] = {}
+
+
+async def _logo_src(biz: dict) -> str | None:
+    """The shop's logo as a small inline image, so it shows in the bill page and in saved PDFs (even offline)."""
+    path = biz.get("logo_path")
+    if not path:
+        return None
+    if path not in _logo_cache:
+        try:
+            data, _ = await run_in_threadpool(storage_client.get_object, path)
+            small = await run_in_threadpool(ai_client.fit_thumbnail, data)
+        except Exception:
+            return None
+        if len(_logo_cache) > 500:
+            _logo_cache.clear()
+        _logo_cache[path] = "data:image/jpeg;base64," + base64.b64encode(small).decode()
+    return _logo_cache[path]
+
+
 @router.get("/invoices/{invoice_id}/html", response_class=HTMLResponse)
 async def invoice_page_for_print(invoice_id: str, user: dict = Depends(auth.require("sell"))):
     inv = await _get_invoice(user, invoice_id)
     biz = await get_db().businesses.find_one({"id": user["business_id"]}, {"_id": 0}) or {}
-    return HTMLResponse(invoice_html.render(inv, biz, public=False))
+    return HTMLResponse(invoice_html.render(inv, biz, public=False, logo_src=await _logo_src(biz)))
 
 
 @public_router.get("/i/{token}", response_class=HTMLResponse, include_in_schema=False)
@@ -204,7 +229,7 @@ async def public_bill(token: str):
     if not inv:
         return HTMLResponse("<h1>Bill not found</h1>", status_code=404, headers={"X-Robots-Tag": "noindex"})
     biz = await db.businesses.find_one({"id": inv["business_id"]}, {"_id": 0}) or {}
-    return HTMLResponse(invoice_html.render(inv, biz), headers={"X-Robots-Tag": "noindex"})
+    return HTMLResponse(invoice_html.render(inv, biz, logo_src=await _logo_src(biz)), headers={"X-Robots-Tag": "noindex"})
 
 
 @router.get("/dashboard/today")

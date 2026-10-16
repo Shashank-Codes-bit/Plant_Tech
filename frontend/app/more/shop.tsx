@@ -71,7 +71,7 @@ function ShopForm({ initial }: { initial: Business }) {
       <Header title={t("Shop details")} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <Thumb path={b.logo_path} size={80} icon="store" />
+          <Thumb path={b.logo_path} size={80} icon="store" contain />
           <Button title={b.logo_path ? t("Change logo") : t("Add logo")} icon="image-outline" variant="outline" size="md" style={{ flex: 1 }}
             onPress={logo} loading={uploading} />
         </View>

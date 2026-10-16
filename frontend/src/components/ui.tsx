@@ -26,8 +26,11 @@ export function Icon(props: React.ComponentProps<typeof MaterialDesignIcons>) {
   return <MaterialDesignIcons {...props} />;
 }
 
+// Phones set to "large text" can scale ours up to 25% more; beyond that our big type breaks layouts.
+export const MAX_FONT_SCALE = 1.25;
+
 export function T({ v = "body", color, style, ...rest }: TextProps & { v?: TextVariant; color?: string }) {
-  return <Text {...rest} style={[type[v], color ? { color } : null, style]} />;
+  return <Text maxFontSizeMultiplier={MAX_FONT_SCALE} {...rest} style={[type[v], color ? { color } : null, style]} />;
 }
 
 // ------------------------------ layout ------------------------------
@@ -108,7 +111,8 @@ export function Button({ title, onPress, variant = "primary", icon, size = "lg",
       }, style]}
     >
       {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={size === "lg" ? 28 : 24} color={fg} /> : null}
-      <Text style={{ fontFamily: fonts.bold, fontSize: size === "lg" ? 20 : 18, color: fg, textAlign: "center", flexShrink: 1 }}>{title}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={2}
+        style={{ fontFamily: fonts.bold, fontSize: size === "lg" ? 20 : 18, lineHeight: size === "lg" ? 26 : 23, color: fg, textAlign: "center", flexShrink: 1 }}>{title}</Text>
     </Pressable>
   );
 }
@@ -118,10 +122,11 @@ export function Field({ label, hint, error, style, inputStyle, ...props }: TextI
   label?: string; hint?: string; error?: string; style?: StyleProp<ViewStyle>; inputStyle?: any;
 }) {
   return (
-    <View style={[{ gap: 6 }, style]}>
+    <View style={[{ gap: 6, justifyContent: "flex-end" }, style]}>
       {!!label && <T v="label">{label}</T>}
       <TextInput
         placeholderTextColor={colors.muted}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         {...props}
         style={[{ minHeight: touch.min + 2, borderWidth: 2, borderColor: error ? colors.red : colors.lineStrong, borderRadius: radius.md,
           paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 20, color: colors.ink, backgroundColor: colors.surface },
@@ -149,6 +154,7 @@ export function PhoneField({ label, value, onChangeText, error, hint, testID, st
           onChangeText={(t) => onChangeText(t.replace(/\D/g, "").slice(-10))}
           keyboardType="phone-pad"
           maxLength={10}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           placeholder="98765 43210"
           placeholderTextColor={colors.muted}
           style={{ flex: 1, paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 22, color: colors.ink, letterSpacing: 1 }}
@@ -186,7 +192,7 @@ export function Chip({ label, active, onPress, right, testID, tone = "green" }: 
       style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 52, paddingHorizontal: 16, borderRadius: 26, borderWidth: 2,
         borderColor: active ? on : colors.lineStrong, backgroundColor: active ? on : colors.surface }}>
       {active && tone === "green" && <Icon name="check" size={20} color={colors.white} />}
-      <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: active ? colors.white : colors.ink }}>{label}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: fonts.bold, fontSize: 17, color: active ? colors.white : colors.ink }}>{label}</Text>
       {right}
     </Pressable>
   );
@@ -199,8 +205,10 @@ export function Segmented<V extends string>({ options, value, onChange }: {
     <View style={{ flexDirection: "row", gap: 6, padding: 5, borderRadius: radius.md + 2, backgroundColor: "#E3EBE5" }}>
       {options.map((o) => (
         <Pressable key={o.value} testID={`seg-${o.value}`} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: o.value === value }}
-          style={{ flex: 1, minHeight: 50, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: o.value === value ? colors.green : "transparent" }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: o.value === value ? colors.white : colors.ink }}>{o.label}</Text>
+          style={{ flex: 1, minHeight: 50, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 12, alignItems: "center", justifyContent: "center",
+            backgroundColor: o.value === value ? colors.green : "transparent" }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={2}
+            style={{ fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, textAlign: "center", color: o.value === value ? colors.white : colors.ink }}>{o.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -238,12 +246,12 @@ export function Card({ children, onPress, style, testID }: {
   );
 }
 
-export function Thumb({ path, size = 56, tint = colors.greenTint, icon = "sprout" }: {
-  path?: string | null; size?: number; tint?: string; icon?: IconName;
+export function Thumb({ path, size = 56, tint = colors.greenTint, icon = "sprout", contain }: {
+  path?: string | null; size?: number; tint?: string; icon?: IconName; contain?: boolean; // contain: show all of it (logos)
 }) {
   return (
     <View style={{ width: size, height: size, borderRadius: size * 0.24, overflow: "hidden", backgroundColor: tint, alignItems: "center", justifyContent: "center" }}>
-      {path ? <Image source={{ uri: fileUrl(path) }} style={{ width: "100%", height: "100%" }} contentFit="cover" accessibilityLabel="Product picture" />
+      {path ? <Image source={{ uri: fileUrl(path) }} style={{ width: "100%", height: "100%" }} contentFit={contain ? "contain" : "cover"} accessibilityLabel={contain ? "Shop logo" : "Product picture"} />
         : <Icon name={icon} size={size * 0.5} color={colors.greenMid} />}
     </View>
   );

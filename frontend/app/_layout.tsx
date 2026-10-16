@@ -3,7 +3,7 @@ import "@/src/i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { LogBox } from "react-native";
+import { LogBox, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -20,6 +20,7 @@ import { queryClient } from "@/src/query-client";
 import { colors } from "@/src/theme";
 
 LogBox.ignoreAllLogs(true);
+const WEB = Platform.OS === "web";
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
@@ -35,7 +36,9 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: WEB ? "#DCE6DF" : colors.page }}>
+      {/* On a computer's browser, show the app at phone width so testing there matches the phone. */}
+      <View style={WEB ? { flex: 1, width: "100%", maxWidth: 480, alignSelf: "center", overflow: "hidden", backgroundColor: colors.page } : { flex: 1 }}>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <SafeAreaProvider>
@@ -52,6 +55,7 @@ export default function RootLayout() {
           </SafeAreaProvider>
         </QueryClientProvider>
       </ErrorBoundary>
+      </View>
     </GestureHandlerRootView>
   );
 }

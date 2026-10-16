@@ -68,7 +68,7 @@ export default function OrderCart() {
             <T v="label">{t("Total")}</T>
             {cart.gstIncluded > 0.004 && <T v="small">{t("Includes GST {{gst}}", { gst: formatCurrency(cart.gstIncluded) })}</T>}
           </View>
-          <T v="amount" testID="cart-total">{formatCurrency(cart.total)}</T>
+          <T v="amount" numberOfLines={1} adjustsFontSizeToFit testID="cart-total">{formatCurrency(cart.total)}</T>
         </View>
         <Button title={t("Take payment")} icon="cash-register" onPress={() => router.push("/order/pay")} testID="cart-pay" />
       </BottomBar>

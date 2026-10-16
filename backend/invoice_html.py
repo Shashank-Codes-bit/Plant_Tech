@@ -72,7 +72,7 @@ def _when(iso: str) -> str:
         return ""
 
 
-def render(inv: dict, biz: dict, *, public: bool = True) -> str:
+def render(inv: dict, biz: dict, *, public: bool = True, logo_src: str | None = None) -> str:
     e = lambda s: escape(str(s or ""))  # noqa: E731
     rows = []
     for i, it in enumerate(inv.get("items", [])):
@@ -93,6 +93,7 @@ def render(inv: dict, biz: dict, *, public: bool = True) -> str:
     phone = f'<div class="m">{e(inv["customer_phone"])}</div>' if inv.get("customer_phone") else ""
     footer = e(biz.get("footer_note") or "Thank you, visit again!")
     button = ('<button class="dl" onclick="window.print()">Download / Print PDF</button>' if public else "")
+    logo = f'<img class="logo" src="{e(logo_src)}" alt="">' if logo_src else ""
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -104,7 +105,8 @@ def render(inv: dict, biz: dict, *, public: bool = True) -> str:
 body {{ margin: 0; background: #EEF3EF; font-family: "Mukta", "Noto Sans", system-ui, sans-serif; color: #10201A; }}
 .wrap {{ max-width: 520px; margin: 0 auto; padding: 14px; }}
 .card {{ background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(16,32,26,.08); }}
-.head {{ background: #1B5E3B; color: #fff; padding: 16px 18px; }}
+.head {{ background: #1B5E3B; color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }}
+.logo {{ width: 60px; height: 60px; flex: none; object-fit: contain; background: #fff; border-radius: 12px; padding: 4px; }}
 .head h1 {{ margin: 0; font-size: 22px; }}
 .s {{ font-size: 13px; color: #D5E9DB; margin-top: 2px; }}
 .meta {{ display: flex; justify-content: space-between; gap: 10px; padding: 12px 18px; border-bottom: 1px dashed #C7D6CC; font-size: 14px; }}
@@ -127,7 +129,7 @@ tr.z td {{ background: #F5F8F5; }}
 @media print {{ body {{ background: #fff; }} .wrap {{ padding: 0; }} .card {{ box-shadow: none; }} .dl {{ display: none; }} }}
 </style></head>
 <body><div class="wrap"><article class="card">
-<header class="head"><h1>{e(biz.get("name") or "Bill")}</h1><div class="s">{shop_line}</div>{gstin}</header>
+<header class="head">{logo}<div><h1>{e(biz.get("name") or "Bill")}</h1><div class="s">{shop_line}</div>{gstin}</div></header>
 <div class="meta"><div><div class="m">Bill to</div><b>{customer}</b>{phone}</div>
 <div style="text-align:right"><div class="m">Bill no.</div><b>{e(inv.get("invoice_number"))}</b><div class="m">{_when(inv.get("created_at", ""))}</div></div></div>
 <table><thead><tr><th>Item</th><th class="c">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead>

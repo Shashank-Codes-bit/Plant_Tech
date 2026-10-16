@@ -1,7 +1,10 @@
 // The order being built: items (kept on the phone across restarts) and the discount.
 // product_id "loose-…" = a line billed without stock; the server gets product_id null for it.
+// The saved cart belongs to one login: logging out, or another person (or shop) logging in on
+// the same phone, starts with an empty cart; logging back in brings yours back.
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+import { useAuth } from "@/src/auth";
 import { storage } from "@/src/utils/storage";
 
 export type CartItem = {
@@ -28,26 +31,34 @@ type CartContextType = {
 };
 
 const CartContext = createContext<CartContextType | null>(null);
-const STORAGE_KEY = "nurserypos_cart_v2";
+const STORAGE_KEY = "nurserypos_cart_v3";
 
 export const isLoose = (id: string) => id.startsWith("loose-");
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
   const [items, setItems] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
+    let live = true;
     (async () => {
-      const saved = await storage.getItem<any>(STORAGE_KEY, []);
-      if (Array.isArray(saved)) setItems(saved);
-      setHydrated(true);
+      const saved = await storage.getItem<any>(STORAGE_KEY, null);
+      if (!live) return;
+      setItems(uid && saved?.uid === uid && Array.isArray(saved.items) ? saved.items : []);
+      setDiscount(0);
+      setLoadedFor(uid);
     })();
-  }, []);
+    return () => {
+      live = false;
+    };
+  }, [uid]);
 
   useEffect(() => {
-    if (hydrated) storage.setItem(STORAGE_KEY, items as any);
-  }, [items, hydrated]);
+    if (uid && loadedFor === uid) storage.setItem(STORAGE_KEY, { uid, items } as any);
+  }, [items, uid, loadedFor]);
 
   const addItem = (item: CartItem) =>
     setItems((prev) =>

@@ -341,7 +341,7 @@ function NotInStock({ initial, photo, onBack, onAdded }: {
 
         {canSave && (
           <Segmented value={mode} onChange={setMode}
-            options={[{ value: "save", label: t("Save as new product") }, { value: "once", label: t("Just sell it") }]} />
+            options={[{ value: "save", label: t("Add to products") }, { value: "once", label: t("Just sell it") }]} />
         )}
         <T v="small">
           {mode === "save" ? t("Adds it to your products, then to this order.") : t("For something you don't keep in stock. Only this bill.")}
