@@ -1,76 +1,47 @@
-import { Platform } from "react-native";
-import { Tabs } from "expo-router";
-import MaterialDesignIcons from "@react-native-vector-icons/material-design-icons";
+// Bottom tabs. Owner: Home · Orders · Products · Customers · More.
+// Worker: the same, minus what the owner hasn't allowed, and "Me" instead of More.
+import { Redirect, Tabs } from "expo-router";
+import type { ColorValue } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
-import { useTheme } from "@/src/theme";
-import { useCart } from "@/src/cart-context";
+import { useAuth } from "@/src/auth";
+import { Icon, IconName } from "@/src/components/ui";
+import { colors, fonts } from "@/src/theme";
+
+const icon = (name: IconName) => function TabIcon({ color }: { color: ColorValue }) {
+  return <Icon name={name} size={28} color={color as string} />;
+};
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
-  const { count } = useCart();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { ready, user, isOwner, can } = useAuth();
+  if (!ready) return null;
+  if (!user) return <Redirect href="/welcome" />;
+  if (isOwner && !user.business?.onboarding_done) return <Redirect href="/setup/shop" />;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.brandPrimary,
+        tabBarActiveTintColor: colors.green,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.divider,
-          ...(Platform.OS === "web" ? { height: 64 } : {}),
-        },
-        tabBarItemStyle: { alignSelf: "center" },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarStyle: { height: 72 + insets.bottom, paddingTop: 8, paddingBottom: insets.bottom + 8, borderTopColor: colors.line, backgroundColor: colors.surface },
+        tabBarLabelStyle: { fontFamily: fonts.bold, fontSize: 13 },
+        tabBarItemStyle: { paddingHorizontal: 0 },
+        sceneStyle: { backgroundColor: colors.page },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialDesignIcons name="home-variant" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="billing"
-        options={{
-          title: "Billing",
-          tabBarBadge: count > 0 ? count : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.warning, color: colors.onWarning },
-          tabBarIcon: ({ color, size }) => (
-            <MaterialDesignIcons name="cart" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="inventory"
-        options={{
-          title: "Inventory",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialDesignIcons name="sprout" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="customers"
-        options={{
-          title: "Customers",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialDesignIcons name="account-group" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: "More",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialDesignIcons name="dots-horizontal-circle-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: t("Home"), tabBarIcon: icon("home"), tabBarButtonTestID: "tab-home" }} />
+      <Tabs.Screen name="orders" options={{ title: t("Orders"), tabBarIcon: icon("receipt-text"), tabBarButtonTestID: "tab-orders",
+        href: can("sell") ? undefined : null }} />
+      <Tabs.Screen name="products" options={{ title: t("Products"), tabBarIcon: icon("sprout"), tabBarButtonTestID: "tab-products",
+        href: can("sell") || can("stock") ? undefined : null }} />
+      <Tabs.Screen name="customers" options={{ title: t("Customers"), tabBarIcon: icon("account-group"), tabBarButtonTestID: "tab-customers",
+        href: can("customers") ? undefined : null }} />
+      <Tabs.Screen name="more" options={{ title: isOwner ? t("More") : t("Me"), tabBarButtonTestID: "tab-more",
+        tabBarIcon: icon(isOwner ? "dots-horizontal-circle" : "account-circle") }} />
     </Tabs>
   );
 }

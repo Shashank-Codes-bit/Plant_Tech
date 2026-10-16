@@ -1,21 +1,19 @@
-import { View } from "react-native";
+// Where the app opens: Welcome (logged out), the setup wizard (owner, shop not set up), or Home.
 import { Redirect } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { apiGet } from "@/src/api";
-import { LoadingView } from "@/src/components/ui";
+
+import { useAuth } from "@/src/auth";
+import { LoadingView, Screen } from "@/src/components/ui";
 
 export default function Index() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["business"],
-    queryFn: () => apiGet("/business"),
-  });
-
-  if (isLoading) {
+  const { ready, user } = useAuth();
+  if (!ready) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+      <Screen>
         <LoadingView />
-      </View>
+      </Screen>
     );
   }
-  return <Redirect href={data ? "/(tabs)" : "/setup"} />;
+  if (!user) return <Redirect href="/welcome" />;
+  if (user.role === "owner" && !user.business?.onboarding_done) return <Redirect href="/setup/shop" />;
+  return <Redirect href="/(tabs)" />;
 }

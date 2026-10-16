@@ -60,3 +60,12 @@ def test_password_change_logs_out_old_sessions(client):
     new = {"Authorization": f"Bearer {r.json()['token']}"}
     assert client.get("/api/auth/me", headers=new).status_code == 200
     assert client.post("/api/auth/login", json={"phone": "9811122334", "password": "newsecret1"}).status_code == 200
+
+
+def test_worker_can_change_pin_owner_needs_8(client):
+    shop = Shop(client)
+    assert shop.post("/api/auth/password", {"current_password": "secret123", "new_password": "1234"}).status_code == 400
+    _, wh = shop.worker()
+    r = client.post("/api/auth/password", headers=wh, json={"current_password": "4821", "new_password": "9090"})
+    assert r.status_code == 200
+    assert client.post("/api/auth/login", json={"phone": "9822233445", "password": "9090"}).status_code == 200

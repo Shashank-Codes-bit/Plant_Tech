@@ -28,7 +28,7 @@ class GoogleIn(BaseModel):
 
 class PasswordIn(BaseModel):
     current_password: str = ""
-    new_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=4, max_length=128)  # owners need 8+, checked below
 
 
 async def _new_owner(db, *, name: str, phone: str | None = None, password: str | None = None,
@@ -116,6 +116,8 @@ async def change_password(body: PasswordIn, user: dict = Depends(auth.current_us
     Logs out every other phone using this login."""
     if user.get("password_hash") and not auth.check_password(body.current_password, user["password_hash"]):
         raise HTTPException(401, "Current password is wrong")
+    if user["role"] == "owner" and len(body.new_password) < 8:
+        raise HTTPException(400, "Use at least 8 characters")
     db = get_db()
     tv = user.get("token_version", 0) + 1
     await db.users.update_one({"id": user["id"]},

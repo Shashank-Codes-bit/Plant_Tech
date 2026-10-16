@@ -51,6 +51,7 @@ def test_categories_gst_rules(client):
     pots = shop.cat["Pots"]
     assert client.patch(f"/api/categories/{pots}", headers=shop.h, json={"gst_percent": 7}).status_code == 400
     assert client.patch(f"/api/categories/{pots}", headers=shop.h, json={"gst_percent": 12}).json()["gst_percent"] == 12
+    assert client.patch(f"/api/categories/{pots}", headers=shop.h, json={"gst_percent": 40}).json()["gst_percent"] == 40
     shop.product("Clay Pot", 120, 3, category="Pots")
     assert client.delete(f"/api/categories/{pots}", headers=shop.h).status_code == 400  # still used
     cats = {c["name"]: c for c in shop.get("/api/categories").json()}

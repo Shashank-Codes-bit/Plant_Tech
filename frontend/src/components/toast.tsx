@@ -13,7 +13,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [msg, setMsg] = useState("");
   const [type, setType] = useState<ToastType>("info");
   const [visible, setVisible] = useState(false);
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const timer = useRef<any>(null);
@@ -35,7 +35,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const bg =
-    type === "success" ? colors.success : type === "error" ? colors.error : colors.surfaceInverse;
+    type === "success" ? colors.green : type === "error" ? colors.red : colors.ink;
   const icon =
     type === "success" ? "check-circle" : type === "error" ? "alert-circle" : "information";
 

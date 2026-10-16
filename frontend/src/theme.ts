@@ -1,71 +1,78 @@
-// Design tokens for NurseryPOS. Light theme only — max contrast for outdoor use.
+// Design tokens for NurseryPOS (matches the approved prototype).
+// Light theme only, high contrast for outdoor use. Touch targets >= 56. Baloo 2 for headings and
+// money, Mukta for text: both cover Latin and Devanagari, so Hindi needs no font change.
 
 import { useMemo } from "react";
-import { Appearance, StyleSheet, useColorScheme } from "react-native";
+import { StyleSheet, TextStyle } from "react-native";
 
-export type ColorScheme = "light" | "dark";
-
-const light = {
+export const colors = {
+  page: "#F5F8F5",
   surface: "#FFFFFF",
-  onSurface: "#0B120C",
-  surfaceSecondary: "#F2F5F3",
-  onSurfaceSecondary: "#1A261D",
-  surfaceTertiary: "#E4EBE5",
-  onSurfaceTertiary: "#283B2C",
-  surfaceInverse: "#162419",
-  onSurfaceInverse: "#FFFFFF",
-  muted: "#5C7563",
+  ink: "#10201A",
+  inkSoft: "#3E5248",
+  muted: "#4B5F55",
+  line: "#D6E2D9",
+  lineStrong: "#C7D6CC",
 
-  brand: "#1B4D3E",
-  onBrand: "#FFFFFF",
-  brandPrimary: "#1B4D3E",
-  onBrandPrimary: "#FFFFFF",
-  brandSecondary: "#4A7C59",
-  onBrandSecondary: "#FFFFFF",
-  brandTertiary: "#D1E0D5",
-  onBrandTertiary: "#1B4D3E",
+  green: "#1B5E3B",
+  greenDark: "#134A2E",
+  greenMid: "#2D7A50",
+  greenTint: "#E8F2EA",
+  greenOnDark: "#D5E9DB",
 
-  success: "#287D3C",
-  onSuccess: "#FFFFFF",
-  warning: "#D97706",
-  onWarning: "#FFFFFF",
-  error: "#DC2626",
-  onError: "#FFFFFF",
-  info: "#1D4ED8",
-  onInfo: "#FFFFFF",
+  blue: "#1D4ED8",
+  blueTint: "#EEF2FF",
+  blueInk: "#1E3A8A",
 
-  border: "#D4DDD6",
-  borderStrong: "#A3B5A7",
-  divider: "#E4EBE5",
+  amber: "#B45309",
+  amberTint: "#FFFBEB",
+  amberInk: "#7C3A06",
+
+  red: "#B91C1C",
+  redLine: "#F3C9C9",
+
+  whatsapp: "#128C4A",
+  white: "#FFFFFF",
 };
 
-export type ThemeColors = typeof light;
+export type ThemeColors = typeof colors;
 
-export const defaultScheme = "light" satisfies ColorScheme;
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, "2xl": 32 };
+export const radius = { sm: 10, md: 14, lg: 18, xl: 24, pill: 999 };
+export const touch = { min: 56, large: 64, primary: 68 };
 
-export const themes: { light: ThemeColors; dark?: ThemeColors } = { light };
+export const fonts = {
+  display: "Baloo2_800ExtraBold",
+  displayBold: "Baloo2_700Bold",
+  regular: "Mukta_400Regular",
+  semibold: "Mukta_600SemiBold",
+  bold: "Mukta_700Bold",
+  extrabold: "Mukta_800ExtraBold",
+};
 
-export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, "2xl": 32, "3xl": 48 };
-export const radius = { sm: 6, md: 12, lg: 20, pill: 999 };
-export const fontSize = { sm: 12, base: 14, lg: 16, xl: 20, "2xl": 24, "3xl": 32 };
+export const type = {
+  amount: { fontFamily: fonts.display, fontSize: 44, lineHeight: 50, color: colors.greenDark },
+  heading: { fontFamily: fonts.display, fontSize: 32, lineHeight: 38, color: colors.ink },
+  title: { fontFamily: fonts.display, fontSize: 26, lineHeight: 32, color: colors.ink },
+  number: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28, color: colors.ink },
+  bodyLarge: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 26, color: colors.ink },
+  body: { fontFamily: fonts.regular, fontSize: 18, lineHeight: 25, color: colors.ink },
+  bold: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 25, color: colors.ink },
+  label: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, color: colors.inkSoft },
+  small: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.muted },
+  caption: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.muted },
+} satisfies Record<string, TextStyle>;
 
-export function setColorScheme(scheme: ColorScheme | null) {
-  Appearance.setColorScheme?.(scheme ?? "unspecified");
-}
+export type TextVariant = keyof typeof type;
 
-setColorScheme?.(themes.dark ? null : defaultScheme);
-
-export function useTheme(): { scheme: ColorScheme; colors: ThemeColors } {
-  const system = useColorScheme();
-  const scheme: ColorScheme = system && themes[system] ? system : defaultScheme;
-  return { scheme, colors: themes[scheme] ?? themes.light };
+export function useTheme() {
+  return { colors };
 }
 
 export function makeStyles<T extends StyleSheet.NamedStyles<T> | StyleSheet.NamedStyles<any>>(
-  factory: (colors: ThemeColors) => T & StyleSheet.NamedStyles<any>,
+  factory: (c: ThemeColors) => T & StyleSheet.NamedStyles<any>,
 ): () => T {
   return function useStyles(): T {
-    const { colors } = useTheme();
-    return useMemo(() => StyleSheet.create(factory(colors)), [colors]);
+    return useMemo(() => StyleSheet.create(factory(colors)), []);
   };
 }

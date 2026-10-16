@@ -89,7 +89,7 @@ const useStyles = makeStyles((colors) => ({
     gap: 12,
   },
   title: {
-    color: colors.onSurface,
+    color: colors.ink,
     fontSize: 22,
     fontWeight: "700",
     textAlign: "center",
@@ -100,13 +100,13 @@ const useStyles = makeStyles((colors) => ({
     textAlign: "center",
   },
   devMessage: {
-    color: colors.error,
+    color: colors.red,
     fontSize: 13,
     textAlign: "center",
   },
   button: {
     marginTop: 8,
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: colors.green,
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 14,
@@ -116,7 +116,7 @@ const useStyles = makeStyles((colors) => ({
     opacity: 0.85,
   },
   buttonText: {
-    color: colors.onBrandPrimary,
+    color: colors.white,
     fontSize: 15,
     fontWeight: "600",
     textAlign: "center",
@@ -132,14 +132,14 @@ const useStyles = makeStyles((colors) => ({
     maxHeight: 260,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSecondary,
+    borderColor: colors.line,
+    backgroundColor: colors.page,
   },
   detailsContent: {
     padding: 12,
   },
   detailsText: {
-    color: colors.onSurfaceSecondary,
+    color: colors.ink,
     fontSize: 12,
     lineHeight: 18,
     fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }),

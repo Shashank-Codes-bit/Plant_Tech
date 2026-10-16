@@ -1,106 +1,101 @@
-import { ScrollView, Text, View, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+// Owner: More (reports, staff, shop, categories, supplier bill, shared pictures).
+// Worker: Me (what the owner lets them do, change PIN, log out).
+import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { apiGet } from "@/src/api";
-import { makeStyles, radius, spacing, useTheme } from "@/src/theme";
-import { Icon } from "@/src/components/ui";
+import { Permission, useAuth } from "@/src/auth";
+import { confirm } from "@/src/confirm";
+import { Badge, Icon, IconName, Row, Screen, T } from "@/src/components/ui";
+import { formatPhone } from "@/src/format";
+import { colors, radius, spacing } from "@/src/theme";
+import { resetTo } from "@/src/nav";
 
-export default function More() {
-  const s = useStyles();
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const business = useQuery({ queryKey: ["business"], queryFn: () => apiGet("/business") });
-
-  const items = [
-    { icon: "receipt", label: "Invoice History", sub: "All past bills", onPress: () => router.push("/history"), testID: "more-history" },
-    { icon: "text-box-search", label: "Scan Purchase Invoice", sub: "Add stock from supplier bill", onPress: () => router.push("/scan-invoice"), testID: "more-scan-invoice" },
-    { icon: "shape-outline", label: "Categories", sub: "Manage product categories", onPress: () => router.push("/categories"), testID: "more-categories" },
-    { icon: "store-cog", label: "Business Info", sub: "Edit nursery details & tax", onPress: () => router.push("/business-settings"), testID: "more-business" },
-  ];
-
+function MenuIcon({ name, tint = colors.greenTint, color = colors.green }: { name: IconName; tint?: string; color?: string }) {
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.surface }}
-      contentContainerStyle={{ paddingTop: insets.top + spacing.sm, paddingBottom: spacing.xl }}
-    >
-      <Text style={s.title}>More</Text>
-
-      <View style={s.businessCard}>
-        <View style={s.logo}>
-          <Icon name="sprout" size={28} color={colors.onBrandPrimary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={s.bizName} numberOfLines={1}>
-            {business.data?.business_name ?? "Your Nursery"}
-          </Text>
-          {!!business.data?.owner_name && <Text style={s.bizOwner}>{business.data.owner_name}</Text>}
-        </View>
-      </View>
-
-      <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
-        {items.map((it) => (
-          <Pressable key={it.label} testID={it.testID} style={s.row} onPress={it.onPress}>
-            <View style={s.iconWrap}>
-              <Icon name={it.icon as any} size={24} color={colors.brandPrimary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.rowLabel}>{it.label}</Text>
-              <Text style={s.rowSub}>{it.sub}</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color={colors.muted} />
-          </Pressable>
-        ))}
-      </View>
-    </ScrollView>
+    <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: tint, alignItems: "center", justifyContent: "center" }}>
+      <Icon name={name} size={26} color={color} />
+    </View>
   );
 }
 
-const useStyles = makeStyles((colors) => ({
-  title: { fontSize: 28, fontWeight: "800", color: colors.onSurface, paddingHorizontal: spacing.lg, marginBottom: spacing.md },
-  businessCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surfaceSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  logo: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.brandPrimary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bizName: { fontSize: 20, fontWeight: "800", color: colors.onSurface },
-  bizOwner: { fontSize: 15, color: colors.muted, marginTop: 2 },
+export default function More() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { user, isOwner, can, logout } = useAuth();
+  const staff = useQuery<any[]>({ queryKey: ["staff"], queryFn: () => apiGet("/staff"), enabled: isOwner });
+  const shop = user?.business?.name ?? "";
 
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.brandTertiary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowLabel: { fontSize: 17, fontWeight: "700", color: colors.onSurface },
-  rowSub: { fontSize: 14, color: colors.muted, marginTop: 2 },
-}));
+  async function out() {
+    if (await confirm(t("Log out?"), t("You will need your phone number and password to log in again."), t("Log out"))) {
+      await logout();
+      resetTo(router, "/welcome");
+    }
+  }
+
+  const PERMS: { p: Permission; label: string }[] = [
+    { p: "sell", label: t("Make bills") }, { p: "stock", label: t("Add stock") },
+    { p: "customers", label: t("Customers") }, { p: "reports", label: t("Sales reports") },
+  ];
+
+  return (
+    <Screen>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 10, paddingBottom: spacing["2xl"] }}>
+        <T v="title" style={{ marginBottom: 4 }}>{isOwner ? t("More") : t("Me")}</T>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: radius.lg, backgroundColor: colors.surface,
+          borderWidth: 1, borderColor: colors.line }}>
+          <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: colors.green, alignItems: "center", justifyContent: "center" }}>
+            <T v="title" color={colors.white}>{(user?.name || "?").charAt(0).toUpperCase()}</T>
+          </View>
+          <View style={{ flex: 1 }}>
+            <T v="bodyLarge">{user?.name}</T>
+            <T v="small">{isOwner ? t("Owner · {{shop}}", { shop }) : t("Worker at {{shop}}", { shop })}</T>
+            {!!user?.phone && <T v="small">{formatPhone(user.phone)}</T>}
+          </View>
+        </View>
+
+        {isOwner ? (
+          <>
+            <Row title={t("Sales reports")} subtitle={t("Today, week, month")} left={<MenuIcon name="chart-bar" />} chevron
+              onPress={() => router.push("/more/reports")} testID="more-reports" />
+            <Row title={t("Staff")} left={<MenuIcon name="account-multiple" />} chevron testID="more-staff"
+              subtitle={staff.data ? (staff.data.length === 1 ? t("1 worker") : t("{{n}} workers", { n: staff.data.length })) : t("Workers and what they can do")}
+              onPress={() => router.push("/more/staff")} />
+            <Row title={t("Shop details")} subtitle={t("Name, address, UPI, GST")} left={<MenuIcon name="store" />} chevron
+              onPress={() => router.push("/more/shop")} testID="more-shop" />
+            <Row title={t("Categories")} subtitle={t("Names and GST %")} left={<MenuIcon name="shape" />} chevron
+              onPress={() => router.push("/more/categories")} testID="more-categories" />
+            <Row title={t("Supplier bill")} subtitle={t("Photo of a bill adds the stock")} chevron testID="more-supplier"
+              left={<MenuIcon name="file-document-outline" tint={colors.blueTint} color={colors.blue} />} onPress={() => router.push("/more/supplier-bill")} />
+            {user?.is_admin && (
+              <Row title={t("Shared pictures")} subtitle={t("App admin only (you)")} chevron testID="more-library"
+                left={<MenuIcon name="image-multiple" tint={colors.amberTint} color={colors.amber} />} onPress={() => router.push("/more/library")} />
+            )}
+          </>
+        ) : (
+          <View style={{ gap: 10, padding: 16, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+            <T v="label">{t("You can")}</T>
+            {PERMS.map(({ p, label }) => (
+              <View key={p} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Icon name={can(p) ? "check-circle" : "close-circle-outline"} size={26} color={can(p) ? colors.green : colors.muted} />
+                <T v="bold" color={can(p) ? colors.ink : colors.muted}>{label}</T>
+              </View>
+            ))}
+            <T v="small" style={{ marginTop: 4 }}>{t("Forgot your PIN? Ask the shop owner to give you a new one.")}</T>
+          </View>
+        )}
+        {!isOwner && can("reports") && (
+          <Row title={t("Sales reports")} left={<MenuIcon name="chart-bar" />} chevron onPress={() => router.push("/more/reports")} />
+        )}
+
+        <Row title={user?.has_password ? (isOwner ? t("Change password") : t("Change PIN")) : t("Set a password")}
+          left={<MenuIcon name="lock-reset" tint={colors.page} color={colors.inkSoft} />} chevron onPress={() => router.push("/more/password")} />
+        <Row title={t("Language")} subtitle={t("English · हिन्दी coming soon")} left={<MenuIcon name="translate" tint={colors.page} color={colors.inkSoft} />}
+          right={<Badge text={t("Soon")} tone="grey" />} />
+        <Row title={t("Log out")} left={<MenuIcon name="logout" tint="#FDECEC" color={colors.red} />} onPress={out} testID="more-logout" />
+      </ScrollView>
+    </Screen>
+  );
+}

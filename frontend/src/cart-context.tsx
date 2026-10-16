@@ -1,4 +1,7 @@
+// The order being built: items (kept on the phone across restarts) and the discount.
+// product_id "loose-…" = a line billed without stock; the server gets product_id null for it.
 import React, { createContext, useContext, useEffect, useState } from "react";
+
 import { storage } from "@/src/utils/storage";
 
 export type CartItem = {
@@ -6,8 +9,8 @@ export type CartItem = {
   name: string;
   price: number;
   quantity: number;
-  photo_path?: string | null;
-  botanical_name?: string;
+  gst_percent?: number;
+  image_path?: string | null;
   stock?: number;
 };
 
@@ -15,18 +18,23 @@ type CartContextType = {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   setQuantity: (product_id: string, qty: number) => void;
-  setPrice: (product_id: string, price: number) => void;
   removeItem: (product_id: string) => void;
   clear: () => void;
+  discount: number;
+  setDiscount: (d: number) => void;
   count: number;
-  subtotal: number;
+  total: number;
+  gstIncluded: number;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
-const STORAGE_KEY = "nursery_cart_v1";
+const STORAGE_KEY = "nurserypos_cart_v2";
+
+export const isLoose = (id: string) => id.startsWith("loose-");
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [discount, setDiscount] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -41,42 +49,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (hydrated) storage.setItem(STORAGE_KEY, items as any);
   }, [items, hydrated]);
 
-  const addItem = (item: CartItem) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product_id === item.product_id);
-      if (existing) {
-        return prev.map((i) =>
-          i.product_id === item.product_id ? { ...i, quantity: i.quantity + item.quantity } : i,
-        );
-      }
-      return [...prev, item];
-    });
-  };
-
-  const setQuantity = (product_id: string, qty: number) => {
+  const addItem = (item: CartItem) =>
     setItems((prev) =>
-      qty <= 0
-        ? prev.filter((i) => i.product_id !== product_id)
-        : prev.map((i) => (i.product_id === product_id ? { ...i, quantity: qty } : i)),
+      prev.some((i) => i.product_id === item.product_id)
+        ? prev.map((i) => (i.product_id === item.product_id ? { ...i, quantity: i.quantity + item.quantity } : i))
+        : [...prev, item],
     );
+  const setQuantity = (id: string, qty: number) =>
+    setItems((prev) => (qty <= 0 ? prev.filter((i) => i.product_id !== id) : prev.map((i) => (i.product_id === id ? { ...i, quantity: qty } : i))));
+  const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.product_id !== id));
+  const clear = () => {
+    setItems([]);
+    setDiscount(0);
   };
 
-  const setPrice = (product_id: string, price: number) => {
-    setItems((prev) => prev.map((i) => (i.product_id === product_id ? { ...i, price } : i)));
-  };
-
-  const removeItem = (product_id: string) =>
-    setItems((prev) => prev.filter((i) => i.product_id !== product_id));
-
-  const clear = () => setItems([]);
-
-  const count = items.reduce((s, i) => s + i.quantity, 0);
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const d = Math.min(discount, subtotal);
+  const factor = subtotal ? (subtotal - d) / subtotal : 1;
+  // prices include GST: the tax inside a line is amount * rate / (100 + rate)
+  const gstIncluded = items.reduce((s, i) => {
+    const r = i.gst_percent || 0;
+    return s + (r ? (i.price * i.quantity * factor * r) / (100 + r) : 0);
+  }, 0);
 
   return (
-    <CartContext.Provider
-      value={{ items, addItem, setQuantity, setPrice, removeItem, clear, count, subtotal }}
-    >
+    <CartContext.Provider value={{ items, addItem, setQuantity, removeItem, clear, discount: d, setDiscount,
+      count: items.reduce((s, i) => s + i.quantity, 0), total: subtotal - d, gstIncluded }}>
       {children}
     </CartContext.Provider>
   );

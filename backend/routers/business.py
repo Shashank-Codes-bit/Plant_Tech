@@ -16,9 +16,10 @@ router = APIRouter(prefix="/api", tags=["business"])
 SUGGESTED_CATEGORIES = [
     ("Indoor Plants", 0), ("Outdoor Plants", 0), ("Flowering Plants", 0), ("Succulents", 0), ("Cacti", 0),
     ("Trees", 0), ("Shrubs", 0), ("Herbs", 0), ("Seeds", 0), ("Pots", 18), ("Soil", 5), ("Fertilizers", 5),
-    ("Garden Tools", 12),
+    ("Garden Tools", 5),
 ]
-GST_SLABS = (0, 0.25, 3, 5, 12, 18, 28)
+# Rates since GST 2.0 (22 Sep 2025) plus the older 12% / 28% for anything still billed at them.
+GST_SLABS = (0, 0.25, 3, 5, 12, 18, 28, 40)
 
 
 class BusinessIn(BaseModel):

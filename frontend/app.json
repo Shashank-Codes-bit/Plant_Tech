@@ -57,6 +57,7 @@
         }
       ],
       "expo-font",
+      "expo-localization",
       "expo-image",
       "expo-secure-store",
       "expo-web-browser",
