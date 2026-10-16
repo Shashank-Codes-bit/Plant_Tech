@@ -1,0 +1,81 @@
+# New owner: sign up with a fresh phone number, then walk the 5-step shop setup to Home.
+# Wipes the Dev app's data first, so it always starts logged out. Leaves the owner logged in for the next flows.
+appId: com.planteck.nurserypos.dev
+name: owner-signup-setup
+env:
+  OWNER_NAME: ${OWNER_NAME || "Maestro Owner"}
+  PASSWORD: ${PASSWORD || "maestro-test-1"}
+  SHOP_NAME: ${SHOP_NAME || "Maestro Nursery"}
+---
+- clearState
+- runFlow: subflows/open-dev-app.yaml
+- extendedWaitUntil:
+    visible:
+      id: welcome-signup
+    timeout: 120000 # first bundle from Metro can be slow
+- tapOn:
+    id: welcome-signup
+
+# Sign up. A new 10-digit mobile number every run, since a phone can only have one account.
+- evalScript: ${output.phone = "9" + (100000000 + Math.floor(Math.random() * 900000000))}
+- tapOn:
+    id: signup-name
+- inputText: ${OWNER_NAME}
+- tapOn:
+    id: signup-phone
+- inputText: ${output.phone}
+- tapOn:
+    id: signup-password
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: signup-submit
+
+# Step 1: shop name
+- extendedWaitUntil:
+    visible:
+      id: setup-shop-name
+    timeout: 20000
+- tapOn:
+    id: setup-shop-name
+- inputText: ${SHOP_NAME}
+- hideKeyboard
+- tapOn:
+    id: setup-next-1
+
+# Step 2: address (optional; shop phone is pre-filled from the owner's)
+- extendedWaitUntil:
+    visible:
+      id: setup-next-2
+    timeout: 20000
+- tapOn:
+    id: setup-next-2
+
+# Step 3: UPI and GST (both optional)
+- extendedWaitUntil:
+    visible:
+      id: setup-next-3
+    timeout: 20000
+- tapOn:
+    id: setup-next-3
+
+# Step 4: categories (common ones are already ticked)
+- extendedWaitUntil:
+    visible:
+      id: setup-next-4
+    timeout: 20000
+- tapOn:
+    id: setup-next-4
+
+# Step 5: done. "Start selling" turns on once the shop is saved.
+- extendedWaitUntil:
+    visible:
+      id: setup-start
+      enabled: true
+    timeout: 20000
+- tapOn:
+    id: setup-start
+- extendedWaitUntil:
+    visible:
+      id: home-new-order
+    timeout: 20000

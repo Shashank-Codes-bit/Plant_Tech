@@ -8,6 +8,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "nurserypos",
     "userInterfaceStyle": "light",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/0ff8f95c-6822-4a2e-83d7-38bf03e117f6"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.planteck.nurserypos",

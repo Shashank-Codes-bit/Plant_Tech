@@ -1,0 +1,9 @@
+# Opens the "NurseryPOS Dev" app on the JS served by `npx expo start`.
+# DEV_SERVER_URL defaults to http://localhost:8081, which reaches the PC after `adb reverse tcp:8081 tcp:8081`.
+# disableOnboarding / disableFab skip the dev menu intro and hide its floating button so they can't cover the app.
+appId: com.planteck.nurserypos.dev
+env:
+  DEV_SERVER_URL: ${DEV_SERVER_URL || "http://localhost:8081"}
+---
+- stopApp
+- openLink: nurserypos-dev://expo-development-client/?url=${DEV_SERVER_URL}&disableOnboarding=1&disableFab=1

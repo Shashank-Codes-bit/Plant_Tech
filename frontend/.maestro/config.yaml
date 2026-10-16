@@ -1,0 +1,9 @@
+# `maestro test .maestro` runs the top-level flows in this order: new owner → add a product → sell it.
+flows:
+  - "*"
+executionOrder:
+  continueOnFailure: false
+  flowsOrder:
+    - owner-signup-setup
+    - add-product
+    - new-order

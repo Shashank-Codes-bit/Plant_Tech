@@ -1,13 +1,20 @@
 // Dynamic config on top of app.json.
-// APP_VARIANT=staging (set by the "staging" EAS profile) builds the separate "NurseryPOS QA"
-// app, which installs next to the real one and talks to the staging server.
+// APP_VARIANT (set by the EAS build profile) builds a separate app that installs next to the real one:
+//   staging     → "NurseryPOS QA", talks to the staging server ("staging" profile)
+//   development → "NurseryPOS Dev", a dev client that loads JS from `npx expo start` ("development" profile)
+const VARIANTS = {
+  staging: { name: "NurseryPOS QA", scheme: "nurserypos-qa", id: "com.planteck.nurserypos.qa" },
+  development: { name: "NurseryPOS Dev", scheme: "nurserypos-dev", id: "com.planteck.nurserypos.dev" },
+};
+
 module.exports = ({ config }) => {
-  if (process.env.APP_VARIANT !== "staging") return config;
+  const variant = VARIANTS[process.env.APP_VARIANT];
+  if (!variant) return config;
   return {
     ...config,
-    name: "NurseryPOS QA",
-    scheme: "nurserypos-qa",
-    android: { ...config.android, package: "com.planteck.nurserypos.qa" },
-    ios: { ...config.ios, bundleIdentifier: "com.planteck.nurserypos.qa" },
+    name: variant.name,
+    scheme: variant.scheme,
+    android: { ...config.android, package: variant.id },
+    ios: { ...config.ios, bundleIdentifier: variant.id },
   };
 };

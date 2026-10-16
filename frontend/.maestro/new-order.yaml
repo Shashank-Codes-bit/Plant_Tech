@@ -1,0 +1,53 @@
+# Sell one product for cash: New order → type the name → pick it → add → pay → Cash → bill is paid.
+# Needs a logged-in user and PRODUCT in stock (add-product makes it with 10 in stock).
+appId: com.planteck.nurserypos.dev
+name: new-order
+env:
+  PRODUCT: ${PRODUCT || "Maestro Money Plant"}
+---
+- runFlow: subflows/open-dev-app.yaml
+- extendedWaitUntil:
+    visible:
+      id: home-new-order
+    timeout: 120000
+- tapOn:
+    id: home-new-order
+
+- tapOn:
+    id: scan-search
+- inputText: ${PRODUCT}
+- extendedWaitUntil:
+    visible:
+      id: scan-result-${PRODUCT}
+    timeout: 15000
+- tapOn:
+    id: scan-result-${PRODUCT}
+
+# Found: quantity starts at 1
+- extendedWaitUntil:
+    visible:
+      id: found-add
+    timeout: 10000
+- tapOn:
+    id: found-add
+
+- extendedWaitUntil:
+    visible:
+      id: cart-pay
+    timeout: 10000
+- tapOn:
+    id: cart-pay
+
+# No customer phone; Cash makes the bill straight away.
+- extendedWaitUntil:
+    visible:
+      id: pay-Cash
+    timeout: 10000
+- tapOn:
+    id: pay-Cash
+- extendedWaitUntil:
+    visible:
+      id: bill-paid
+    timeout: 20000
+- assertVisible:
+    id: bill-paid

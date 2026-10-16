@@ -1,0 +1,45 @@
+# Owner adds a product by typing its name: Products → Add product → Create new → price and stock → Save.
+# Needs a logged-in owner whose shop is set up (run owner-signup-setup first).
+appId: com.planteck.nurserypos.dev
+name: add-product
+env:
+  PRODUCT: ${PRODUCT || "Maestro Money Plant"}
+  PRICE: ${PRICE || "150"}
+  STOCK: ${STOCK || "10"}
+---
+- runFlow: subflows/open-dev-app.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-products
+    timeout: 120000
+- tapOn:
+    id: tab-products
+- tapOn:
+    id: products-add
+
+- tapOn:
+    id: add-search
+- inputText: ${PRODUCT}
+- extendedWaitUntil:
+    visible:
+      id: add-create-new
+    timeout: 15000
+- tapOn:
+    id: add-create-new
+
+# The form opens with the name already filled in.
+- tapOn:
+    id: product-price
+- inputText: ${PRICE}
+- tapOn:
+    id: product-stock
+- inputText: ${STOCK}
+- hideKeyboard
+- tapOn:
+    id: product-save
+
+# Back on the Products list (sorted by name), the new product is there.
+- scrollUntilVisible:
+    element:
+      id: product-${PRODUCT}
+    timeout: 20000
