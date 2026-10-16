@@ -592,6 +592,11 @@ async def root():
 app.include_router(api_router)
 
 
+@app.get("/health")
+async def health():
+    return {"ok": True}
+
+
 @app.middleware("http")
 async def require_app_key(request: Request, call_next):
     """Shared-secret check so a public URL can't be used to read data or spend AI credits."""

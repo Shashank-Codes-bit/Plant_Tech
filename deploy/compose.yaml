@@ -1,0 +1,27 @@
+# NurseryPOS on the shared Oracle VM (see DEPLOYMENT-GUIDE.md). Port 8100, localhost only:
+# the VM's shared Caddy is the way in (add-site.sh nurserypos proxy 8100).
+name: nurserypos
+services:
+  web:
+    build: { context: ../backend }
+    restart: unless-stopped
+    env_file: .env                       # secrets, on the VM only
+    environment:
+      PORT: "8100"
+      MONGO_URL: mongodb://mongo:27017
+      LOCAL_STORAGE_DIR: /data/uploads
+    ports: ["127.0.0.1:8100:8100"]
+    volumes: ["data:/data"]
+    depends_on: [mongo]
+
+  mongo:
+    image: mongo:7                       # multi-arch, runs on Arm64
+    restart: unless-stopped
+    # small cache: the VM's 6 GB is shared with other sites
+    command: ["--wiredTigerCacheSizeGB", "0.25"]
+    volumes: ["mongo:/data/db"]
+    # no ports: only the web container can reach it
+
+volumes:
+  data: {}
+  mongo: {}

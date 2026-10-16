@@ -8,5 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8001
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers"]
+ENV PORT=8001
+# Only the VM's Caddy can reach the published port (bound to 127.0.0.1), but inside
+# Docker its requests arrive from the bridge gateway, so trust forwarded headers from any peer.
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'"]
