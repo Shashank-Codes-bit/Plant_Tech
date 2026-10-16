@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Daily MongoDB backup. Add to crontab:  0 2 * * * /home/ubuntu/Nzone/deploy/backup.sh
+# Daily MongoDB backup. Add to crontab:  0 2 * * * /home/ubuntu/Plant_Tech/deploy/backup.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p backups

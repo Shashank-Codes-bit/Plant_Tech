@@ -27,7 +27,7 @@ sudo netfilter-persistent save
 curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker ubuntu && newgrp docker
 
-git clone https://github.com/udyanojha/Nzone.git && cd Nzone
+git clone https://github.com/Shashank-Codes-bit/Plant_Tech.git && cd Plant_Tech
 ```
 
 ## 3. Cloudflare R2 (photos)
@@ -54,13 +54,13 @@ curl -H "X-App-Key: <APP_API_KEY>" https://yourname.duckdns.org/api/
 
 ## 5. Updating after code changes
 ```bash
-cd ~/Nzone && git pull && cd deploy && DOMAIN=yourname.duckdns.org docker compose up -d --build
+cd ~/Plant_Tech && git pull && cd deploy && DOMAIN=yourname.duckdns.org docker compose up -d --build
 ```
 
 ## 6. Backups
 ```bash
-chmod +x ~/Nzone/deploy/backup.sh
-crontab -e   # add:  0 2 * * * /home/ubuntu/Nzone/deploy/backup.sh
+chmod +x ~/Plant_Tech/deploy/backup.sh
+crontab -e   # add:  0 2 * * * /home/ubuntu/Plant_Tech/deploy/backup.sh
 ```
 
 Backups go to `deploy/backups/` and are kept for 14 days. Copy them off the VM now and then, for example to R2 with `rclone`.
