@@ -1,5 +1,5 @@
-# NurseryPOS on the shared Oracle VM (see DEPLOYMENT-GUIDE.md). Port 8100, localhost only:
-# the VM's shared Caddy is the way in (add-site.sh nurserypos proxy 8100).
+# NurseryPOS on the shared Oracle VM (see DEPLOYMENT-GUIDE.md). Port 8120, localhost only:
+# the VM's shared Caddy is the way in (add-site.sh nurserypos proxy 8120).
 name: nurserypos
 services:
   web:
@@ -7,10 +7,10 @@ services:
     restart: unless-stopped
     env_file: .env                       # secrets, on the VM only
     environment:
-      PORT: "8100"
+      PORT: "8120"
       MONGO_URL: mongodb://mongo:27017
       LOCAL_STORAGE_DIR: /data/uploads
-    ports: ["127.0.0.1:8100:8100"]
+    ports: ["127.0.0.1:8120:8120"]
     volumes: ["data:/data"]
     depends_on: [mongo]
 

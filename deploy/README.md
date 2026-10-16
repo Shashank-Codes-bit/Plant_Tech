@@ -5,12 +5,12 @@ NurseryPOS runs on the **shared** Oracle VM (`svc-agent`, `140.238.251.141`). Ot
 | | |
 |---|---|
 | URL | **https://nurserypos.140-238-251-141.sslip.io** |
-| Port | **8100** (bound to `127.0.0.1` only; the VM's Caddy is the way in) |
+| Port | **8120** (bound to `127.0.0.1` only; the VM's Caddy is the way in) |
 | Containers | `web` (FastAPI) + `mongo` (MongoDB 7, internal only), compose project `nurserypos` |
 | Data | volumes `nurserypos_mongo` (database) and `nurserypos_data` (`/data/uploads` when `STORAGE_BACKEND=local`) |
 | Photos | Cloudflare R2 bucket `nurserypos-photos` |
 | Secrets | `~/Plant_Tech/deploy/.env` on the VM only |
-| Health | `curl 127.0.0.1:8100/health` → `{"ok":true}` |
+| Health | `curl 127.0.0.1:8120/health` → `{"ok":true}` |
 
 ## First deploy
 Log in from Windows PowerShell. Disconnect the Voltas VPN first:
@@ -30,15 +30,15 @@ nano .env                                   # fill in ANTHROPIC_API_KEY, APP_API
 docker compose up -d --build                # first build on Arm takes a few minutes
 docker compose ps                           # web and mongo: running
 docker compose logs web | tail -20          # expect "Seed check complete", "Storage initialized"
-curl -s 127.0.0.1:8100/health               # {"ok":true}
+curl -s 127.0.0.1:8120/health               # {"ok":true}
 
-sudo bash ~/Service-Call-Bot/infra/oracle-vm/add-site.sh nurserypos proxy 8100
+sudo bash ~/Service-Call-Bot/infra/oracle-vm/add-site.sh nurserypos proxy 8120
 ```
 
 Check it from outside:
 - `https://nurserypos.140-238-251-141.sslip.io/api/` should return `{"detail":"Unauthorized"}`. That means it's up and the app-key check is on.
 - `curl -H "X-App-Key: <APP_API_KEY>" https://nurserypos.140-238-251-141.sslip.io/api/` should return `{"message":"NurseryPOS API"}`.
-- The other sites must still work: `https://140-238-251-141.sslip.io/health` and `https://alerts.140-238-251-141.sslip.io`.
+- The other sites must still work: `https://140-238-251-141.sslip.io/health`, `https://alerts.140-238-251-141.sslip.io`, `https://mehtamart.140-238-251-141.sslip.io` and `https://plantstore.140-238-251-141.sslip.io`.
 
 ## Update, logs, rollback
 ```bash
