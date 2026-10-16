@@ -22,6 +22,12 @@ import { colors } from "@/src/theme";
 
 LogBox.ignoreAllLogs(true);
 const WEB = Platform.OS === "web";
+if (WEB && typeof document !== "undefined") {
+  // The browser draws its own focus ring inside our bordered boxes; phones don't, so match them.
+  const style = document.createElement("style");
+  style.textContent = "input:focus, textarea:focus { outline: none; }";
+  document.head.appendChild(style);
+}
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {

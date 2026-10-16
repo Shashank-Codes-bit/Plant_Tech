@@ -5,6 +5,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
 import { isLoose, useCart } from "@/src/cart-context";
+import { OrderCustomerBar } from "@/src/components/order-customer";
 import { BottomBar, Button, EmptyState, Field, Header, Icon, Screen, Stepper, T, Thumb } from "@/src/components/ui";
 import { formatCurrency, formatQty } from "@/src/format";
 import { colors, radius, spacing } from "@/src/theme";
@@ -29,6 +30,7 @@ export default function OrderCart() {
     <Screen bg={colors.surface}>
       <Header title={t("Order · {{n}} items", { n: formatQty(cart.count) })} onBack={back} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 10 }} bottomOffset={24}>
+        <OrderCustomerBar />
         {cart.items.map((it) => (
           <View key={it.product_id} testID={`cart-line-${it.name}`}
             style={{ gap: 10, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>

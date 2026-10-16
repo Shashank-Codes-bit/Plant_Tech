@@ -54,7 +54,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
   ];
 
   function shareLogin(phoneE164: string) {
-    const text = t("Your NurseryPOS login for {{shop}}:\nPhone: {{phone}}\nPIN: {{pin}}\nOpen the NurseryPOS app and tap Log in.",
+    const text = t("Your Hara Hisaab login for {{shop}}:\nPhone: {{phone}}\nPIN: {{pin}}\nOpen the Hara Hisaab app and tap Log in.",
       { shop: user?.business?.name ?? "", phone: formatPhone(phoneE164), pin });
     Linking.openURL(`https://wa.me/${phoneE164.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`).catch(() => {});
   }

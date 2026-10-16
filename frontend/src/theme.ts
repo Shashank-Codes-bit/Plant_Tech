@@ -1,4 +1,4 @@
-// Design tokens for NurseryPOS (matches the approved prototype).
+// Design tokens for Hara Hisaab (matches the approved prototype).
 // Light theme only, high contrast for outdoor use. Touch targets >= 56. Baloo 2 for headings and
 // money, Mukta for text: both cover Latin and Devanagari, so Hindi needs no font change.
 

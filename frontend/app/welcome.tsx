@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/src/auth";
 import { useToast } from "@/src/components/toast";
 import { Button, Icon, Screen, T } from "@/src/components/ui";
+import { BrandIcon, BrandName } from "@/src/components/brand";
 import { googleAvailable, signInWithGoogle } from "@/src/google";
 import { colors, radius, spacing } from "@/src/theme";
 import { resetTo } from "@/src/nav";
@@ -30,11 +31,10 @@ export default function Welcome() {
     <Screen bg={colors.surface} edgeTop={false}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 18, paddingHorizontal: 32, paddingTop: 60,
         backgroundColor: colors.greenTint, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}>
-        <View style={{ width: 112, height: 112, borderRadius: 36, backgroundColor: colors.green, alignItems: "center", justifyContent: "center" }}>
-          <Icon name="sprout" size={64} color={colors.white} />
-        </View>
-        <T v="heading" style={{ fontSize: 44, lineHeight: 50, color: colors.greenDark }}>NurseryPOS</T>
-        <T v="body" style={{ fontSize: 20, lineHeight: 27, textAlign: "center", color: colors.inkSoft }}>
+        <BrandIcon size={112} />
+        <BrandName big />
+        <T v="bodyLarge" style={{ textAlign: "center", color: colors.green }}>हर पौधे का हिसाब</T>
+        <T v="body" style={{ fontSize: 19, lineHeight: 26, textAlign: "center", color: colors.inkSoft }}>
           {t("Bills, stock and customers for your nursery, in one app.")}
         </T>
       </View>

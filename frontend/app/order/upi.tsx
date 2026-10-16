@@ -1,6 +1,5 @@
 // UPI: the shop's pay QR with the amount filled in. "Money received" makes the bill.
 import { View } from "react-native";
-import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import QRCode from "react-native-qrcode-svg";
@@ -10,7 +9,7 @@ import { apiGet } from "@/src/api";
 import { useCart } from "@/src/cart-context";
 import { BottomBar, Button, Header, LoadingView, Screen, T } from "@/src/components/ui";
 import { formatCurrency } from "@/src/format";
-import { getPayer, useCreateBill } from "@/src/order";
+import { useCreateBill } from "@/src/order";
 import { colors, radius, spacing } from "@/src/theme";
 import type { Business } from "@/src/types";
 
@@ -24,7 +23,6 @@ export default function OrderUpi() {
   const router = useRouter();
   const cart = useCart();
   const bill = useCreateBill();
-  const [{ phone, name }] = useState(getPayer);
   const biz = useQuery<Business>({ queryKey: ["business"], queryFn: () => apiGet("/business") });
   const b = biz.data;
 
@@ -42,7 +40,7 @@ export default function OrderUpi() {
         </View>
       )}
       <BottomBar>
-        <Button title={t("Money received")} icon="check-bold" onPress={() => bill.create("UPI", phone, name)} loading={bill.busy}
+        <Button title={t("Money received")} icon="check-bold" onPress={() => bill.create("UPI")} loading={bill.busy}
           disabled={!b || !cart.count} testID="upi-received" />
         <Button title={t("Change payment method")} variant="outline" size="md" onPress={() => router.back()} />
       </BottomBar>

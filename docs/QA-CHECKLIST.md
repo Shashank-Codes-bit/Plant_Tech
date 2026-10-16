@@ -139,6 +139,13 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 ## G. New order
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|
+| G.0 | New order | First "Who is buying?": recent customers, search by name or any part of the phone | 1 | | |
+| G.0a | Search finds nobody → "Add … as a new customer" | Name and phone both needed; saved customer is picked and you go on to add items | 1 | | |
+| G.0b | Add items, go back to Home | Home shows "Continue order · customer · items · ₹" and "Discard this order" | 1 | | |
+| G.0c | Close the app (or log in on another phone as the same person), open New order | Same draft comes back: same customer and items | 1 | | |
+| G.0d | Discard this order | Asks first; then Home shows "New order" again; the customer stays saved | 1 | | |
+| G.0e | Two people (owner + worker) each start an order | Each has their own draft; neither sees the other's | 1 | | |
+| G.0f | "Change" on the customer bar while adding items | Pick another customer; items stay | 2 | | |
 | G.1 | Take a photo of a plant you have | "Plant found", right name, Sure match / Probably badge | 1 | | |
 | G.2 | Photo from gallery | Same as G.1 | 1 | | |
 | G.3 | Blurry photo / photo of a person | Says it can't tell, or "Not in your stock"; no crash | 1 | | |
@@ -171,9 +178,9 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | H.4 | On the QR screen: "Change payment method" | Back to Payment; no bill made | 1 | | |
 | H.5 | Double-tap "Cash" fast / double-tap "Money received" | Only ONE bill | 1 | | |
 | H.6 | Pay with the network off | Error; order kept; pay again online makes exactly one bill | 1 | | |
-| H.7 | Customer number of a returning customer | "Anita · bought N times before" | 2 | | |
-| H.8 | New number + name | Customer saved; appears in Customers | 1 | | |
-| H.9 | Number with 9 digits | Payment buttons disabled | 1 | | |
+| H.7 | Payment screen | Shows the order's customer (no number to type) and Cash / UPI / Card | 1 | | |
+| H.8 | API: make a bill without a customer, or a new phone without a name | 400 "Choose the customer…" / "Enter the customer's name"; nothing taken from stock | 1 | | |
+| H.9 | Make the bill | The draft is gone; Home shows "New order" again; the customer's page lists the bill | 1 | | |
 | H.10 | Non-GST shop | No GST lines anywhere on screen or bill | 1 | | |
 | H.11 | GST shop, Pot ₹118 @18% | "Includes GST 18% ₹18.00"; total ₹118 | 1 | | |
 | H.12 | GST shop: 2 × Money Plant ₹199 (0%) + Pot ₹118 (18%), discount ₹50 | Total ₹466; "Includes GST 18% ₹16.26" | 1 | | |
@@ -186,7 +193,7 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | H.19 | Open the downloaded PDF | Shop logo top-left, shop name, items, GST lines, total, amount in words, "PAID · method"; A5 size | 1 | | |
 | H.20 | "Send bill on WhatsApp" with a customer number | Opens that customer's chat with the message and bill link | 1 | | |
 | H.21 | WhatsApp with a number not on WhatsApp | (Known limit 4) WhatsApp's own message | 3 | | |
-| H.22 | WhatsApp with no number | WhatsApp opens to choose a contact | 1 | | |
+| H.22 | Old bills made before customers were required (no number) | WhatsApp opens to choose a contact | 3 | | |
 | H.23 | Open the bill link on a phone that isn't logged in | Bill page shows without login; logo, items, total | 1 | | |
 | H.24 | Change one character in the bill link | "Bill not found" | 1 | | |
 | H.25 | Product named `<b>Rose</b><script>alert(1)</script>` | Bill page and PDF show the text as typed; no popup | 1 | | |
@@ -216,7 +223,7 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|
 | J.1 | Add customer with an existing number | "already exists" error | 1 | | |
-| J.2 | Add customer with no phone | Saved; shows "No phone"; no Call/WhatsApp buttons | 2 | | |
+| J.2 | Add customer with no phone, or a 9-digit phone | Can't save: name and phone are both needed | 1 | | |
 | J.3 | Search by name part and by last 4 digits | Finds them | 2 | | |
 | J.4 | Customer page | Total bought and visits match their bills; past bills open | 1 | | |
 | J.5 | Call / WhatsApp buttons | Open the dialer / chat with the right number | 2 | | |
@@ -289,13 +296,12 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 ## Q. Demo shop (Green House, 9654346434)
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|
-| Q.1 | Log in, look at Home in the afternoon | Today has orders and sales; list of recent orders | 1 | | |
-| Q.2 | Wait 15–30 min, refresh Home | New orders appear (shop hours 9 am–8:30 pm) | 1 | | |
+| Q.1 | Log in any time of day | Home "Today" is a full day of orders and sales; every order has a customer | 1 | | |
+| Q.2 | Next morning after 5:30 am | All dates moved one day forward: today is full again, yesterday has yesterday's orders, reports look the same | 1 | | |
 | Q.3 | Products | 25 plants + 15 other products + your own; some "Low stock", Fiddle Leaf Fig "Out of stock" | 1 | | |
-| Q.4 | Reports Month | A full month of sales with profit and best sellers | 1 | | |
-| Q.5 | Next morning | Stock topped up; showcase items still low/out; old orders still there | 2 | | |
-| Q.6 | Your own products and bills (e.g. Kopi Plant) | Never changed by the demo | 1 | | |
-| Q.7 | Demo customers' WhatsApp | Don't send: their numbers are dummies (+91 90000 001xx) | 1 | | |
+| Q.4 | Reports Month / Orders all dates | A full month of sales with profit, best sellers, 45 customers | 1 | | |
+| Q.5 | Your own products (e.g. Kopi Plant) | Never deleted or changed by the demo (their bills move dates with everything else) | 1 | | |
+| Q.6 | Demo customers' WhatsApp | Don't send: their numbers are dummies (+91 90000 001xx) | 1 | | |
 
 ## R. Release to production (after staging passes)
 | # | Steps | Expected | P | ✅/❌ | Notes |

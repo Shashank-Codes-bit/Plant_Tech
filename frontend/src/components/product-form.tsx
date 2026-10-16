@@ -41,7 +41,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
 
   async function photo(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
-    if (out.status === "denied") toast.show(t("Allow camera and photos for NurseryPOS in your phone settings"), "error");
+    if (out.status === "denied") toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
     if (out.status !== "ok") return;
     setUploading(true);
     try {

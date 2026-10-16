@@ -1,54 +1,58 @@
-"""Demo shop data: seeded once, topped up by ticks, never touching the shop's own data."""
+"""Demo shop data: seeded once, refreshed daily by moving every date forward, demo rows removable."""
 import asyncio
 from datetime import datetime, timedelta
 
 import db as db_module
 import demo_data
-from common import IST
+from common import now_ist
 from conftest import Shop
 
-NOW = datetime(2026, 10, 16, 15, 5, tzinfo=IST)  # a Friday afternoon
+# This afternoon: the shop's own test bill below is made with the real clock, so the demo uses the same day.
+NOW = now_ist().replace(hour=15, minute=5, second=0, microsecond=0)
 
 
 def run(coro):
     return asyncio.run(coro)
 
 
-def test_seed_then_ticks(client):
+def test_seed_refresh_remove(client):
     shop = Shop(client)
     own = shop.product("Kopi Plant", 850, 18)
+    shop.post("/api/invoices", {"items": [{"product_id": own["id"], "name": "Kopi Plant", "quantity": 1, "price": 850}],
+                                "customer_phone": "9811100099", "customer_name": "Own Customer"})
     db = db_module.state.db
 
     r = run(demo_data.seed(db, "9811122334", now=NOW))
-    assert r["seeded"] and r["products"] == 40 and r["customers"] == 18 and r["orders"] > 250
+    assert r["seeded"] and r["products"] == 40 and r["customers"] == len(demo_data.CUSTOMERS) and r["orders"] > 300
 
-    products = shop.get("/api/products").json()
-    by_name = {p["name"]: p for p in products}
-    assert len(products) == 41 and by_name["Kopi Plant"]["stock"] == 18  # own product untouched
+    by_name = {p["name"]: p for p in shop.get("/api/products").json()}
+    assert len(by_name) == 41 and by_name["Kopi Plant"]["stock"] == 17  # own product untouched by the demo
     assert by_name["Fiddle Leaf Fig"]["out_of_stock"] and by_name["ZZ Plant"]["low_stock"]
-    assert all(p["stock"] >= 0 for p in products)
-    assert {c["name"] for c in shop.get("/api/categories").json()} >= {"Garden Tools", "Herbs", "Pots"}
+    assert all(p["stock"] >= 0 for p in by_name.values())
 
-    today = shop.get("/api/invoices/summary", params={"day": NOW.date().isoformat()}).json()
-    assert today["orders"] > 0 and today["sales"] > 0
-    invs = run(db.invoices.find({"demo": True}, {"_id": 0, "created_at": 1, "date_key": 1}).to_list(5000))
-    assert all(datetime.fromisoformat(i["created_at"]) <= NOW for i in invs)  # nothing from the future
+    invs = run(db.invoices.find({"demo": True}, {"_id": 0, "date_key": 1, "customer_id": 1}).to_list(5000))
+    assert all(i["customer_id"] for i in invs)  # every order has a customer
+    assert max(i["date_key"] for i in invs) == NOW.date().isoformat()  # a full "today"
     assert min(i["date_key"] for i in invs) >= (NOW - timedelta(days=30)).date().isoformat()
     month = shop.get("/api/reports/sales", params={"range": "month", "date": NOW.date().isoformat()}).json()
     assert month["orders"] > 100 and month["profit"] > 0 and month["top"]
-    assert len(shop.get("/api/customers").json()) == 18
+    assert run(demo_data.seed(db, "9811122334", now=NOW))["seeded"] is False  # seeding twice: refused
 
-    # Same moment again: nothing new. Later the same day: more orders. Seeding twice: refused.
-    assert run(demo_data.tick(db, "9811122334", now=NOW))["orders"] == 0
-    later = run(demo_data.tick(db, "9811122334", now=NOW + timedelta(hours=3)))
-    assert later["orders"] > 0 and later["restocked"] is False
-    assert run(demo_data.tick(db, "9811122334", now=NOW + timedelta(hours=3)))["orders"] == 0
-    assert run(demo_data.seed(db, "9811122334", now=NOW))["seeded"] is False
+    # Next morning: everything (the shop's own bill too) moves one day forward, so "today" is full again.
+    before = {i["id"]: i["date_key"] for i in run(db.invoices.find({}, {"_id": 0, "id": 1, "date_key": 1}).to_list(5000))}
+    tomorrow = NOW.date() + timedelta(days=1)
+    assert run(demo_data.refresh(db, "9811122334", today=tomorrow))["shifted_days"] == 1
+    after = {i["id"]: i["date_key"] for i in run(db.invoices.find({}, {"_id": 0, "id": 1, "date_key": 1}).to_list(5000))}
+    assert all(after[k] == (datetime.fromisoformat(v) + timedelta(days=1)).date().isoformat() for k, v in before.items())
+    today = shop.get("/api/invoices/summary", params={"day": tomorrow.isoformat()}).json()
+    assert today["orders"] > 0
+    assert run(demo_data.refresh(db, "9811122334", today=tomorrow))["shifted_days"] == 0  # once a day only
+    # Missed days catch up in one go.
+    assert run(demo_data.refresh(db, "9811122334", today=tomorrow + timedelta(days=3)))["shifted_days"] == 3
 
-    # Next morning: restock once, and the shop's own data is still there.
-    nxt = run(demo_data.tick(db, "9811122334", now=NOW + timedelta(days=1, hours=-5)))
-    assert nxt["restocked"] is True
-    assert shop.get(f"/api/products/{own['id']}").json()["stock"] == 18
+    # A shop without demo data is never moved.
+    Shop(client, phone="9811155667", name="Real")
+    assert run(demo_data.refresh(db, "9811155667", today=tomorrow))["shifted_days"] == 0
 
     business_id = shop.get("/api/auth/me").json()["business"]["id"]
     run(demo_data.remove_demo(db, business_id))

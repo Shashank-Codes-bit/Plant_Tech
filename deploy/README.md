@@ -79,12 +79,14 @@ docker compose exec -T mongo mongorestore --archive --gzip < backups/<file>
 ```
 
 ## Demo shop
-A showcase shop with 25 plants, 15 other products, regular customers and orders that keep coming in during shop
-hours (staging: Green House, owner 9654346434). Demo rows are marked `demo`; the shop's own data is never touched.
+A showcase shop with 25 plants, 15 other products, 45 customers and a month of orders (staging: Green House,
+owner 9654346434). Every day at 5:30 am India time all its dates move forward one day, so "today" is always full
+and nothing looks old. Seeding and removing touch only rows marked `demo`; the refresh moves every date in that
+shop, so it refuses to run on a shop without demo data.
 ```bash
 cd ~/Plant_Tech-staging/deploy
 docker compose exec web python demo_data.py seed --phone <owner phone>    # once (--force starts again)
-crontab -e   # add:  */15 * * * * bash /home/ubuntu/Plant_Tech-staging/deploy/demo-tick.sh staging <owner phone> >> /home/ubuntu/nurserypos-demo.log 2>&1
+crontab -e   # add (the VM runs on UTC):  0 0 * * * bash /home/ubuntu/Plant_Tech-staging/deploy/demo-refresh.sh staging <owner phone> >> /home/ubuntu/nurserypos-demo.log 2>&1
 docker compose exec web python demo_data.py remove --phone <owner phone>  # take the demo data out again
 ```
 

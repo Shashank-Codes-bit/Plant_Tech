@@ -1,11 +1,13 @@
 """Demo data for a showcase shop, so the app always looks like a busy nursery.
 
-  python demo_data.py seed --phone 9654346434   # once: 25 plants, 15 other products, customers, last 30 days of orders
-  python demo_data.py tick --phone 9654346434   # every 15 min (cron): today's orders so far; once a day restock + tidy
+  python demo_data.py seed --phone 9654346434      # once: 25 plants, 15 other products, customers, 30 days of orders
+  python demo_data.py refresh --phone 9654346434   # daily at 5:30 am (cron): every date moves forward so the
+                                                    # newest day is today again; nothing ever looks old
+  python demo_data.py remove --phone 9654346434    # take the demo products, customers and orders out again
 
-Orders follow a fixed plan per day (same plan whenever it runs), with shop hours 9 am to 8:30 pm and busier
-weekends, so a tick only adds the orders whose time has come. Everything made here is marked demo=True:
-the shop's own products, customers and bills are never changed or removed.
+Orders follow a fixed plan per day, with shop hours 9 am to 8:30 pm and busier weekends; every order has a
+customer. Seeding and removing touch only rows marked demo=True. Refresh moves the dates of everything in the
+shop (its own test bills too), so it only runs on a shop that has demo data.
 """
 import argparse
 import asyncio
@@ -24,7 +26,6 @@ from routers.products import context
 from routers.sales import _next_number, price_lines
 
 DAYS_BACK = 30
-KEEP_DAYS = 60
 
 # name, botanical, category, price, cost, usual stock, popularity
 PLANTS = [
@@ -77,13 +78,17 @@ PRODUCTS = [
 # Kept low or empty every day so the Low stock / Out of stock badges always have something to show.
 SHOWCASE_STOCK = {"Fiddle Leaf Fig": 0, "ZZ Plant": 3, "Ceramic Pot 10 inch": 2, "Neem Oil Spray 250 ml": 4}
 
-# Regular customers. Numbers are dummies in one block (+91 90000 001xx); don't send them WhatsApp messages.
+# Customers (name, how often they come). Numbers are dummies in one block (+91 90000 001xx); don't message them.
 CUSTOMERS = [
     ("Anita Sharma", 6), ("Rajesh Gupta", 5), ("Priya Verma", 4), ("Amit Kumar", 4), ("Sunita Yadav", 3),
     ("Vikram Singh", 3), ("Neha Agarwal", 3), ("Rohit Mehta", 2), ("Kavita Joshi", 2), ("Sanjay Malhotra", 2),
     ("Pooja Bansal", 2), ("Arjun Reddy", 2), ("Meena Iyer", 2), ("Deepak Chauhan", 1), ("Ritu Kapoor", 1),
     ("Manoj Tiwari", 1), ("Shalini Nair", 1), ("Karan Arora", 1),
-]
+] + [(n, 1) for n in (
+    "Suresh Patel", "Geeta Rawat", "Harish Bhatia", "Nisha Saxena", "Prakash Jain", "Rekha Pandey", "Ashok Mishra",
+    "Swati Kulkarni", "Gaurav Sethi", "Anjali Desai", "Mohit Khanna", "Seema Chawla", "Rahul Dubey", "Pallavi Rao",
+    "Naveen Bhalla", "Kiran Thakur", "Vandana Goel", "Yogesh Sood", "Bhavna Mittal", "Tarun Ahuja", "Lata Menon",
+    "Sachin Garg", "Dimple Bedi", "Alok Srivastava", "Komal Arya", "Rakesh Dhawan", "Sneha Kohli")]
 CUSTOMER_PHONE = {name: f"+91900000{101 + i:04d}" for i, (name, _) in enumerate(CUSTOMERS)}
 
 POTS = [p[0] for p in PRODUCTS if p[1] == "Pots"]
@@ -123,7 +128,7 @@ def day_plan(business_id: str, day: date) -> list[dict]:
             add(pot, max(1, min(3, sum(lines.values()) // 2)))
         if rng.random() < 0.2:
             add(rng.choice([x for x in CARE if x not in SHOWCASE_STOCK]), 1)
-        customer = (rng.choices(CUSTOMERS, [w for _, w in CUSTOMERS])[0][0] if rng.random() < 0.55 else None)
+        customer = rng.choices(CUSTOMERS, [w for _, w in CUSTOMERS])[0][0]
         orders.append({
             "minute": hour * 60 + minute,
             "lines": lines,
@@ -241,7 +246,7 @@ async def find_owner(db, phone: str) -> dict:
 async def remove_demo(db, business_id: str):
     for coll in ("invoices", "stock_history", "products", "customers"):
         await db[coll].delete_many({"business_id": business_id, "demo": True})
-    await db.demo_state.delete_many({"business_id": business_id})
+    await db.demo_state.delete_many({"business_id": business_id})  # left by older versions of this script
 
 
 async def seed(db, phone: str, now: datetime | None = None, force: bool = False) -> dict:
@@ -287,35 +292,54 @@ async def seed(db, phone: str, now: datetime | None = None, force: bool = False)
     while day <= now.date():
         if day.weekday() == 0 or day == now.date():  # deliveries on Mondays, and before today's trade
             await shop.restock(datetime(day.year, day.month, day.day, 8, 45, tzinfo=IST))
-        made += await shop.orders_until(day, now)
+        # Whole days, today included: the daily refresh then always shows a full "today".
+        made += await shop.orders_until(day, datetime(day.year, day.month, day.day, 23, 59, tzinfo=IST))
         day += timedelta(days=1)
-    await db.demo_state.update_one({"business_id": bid}, {"$set": {"housekeeping_day": now.date().isoformat()}}, upsert=True)
     return {"seeded": True, "products": len(items), "customers": len(CUSTOMERS), "orders": made}
 
 
-async def tick(db, phone: str, now: datetime | None = None) -> dict:
-    now = (now or now_ist()).astimezone(IST)
+def _later(iso: str | None, days: int) -> str | None:
+    return (datetime.fromisoformat(iso) + timedelta(days=days)).isoformat() if iso else iso
+
+
+async def shift_dates(db, business_id: str, days: int) -> int:
+    """Move every date in the shop `days` forward: bills, stock history, customers, products, supplier bills."""
+    moved = 0
+    async for inv in db.invoices.find({"business_id": business_id}, {"_id": 0, "id": 1, "created_at": 1, "date_key": 1}):
+        day = (date.fromisoformat(inv["date_key"]) + timedelta(days=days)).isoformat()
+        await db.invoices.update_one({"id": inv["id"]}, {"$set": {"date_key": day, "created_at": _later(inv["created_at"], days)}})
+        moved += 1
+    for coll, fields in (("stock_history", ("created_at",)), ("customers", ("created_at", "last_purchase_at")),
+                         ("products", ("created_at", "updated_at")), ("purchases", ("created_at",))):
+        async for doc in db[coll].find({"business_id": business_id}, {"_id": 0, "id": 1, **{f: 1 for f in fields}}):
+            changes = {f: _later(doc[f], days) for f in fields if doc.get(f)}
+            if changes:
+                await db[coll].update_one({"id": doc["id"], "business_id": business_id}, {"$set": changes})
+    return moved
+
+
+async def refresh(db, phone: str, today: date | None = None) -> dict:
+    """Daily: move all the shop's dates forward so its newest day of orders is today."""
+    today = today or now_ist().date()
     shop = Shop(db, await find_owner(db, phone))
     if not await db.products.find_one({"business_id": shop.bid, "demo": True}):
-        return {"orders": 0, "note": "no demo data yet: run seed first"}
-    today = now.date()
-    state = await db.demo_state.find_one({"business_id": shop.bid}) or {}
-    tidied = False
-    if state.get("housekeeping_day") != today.isoformat():
-        await shop.restock(now)
-        cutoff = (today - timedelta(days=KEEP_DAYS)).isoformat()
-        await db.invoices.delete_many({"business_id": shop.bid, "demo": True, "date_key": {"$lt": cutoff}})
-        await db.stock_history.delete_many({"business_id": shop.bid, "demo": True, "type": "sale",
-                                            "created_at": {"$lt": cutoff}})
-        await db.demo_state.update_one({"business_id": shop.bid}, {"$set": {"housekeeping_day": today.isoformat()}},
-                                       upsert=True)
-        tidied = True
-    return {"orders": await shop.orders_until(today, now), "restocked": tidied}
+        return {"shifted_days": 0, "note": "not a demo shop (no demo data): nothing moved"}
+    newest = await db.invoices.find({"business_id": shop.bid}, {"_id": 0, "date_key": 1}).sort("date_key", -1).limit(1).to_list(1)
+    if not newest:
+        return {"shifted_days": 0, "note": "no orders"}
+    days = (today - date.fromisoformat(newest[0]["date_key"])).days
+    if days <= 0:
+        return {"shifted_days": 0}
+    bills = await shift_dates(db, shop.bid, days)
+    for name, p in (await shop.products()).items():  # keep the Low / Out of stock badges showing
+        if name in SHOWCASE_STOCK:
+            await shop.set_stock(p, SHOWCASE_STOCK[name], "adjustment", "Stock count", now_ist())
+    return {"shifted_days": days, "bills": bills}
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("action", choices=["seed", "tick", "remove"])
+    ap.add_argument("action", choices=["seed", "refresh", "remove"])
     ap.add_argument("--phone", required=True, help="the demo shop owner's phone number")
     ap.add_argument("--force", action="store_true", help="seed: remove the old demo data and start again")
     args = ap.parse_args()
@@ -324,14 +348,13 @@ def main():
         db = get_db()
         if args.action == "seed":
             return await seed(db, args.phone, force=args.force)
-        if args.action == "tick":
-            return await tick(db, args.phone)
+        if args.action == "refresh":
+            return await refresh(db, args.phone)
         await remove_demo(db, (await find_owner(db, args.phone))["business_id"])
         return {"removed": True}
 
     result = asyncio.run(run())
-    if args.action != "tick" or result.get("orders") or result.get("restocked") or result.get("note"):
-        print(datetime.now(IST).strftime("%Y-%m-%d %H:%M"), args.action, result, flush=True)
+    print(datetime.now(IST).strftime("%Y-%m-%d %H:%M"), args.action, result, flush=True)
     return 0
 
 

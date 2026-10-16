@@ -44,7 +44,7 @@ export default function NewProduct() {
 
   async function scan() {
     const out = await takePhoto();
-    if (out.status === "denied") toast.show(t("Allow camera and photos for NurseryPOS in your phone settings"), "error");
+    if (out.status === "denied") toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
     if (out.status !== "ok") return;
     setScanning(true);
     try {

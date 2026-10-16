@@ -1,12 +1,14 @@
 // Owner: More (reports, staff, shop, categories, supplier bill, shared pictures).
 // Worker: Me (what the owner lets them do, change PIN, log out).
 import { ScrollView, View } from "react-native";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { apiGet } from "@/src/api";
 import { Permission, useAuth } from "@/src/auth";
+import { BrandMark } from "@/src/components/brand";
 import { confirm } from "@/src/confirm";
 import { Badge, Icon, IconName, Row, Screen, T } from "@/src/components/ui";
 import { formatPhone } from "@/src/format";
@@ -95,6 +97,12 @@ export default function More() {
         <Row title={t("Language")} subtitle={t("English · हिन्दी coming soon")} left={<MenuIcon name="translate" tint={colors.page} color={colors.inkSoft} />}
           right={<Badge text={t("Soon")} tone="grey" />} />
         <Row title={t("Log out")} left={<MenuIcon name="logout" tint="#FDECEC" color={colors.red} />} onPress={out} testID="more-logout" />
+
+        <View style={{ alignItems: "center", gap: 2, marginTop: 18 }}>
+          <BrandMark size={36} />
+          <T v="bold" color={colors.greenDark}>हरा हिसाब · Hara Hisaab</T>
+          <T v="caption">{t("Version {{v}}", { v: Constants.expoConfig?.version ?? "" })}</T>
+        </View>
       </ScrollView>
     </Screen>
   );

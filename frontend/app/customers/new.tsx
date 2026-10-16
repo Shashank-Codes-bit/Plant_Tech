@@ -20,12 +20,13 @@ export default function NewCustomer() {
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
-  const phoneBad = !!phone && !normalizePhone(phone);
+  const phone10 = normalizePhone(phone);
+  const phoneBad = !!phone && !phone10;
 
   async function save() {
     setBusy(true);
     try {
-      await apiPost("/customers", { name: name.trim(), phone: phone ? `+91${phone}` : "", address, notes });
+      await apiPost("/customers", { name: name.trim(), phone: `+91${phone10}`, address, notes });
       qc.invalidateQueries({ queryKey: ["customers"] });
       toast.show(t("Saved"), "success");
       router.back();
@@ -47,7 +48,7 @@ export default function NewCustomer() {
         <Field label={t("Notes (optional)")} value={notes} onChangeText={setNotes} multiline placeholder={t("e.g. Likes flowering plants")} />
       </KeyboardAwareScrollView>
       <BottomBar>
-        <Button title={t("Save customer")} icon="content-save" onPress={save} loading={busy} disabled={!name.trim() || phoneBad} testID="customer-save" />
+        <Button title={t("Save customer")} icon="content-save" onPress={save} loading={busy} disabled={!name.trim() || !phone10} testID="customer-save" />
       </BottomBar>
     </Screen>
   );

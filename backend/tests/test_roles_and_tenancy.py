@@ -15,7 +15,7 @@ def test_worker_permissions(client):
     assert "cost_price" not in products[0]  # workers never see cost prices
     pid = products[0]["id"]
     r = client.post("/api/invoices", headers=wh, json={"items": [{"product_id": pid, "name": "Money Plant",
-                                                                    "quantity": 1, "price": 250}]})
+                                                                    "quantity": 1, "price": 250}], "customer_phone": "9811100099", "customer_name": "Test Customer"})
     assert r.status_code == 200 and r.json()["created_by"]["name"] == "Ramesh"
 
 
@@ -47,7 +47,7 @@ def test_shops_are_isolated(client):
     assert b.get("/api/invoices").json() == []
     assert b.get(f"/api/products/{pa['id']}").status_code == 404
     # B can't sell A's product, and A's stock is untouched by the attempt
-    r = b.post("/api/invoices", {"items": [{"product_id": pa["id"], "name": "x", "quantity": 1, "price": 1}]})
+    r = b.post("/api/invoices", {"items": [{"product_id": pa["id"], "name": "x", "quantity": 1, "price": 1}], "customer_phone": "9811100099", "customer_name": "Test Customer"})
     assert r.status_code == 400
     assert a.get(f"/api/products/{pa['id']}").json()["stock"] == 4
     # a worker of B can't edit A's categories either
@@ -58,7 +58,7 @@ def test_worker_sees_only_own_orders(client):
     shop = Shop(client)
     p = shop.product("Money Plant", 250, 10)
     _, wh = shop.worker()
-    line = {"items": [{"product_id": p["id"], "name": "Money Plant", "quantity": 1, "price": 250}]}
+    line = {"items": [{"product_id": p["id"], "name": "Money Plant", "quantity": 1, "price": 250}], "customer_phone": "9811100099", "customer_name": "Test Customer"}
     shop.post("/api/invoices", line)
     client.post("/api/invoices", headers=wh, json=line)
     assert len(shop.get("/api/invoices").json()) == 2

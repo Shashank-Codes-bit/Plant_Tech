@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/src/auth";
 import { useToast } from "@/src/components/toast";
+import { BrandMark } from "@/src/components/brand";
 import { Button, Field, Header, PhoneField, Screen, T } from "@/src/components/ui";
 import { normalizePhone } from "@/src/format";
 import { colors, spacing } from "@/src/theme";
@@ -36,7 +37,7 @@ export default function Signup() {
 
   return (
     <Screen bg={colors.surface}>
-      <Header />
+      <Header right={<View style={{ marginRight: 14 }}><BrandMark size={40} /></View>} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 4, gap: 18 }} bottomOffset={24}>
         <View style={{ gap: 4 }}>
           <T v="heading">{t("Create your account")}</T>

@@ -1,4 +1,4 @@
-"""Customers of a shop. Saved automatically when a bill has a phone number."""
+"""Customers of a shop: name and phone are a must. Picked (or added) at the start of every order."""
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/customers", tags=["customers"])
 
 class CustomerIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    phone: str = ""
+    phone: str = Field(min_length=1, max_length=20)  # name and phone are a must; the rest is optional
     email: str = Field("", max_length=120)
     address: str = Field("", max_length=300)
     notes: str = Field("", max_length=500)
@@ -37,15 +37,32 @@ async def lookup(phone: str, user: dict = Depends(auth.require("sell", "customer
     return {"found": bool(c), "name": c["name"] if c else "", "purchase_count": c["purchase_count"] if c else 0}
 
 
-@router.post("")
-async def create_customer(body: CustomerIn, user: dict = Depends(auth.require("customers"))):
+@router.get("/find")
+async def find(q: str = "", user: dict = Depends(auth.require("sell", "customers"))):
+    """New order: pick the customer. Name or phone (any part); empty = the most recent customers."""
     db = get_db()
-    phone = normalize_in_phone(body.phone) if body.phone.strip() else None
-    if body.phone.strip() and not phone:
+    query: dict = {"business_id": user["business_id"]}
+    text = q.strip()
+    if text:
+        digits = re.sub(r"\D", "", text)
+        ors = [{"name": {"$regex": re.escape(text), "$options": "i"}}]
+        if len(digits) >= 3:
+            ors.append({"phone": {"$regex": re.escape(digits[-10:])}})
+        query["$or"] = ors
+    found = await db.customers.find(query, {"_id": 0, "id": 1, "name": 1, "phone": 1, "purchase_count": 1,
+                                            "last_purchase_at": 1}).sort("last_purchase_at", -1).limit(20).to_list(20)
+    return found
+
+
+@router.post("")
+async def create_customer(body: CustomerIn, user: dict = Depends(auth.require("sell", "customers"))):
+    db = get_db()
+    phone = normalize_in_phone(body.phone)
+    if not phone:
         raise HTTPException(400, "Enter a 10-digit Indian mobile number")
-    if phone and await db.customers.find_one({"business_id": user["business_id"], "phone": phone}):
+    if await db.customers.find_one({"business_id": user["business_id"], "phone": phone}):
         raise HTTPException(409, "A customer with this phone number already exists")
-    doc = {"id": new_id(), "business_id": user["business_id"], "name": body.name.strip(), "phone": phone or "",
+    doc = {"id": new_id(), "business_id": user["business_id"], "name": body.name.strip(), "phone": phone,
            "email": body.email.strip(), "address": body.address.strip(), "notes": body.notes.strip(),
            "total_purchases": 0.0, "purchase_count": 0, "created_at": now_iso()}
     await db.customers.insert_one(doc)

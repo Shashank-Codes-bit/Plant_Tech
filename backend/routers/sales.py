@@ -21,6 +21,7 @@ import invoice_html
 import storage_client
 from common import IST, date_key, money, new_id, normalize_in_phone, now_ist, now_iso
 from db import get_db
+from routers import drafts
 from routers.products import context, record_stock
 
 router = APIRouter(prefix="/api", tags=["sales"])
@@ -36,6 +37,7 @@ class LineIn(BaseModel):
 
 class InvoiceIn(BaseModel):
     items: list[LineIn] = Field(min_length=1)
+    customer_id: str | None = None  # a saved customer; or give the phone (+ name for a new one)
     customer_name: str = Field("", max_length=80)
     customer_phone: str = Field("", max_length=20)
     discount: float = Field(0, ge=0)
@@ -99,6 +101,24 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
     if missing := [i for i in ids if i not in products]:
         raise HTTPException(400, f"{len(missing)} item(s) in this order are no longer in your products")
 
+    # Every bill has a customer (name + phone): a saved one, or a new one made from the phone and name.
+    customer, new_customer = None, None
+    if body.customer_id:
+        customer = await db.customers.find_one({"id": body.customer_id, "business_id": bid}, {"_id": 0})
+        if not customer:
+            raise HTTPException(400, "Customer not found")
+    else:
+        phone = normalize_in_phone(body.customer_phone)
+        if not phone:
+            raise HTTPException(400, "Choose the customer for this order")
+        customer = await db.customers.find_one({"business_id": bid, "phone": phone}, {"_id": 0})
+        if not customer:
+            if not body.customer_name.strip():
+                raise HTTPException(400, "Enter the customer's name")
+            new_customer = {"id": new_id(), "business_id": bid, "name": body.customer_name.strip(), "phone": phone,
+                            "email": "", "address": "", "notes": "", "total_purchases": 0.0, "purchase_count": 0,
+                            "created_at": now_iso()}
+
     # Take the stock first; give it back if any product doesn't have enough.
     taken: list[tuple[str, float]] = []
     wanted: dict[str, float] = {}
@@ -127,29 +147,21 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
                       "cost_price": (p or {}).get("cost_price", 0)})
     totals = price_lines(lines, body.discount)
 
-    customer_id, customer_name = None, body.customer_name.strip()
-    phone = normalize_in_phone(body.customer_phone)
-    if phone:
-        existing = await db.customers.find_one({"business_id": bid, "phone": phone}, {"_id": 0})
-        if existing:
-            customer_id = existing["id"]
-            customer_name = customer_name or existing["name"]
-            if body.customer_name.strip() and existing["name"] != customer_name:
-                await db.customers.update_one({"id": customer_id}, {"$set": {"name": customer_name}})
-        else:
-            customer_id = new_id()
-            await db.customers.insert_one({"id": customer_id, "business_id": bid, "name": customer_name or "Customer",
-                                           "phone": phone, "email": "", "address": "", "notes": "",
-                                           "total_purchases": 0.0, "purchase_count": 0, "created_at": now_iso()})
+    if new_customer:
+        await db.customers.insert_one(new_customer)
+        new_customer.pop("_id", None)
+        customer = new_customer
+    customer_id, customer_name, phone = customer["id"], customer["name"], customer.get("phone", "")
 
     invoice = {
         "id": new_id(), "business_id": bid, "invoice_number": await _next_number(db, bid), "items": lines,
         **totals, "payment_method": body.payment_method, "status": "Paid",
-        "customer_id": customer_id, "customer_name": customer_name or "Walk-in customer", "customer_phone": phone or "",
+        "customer_id": customer_id, "customer_name": customer_name, "customer_phone": phone or "",
         "created_by": {"id": user["id"], "name": user.get("name", "")},
         "public_token": secrets.token_urlsafe(16), "date_key": date_key(), "created_at": now_iso(),
     }
     await db.invoices.insert_one(invoice)
+    await drafts.clear(db, user["id"])  # the order is billed: its draft is done
     if customer_id:
         await db.customers.update_one({"id": customer_id},
                                       {"$inc": {"total_purchases": invoice["grand_total"], "purchase_count": 1},

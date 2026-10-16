@@ -1,4 +1,4 @@
-// Turning the cart into a bill. Used by the Pay and UPI screens.
+// Turning the order (the person's draft) into a bill. Used by the Pay and UPI screens.
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,13 +10,6 @@ import type { Invoice } from "@/src/types";
 
 export type PaymentMethod = Invoice["payment_method"];
 
-// The customer typed on the Pay screen, handed to the UPI screen (kept out of the address bar).
-let payer = { phone: "", name: "" };
-export const setPayer = (p: typeof payer) => {
-  payer = p;
-};
-export const getPayer = () => payer;
-
 export function useCreateBill() {
   const cart = useCart();
   const router = useRouter();
@@ -24,14 +17,13 @@ export function useCreateBill() {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
 
-  async function create(method: PaymentMethod, phone10: string, name: string) {
-    if (busy || !cart.items.length) return;
+  async function create(method: PaymentMethod) {
+    if (busy || !cart.items.length || !cart.customer) return;
     setBusy(true);
     try {
       const inv: Invoice = await apiPost("/invoices", {
         items: cart.items.map((i) => ({ product_id: isLoose(i.product_id) ? null : i.product_id, name: i.name, quantity: i.quantity, price: i.price })),
-        customer_name: name.trim(),
-        customer_phone: phone10 ? `+91${phone10}` : "",
+        customer_id: cart.customer.id,
         discount: cart.discount,
         payment_method: method,
       });

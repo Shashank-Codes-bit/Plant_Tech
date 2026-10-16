@@ -125,6 +125,7 @@ tr.z td {{ background: #F5F8F5; }}
 .words {{ font-size: 13px; color: #4B5F55; }}
 .foot {{ display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }}
 .paid {{ border: 2px solid #1B5E3B; border-radius: 8px; padding: 3px 12px; color: #1B5E3B; font-weight: 800; letter-spacing: .08em; }}
+.brand {{ text-align: center; font-size: 12px; color: #6B7C73; margin-top: 12px; }}
 .dl {{ display: block; width: 100%; margin-top: 14px; min-height: 56px; border: 0; border-radius: 14px; background: #1B5E3B; color: #fff; font: inherit; font-size: 18px; font-weight: 700; }}
 @media print {{ body {{ background: #fff; }} .wrap {{ padding: 0; }} .card {{ box-shadow: none; }} .dl {{ display: none; }} }}
 </style></head>
@@ -138,4 +139,4 @@ tr.z td {{ background: #F5F8F5; }}
 <div class="grand"><span>Total</span><span>{inr(inv.get("grand_total", 0))}</span></div>
 <div class="words">{amount_in_words(inv.get("grand_total", 0))}</div>
 <div class="foot"><span class="paid">PAID · {e(inv.get("payment_method"))}</span><span class="m">{footer}</span></div>
-</div></article>{button}</div></body></html>"""
+</div></article>{button}<div class="brand">Made with Hara Hisaab · हरा हिसाब</div></div></body></html>"""

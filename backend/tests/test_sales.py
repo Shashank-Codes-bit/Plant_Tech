@@ -4,6 +4,8 @@ from conftest import Shop, photo_b64
 
 
 def _order(shop, items, **extra):
+    extra.setdefault("customer_phone", "9811100099")  # every bill needs a customer
+    extra.setdefault("customer_name", "Test Customer")
     return shop.post("/api/invoices", {"items": items, **extra})
 
 
@@ -115,7 +117,8 @@ def test_order_history_filters_and_pages(client):
     line = [{"product_id": None, "name": "Seeds", "quantity": 1, "price": 10}]
     for i, m in enumerate(["Cash", "UPI", "Cash", "Card", "Cash"]):
         _order(shop, line, payment_method=m, customer_phone=f"98111000{i:02d}", customer_name=f"Cust {i}")
-    client.post("/api/invoices", headers=wh, json={"items": line, "payment_method": "UPI"})
+    client.post("/api/invoices", headers=wh, json={"items": line, "payment_method": "UPI", "customer_phone": "9811100088",
+                                                    "customer_name": "Worker's Customer"})
 
     page1 = shop.get("/api/invoices", params={"limit": 4}).json()
     page2 = shop.get("/api/invoices", params={"limit": 4, "before": page1[-1]["created_at"]}).json()
@@ -143,3 +146,57 @@ def test_money_formatting():
     assert invoice_html.inr(650) == "₹650"
     assert invoice_html.amount_in_words(1380) == "Rupees One Thousand Three Hundred Eighty Only"
     assert invoice_html.amount_in_words(250000.25) == "Rupees Two Lakh Fifty Thousand and Twenty Five Paise Only"
+
+
+def test_every_bill_needs_a_customer(client):
+    shop = Shop(client)
+    pot = shop.product("Clay Pot", 100, 5)
+    line = [{"product_id": pot["id"], "name": "Clay Pot", "quantity": 1, "price": 100}]
+    r = shop.post("/api/invoices", {"items": line})
+    assert r.status_code == 400 and "customer" in r.json()["detail"].lower()
+    assert shop.post("/api/invoices", {"items": line, "customer_phone": "9811100077"}).status_code == 400  # new: needs a name
+    assert shop.get(f"/api/products/{pot['id']}").json()["stock"] == 5  # nothing taken from stock
+    c = shop.post("/api/customers", {"name": "Meena", "phone": "98111 00066"}).json()
+    inv = shop.post("/api/invoices", {"items": line, "customer_id": c["id"]}).json()
+    assert (inv["customer_name"], inv["customer_phone"]) == ("Meena", "+919811100066")
+    assert shop.post("/api/invoices", {"items": line, "customer_id": "nope"}).status_code == 400
+
+
+def test_customer_needs_name_and_phone_and_can_be_found(client):
+    shop = Shop(client)
+    assert shop.post("/api/customers", {"name": "No Phone"}).status_code == 422
+    assert shop.post("/api/customers", {"name": "Bad", "phone": "12345"}).status_code == 400
+    shop.post("/api/customers", {"name": "Anita Sharma", "phone": "9811122334"})
+    shop.post("/api/customers", {"name": "Rajesh", "phone": "9811155667"})
+    assert [c["name"] for c in shop.get("/api/customers/find", params={"q": "anita"}).json()] == ["Anita Sharma"]
+    assert [c["name"] for c in shop.get("/api/customers/find", params={"q": "55667"}).json()] == ["Rajesh"]
+    assert len(shop.get("/api/customers/find").json()) == 2
+    # a worker who can bill but not see the customer list can still pick and add customers
+    _, wh = shop.worker(customers=False)
+    assert client.get("/api/customers", headers=wh).status_code == 403
+    assert client.get("/api/customers/find", headers=wh, params={"q": "raj"}).status_code == 200
+    assert client.post("/api/customers", headers=wh, json={"name": "Walk", "phone": "9811100011"}).status_code == 200
+
+
+def test_one_draft_order_per_person_until_billed(client):
+    shop = Shop(client)
+    pot = shop.product("Clay Pot", 100, 5)
+    c = shop.post("/api/customers", {"name": "Anita", "phone": "9811122334"}).json()
+    assert shop.get("/api/orders/draft").json() is None
+    item = {"product_id": pot["id"], "name": "Clay Pot", "quantity": 2, "price": 100}
+    r = client.put("/api/orders/draft", headers=shop.h, json={"customer_id": c["id"], "items": [item]})
+    assert r.status_code == 200
+    d = shop.get("/api/orders/draft").json()
+    assert d["customer"]["name"] == "Anita" and d["items"][0]["quantity"] == 2
+    client.put("/api/orders/draft", headers=shop.h, json={"customer_id": c["id"], "items": [{**item, "quantity": 3}]})
+    assert shop.get("/api/orders/draft").json()["items"][0]["quantity"] == 3  # still one draft, replaced
+    assert client.put("/api/orders/draft", headers=shop.h, json={"customer_id": "other-shop"}).status_code == 400
+    # a worker has their own draft
+    _, wh = shop.worker()
+    assert client.get("/api/orders/draft", headers=wh).json() is None
+    # billing removes it
+    shop.post("/api/invoices", {"items": [item], "customer_id": c["id"]})
+    assert shop.get("/api/orders/draft").json() is None
+    client.put("/api/orders/draft", headers=shop.h, json={"customer_id": c["id"]})
+    assert client.delete("/api/orders/draft", headers=shop.h).status_code == 200
+    assert shop.get("/api/orders/draft").json() is None

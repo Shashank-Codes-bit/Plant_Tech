@@ -32,7 +32,7 @@ export default function SupplierBill() {
 
   async function read(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
-    if (out.status === "denied") toast.show(t("Allow camera and photos for NurseryPOS in your phone settings"), "error");
+    if (out.status === "denied") toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
     if (out.status !== "ok") return;
     setReading(true);
     try {
@@ -114,7 +114,7 @@ export default function SupplierBill() {
             <Field value={it.name} onChangeText={(name) => set(it.key, { name })}
               placeholder={t("Item name")} autoCapitalize="words" />
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <Field style={{ flex: 1 }} label={t("How many")} value={it.quantity} onChangeText={(v) => set(it.key, { quantity: num(v) })} keyboardType="decimal-pad" />
+              <Field style={{ flex: 1 }} label={t("Quantity")} value={it.quantity} onChangeText={(v) => set(it.key, { quantity: num(v) })} keyboardType="decimal-pad" />
               <Field style={{ flex: 1 }} label={t("Cost ₹ each")} value={it.purchase_price} onChangeText={(v) => set(it.key, { purchase_price: num(v) })} keyboardType="decimal-pad" />
             </View>
           </View>

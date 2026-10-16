@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { apiGet, apiPost, uploadImage } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { useCart } from "@/src/cart-context";
+import { OrderCustomerBar } from "@/src/components/order-customer";
 import { CategoryPicker } from "@/src/components/category-picker";
 import { useToast } from "@/src/components/toast";
 import { Badge, BottomBar, Button, Field, Header, Icon, Screen, Segmented, Stepper, T, Thumb } from "@/src/components/ui";
@@ -30,13 +31,14 @@ export default function OrderScan() {
   const { t } = useTranslation();
   const router = useRouter();
   const toast = useToast();
+  const cart = useCart();
   const [stage, setStage] = useState<Stage>({ kind: "start" });
   const [photo, setPhoto] = useState<CaptureResult | null>(null);
 
   async function capture(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
     if (out.status === "denied") {
-      toast.show(t("Allow camera and photos for NurseryPOS in your phone settings"), "error");
+      toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
       return;
     }
     if (out.status !== "ok") return;
@@ -69,6 +71,7 @@ export default function OrderScan() {
     else toast.show(t("Added. Scan the next one."), "success");
   };
 
+  if (cart.ready && !cart.customer) return <Redirect href="/order/customer" />;
   if (stage.kind === "found") {
     return <Found product={stage.product} confidence={stage.confidence} photoUri={photo?.uri} onBack={restart} onAdded={added} />;
   }
@@ -95,7 +98,8 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={t("New order")} close onBack={() => router.back()} testID="scan-close" />
+      <Header title={t("Add items")} close onBack={() => router.back()} testID="scan-close" />
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: 12 }}><OrderCustomerBar /></View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: spacing.lg }}>
         {!query && (
           <>
@@ -246,7 +250,7 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
 
         {left > 0 ? (
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <T v="bodyLarge">{t("How many?")}</T>
+            <T v="bodyLarge">{t("Quantity")}</T>
             <Stepper value={qty} onChange={setQty} max={left} testID="found-qty" />
           </View>
         ) : (
@@ -352,13 +356,13 @@ function NotInStock({ initial, photo, onBack, onAdded }: {
           placeholder="0" testID="new-price" inputStyle={{ fontSize: 24 }} />
         {mode === "save" && (
           <>
-            <Field label={t("How many in stock (with this one)")} value={stock} onChangeText={(v) => setStock(v.replace(/[^0-9.]/g, ""))}
+            <Field label={t("Stock (with this one)")} value={stock} onChangeText={(v) => setStock(v.replace(/[^0-9.]/g, ""))}
               keyboardType="decimal-pad" testID="new-stock" error={!stockOk ? t("At least {{n}}, for this order", { n: qty }) : undefined} />
             <CategoryPicker value={categoryId} onChange={setCategoryId} />
           </>
         )}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <T v="bodyLarge">{t("How many in this order?")}</T>
+          <T v="bodyLarge">{t("Quantity")}</T>
           <Stepper value={qty} onChange={setQty} testID="new-qty" />
         </View>
       </KeyboardAwareScrollView>
