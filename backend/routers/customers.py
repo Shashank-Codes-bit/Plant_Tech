@@ -1,0 +1,62 @@
+"""Customers of a shop. Saved automatically when a bill has a phone number."""
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+import auth
+from common import new_id, normalize_in_phone, now_iso
+from db import get_db
+
+router = APIRouter(prefix="/api/customers", tags=["customers"])
+
+
+class CustomerIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    phone: str = ""
+    email: str = Field("", max_length=120)
+    address: str = Field("", max_length=300)
+    notes: str = Field("", max_length=500)
+
+
+@router.get("")
+async def list_customers(search: str = "", user: dict = Depends(auth.require("customers"))):
+    q: dict = {"business_id": user["business_id"]}
+    if search:
+        q["$or"] = [{"name": {"$regex": search, "$options": "i"}}, {"phone": {"$regex": search.replace(" ", "")}}]
+    return await get_db().customers.find(q, {"_id": 0}).sort("name", 1).to_list(5000)
+
+
+@router.get("/lookup")
+async def lookup(phone: str, user: dict = Depends(auth.require("sell", "customers"))):
+    """While billing: is this number an existing customer? Returns just enough to greet them."""
+    p = normalize_in_phone(phone)
+    c = await get_db().customers.find_one({"business_id": user["business_id"], "phone": p}, {"_id": 0}) if p else None
+    return {"found": bool(c), "name": c["name"] if c else "", "purchase_count": c["purchase_count"] if c else 0}
+
+
+@router.post("")
+async def create_customer(body: CustomerIn, user: dict = Depends(auth.require("customers"))):
+    db = get_db()
+    phone = normalize_in_phone(body.phone) if body.phone.strip() else None
+    if body.phone.strip() and not phone:
+        raise HTTPException(400, "Enter a 10-digit Indian mobile number")
+    if phone and await db.customers.find_one({"business_id": user["business_id"], "phone": phone}):
+        raise HTTPException(409, "A customer with this phone number already exists")
+    doc = {"id": new_id(), "business_id": user["business_id"], "name": body.name.strip(), "phone": phone or "",
+           "email": body.email.strip(), "address": body.address.strip(), "notes": body.notes.strip(),
+           "total_purchases": 0.0, "purchase_count": 0, "created_at": now_iso()}
+    await db.customers.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.get("/{customer_id}")
+async def get_customer(customer_id: str, user: dict = Depends(auth.require("customers"))):
+    db = get_db()
+    c = await db.customers.find_one({"id": customer_id, "business_id": user["business_id"]}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Customer not found")
+    bills = await db.invoices.find({"business_id": user["business_id"], "customer_id": customer_id},
+                                   {"_id": 0, "id": 1, "invoice_number": 1, "grand_total": 1, "created_at": 1,
+                                    "payment_method": 1, "items.name": 1, "items.quantity": 1}
+                                   ).sort("created_at", -1).to_list(200)
+    return {**c, "invoices": bills}

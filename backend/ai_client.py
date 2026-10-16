@@ -86,6 +86,18 @@ def normalize_photo_b64(image_base64: str) -> bytes:
     return normalize_photo(data)
 
 
+def square_thumbnail(jpeg: bytes, size: int = 800) -> bytes:
+    """Centre-crop to a square and shrink, for the shared picture library."""
+    img = Image.open(io.BytesIO(jpeg)).convert("RGB")
+    side = min(img.size)
+    left, top = (img.width - side) // 2, (img.height - side) // 2
+    img = img.crop((left, top, left + side, top + side))
+    img.thumbnail((size, size))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return buf.getvalue()
+
+
 def _prepare_image(image_base64: str) -> str:
     return base64.standard_b64encode(normalize_photo_b64(image_base64)).decode("ascii")
 
