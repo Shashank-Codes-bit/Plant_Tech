@@ -2,15 +2,32 @@
 
 NurseryPOS runs on the **shared** Oracle VM (`svc-agent`, `140.238.251.141`). Other live sites run there too. The VM's general rules and setup are in `DEPLOYMENT-GUIDE.md`. This file only covers this app.
 
-| | |
-|---|---|
-| URL | **https://nurserypos.140-238-251-141.sslip.io** |
-| Port | **8120** (bound to `127.0.0.1` only; the VM's Caddy is the way in) |
-| Containers | `web` (FastAPI) + `mongo` (MongoDB 7, internal only), compose project `nurserypos` |
-| Data | volumes `nurserypos_mongo` (database) and `nurserypos_data` (`/data/uploads` when `STORAGE_BACKEND=local`) |
-| Photos | Cloudflare R2 bucket `nurserypos-photos` |
-| Secrets | `~/Plant_Tech/deploy/.env` on the VM only |
-| Health | `curl 127.0.0.1:8120/health` → `{"ok":true}` |
+| | Production | Staging (QA) |
+|---|---|---|
+| Branch | `main` | `staging` |
+| URL | **https://nurserypos.140-238-251-141.sslip.io** | **https://nurserypos-staging.140-238-251-141.sslip.io** |
+| Port (127.0.0.1 only) | 8120 | 8130 |
+| Folder on the VM | `~/Plant_Tech` | `~/Plant_Tech-staging` |
+| Compose project / volumes | `nurserypos` (`nurserypos_mongo`, `nurserypos_data`) | `nurserypos-staging` (its own database) |
+| Photos (R2 bucket `nurserypos-photos`) | folder `nurserypos/` | folder `nurserypos-staging/` |
+| Secrets | `~/Plant_Tech/deploy/.env` | `~/Plant_Tech-staging/deploy/.env` (own `APP_API_KEY`, plus `PROJECT_NAME`, `HOST_PORT`, `STORAGE_PREFIX`) |
+| App | "NurseryPOS" (`eas build --profile prod-apk`) | "NurseryPOS QA" (`eas build --profile staging`) |
+
+Health: `curl 127.0.0.1:8120/health` (or `8130`) returns `{"ok":true}`.
+
+## Day-to-day: how code reaches the server
+1. Commit to `staging` and push. GitHub Actions (`.github/workflows/deploy.yml`) runs the offline smoke test. If it passes, Actions SSHes in with the restricted deploy key and runs `deploy/deploy.sh staging`, then checks the public `/health`.
+2. Test in the "NurseryPOS QA" app with `docs/QA-CHECKLIST.md`.
+3. Merge `staging` into `main` and push. The same pipeline deploys to production.
+
+Only changes under `backend/`, `deploy/` or the workflow trigger a deploy. App (screen) changes need a new APK instead.
+
+To deploy by hand on the VM, run `~/Plant_Tech/deploy/deploy.sh prod` or `~/Plant_Tech-staging/deploy/deploy.sh staging`. The script syncs the folder to its branch, rebuilds, and fails if `/health` doesn't answer within 60 s.
+
+**The deploy key:**
+- GitHub secret `NURSERYPOS_DEPLOY_KEY`; the private half is `~/.ssh/nurserypos_deploy` on Shashank's PC.
+- It's locked in the VM's `~/.ssh/authorized_keys` to `~/bin/nurserypos-ci-deploy` (a copy of `deploy/ci-deploy`). It can only ask for `staging` or `prod`, and gets no shell.
+- To revoke it, delete that line from `authorized_keys`.
 
 ## First deploy
 Log in from Windows PowerShell. Disconnect the Voltas VPN first:

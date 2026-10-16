@@ -4,9 +4,20 @@
     "appVersionSource": "local"
   },
   "build": {
-    "preview": {
+    "staging": {
       "distribution": "internal",
       "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_VARIANT": "staging",
+        "EXPO_PUBLIC_BACKEND_URL": "https://nurserypos-staging.140-238-251-141.sslip.io"
+      }
+    },
+    "prod-apk": {
+      "distribution": "internal",
+      "environment": "production",
       "android": {
         "buildType": "apk"
       },

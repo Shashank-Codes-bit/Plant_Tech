@@ -9,7 +9,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 BASE_URL = os.environ["EXPO_PUBLIC_BACKEND_URL"].rstrip("/") if os.environ.get("EXPO_PUBLIC_BACKEND_URL") else None
 
 # Fallback to frontend .env
-if not BASE_URL:
+if not BASE_URL and (Path(__file__).parent.parent.parent / "frontend" / ".env").exists():
     fe = Path(__file__).parent.parent.parent / "frontend" / ".env"
     for line in fe.read_text().splitlines():
         if line.startswith("EXPO_PUBLIC_BACKEND_URL="):

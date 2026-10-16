@@ -5,7 +5,7 @@ from pathlib import Path
 STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local").lower()  # "r2" | "local"
 LOCAL_DIR = Path(os.environ.get("LOCAL_STORAGE_DIR", "/data/uploads"))
 R2_BUCKET = os.environ.get("R2_BUCKET", "")
-APP_NAME = "nurserypos"
+APP_NAME = os.environ.get("STORAGE_PREFIX", "nurserypos")  # folder in the bucket; staging uses its own
 
 _s3 = None
 
