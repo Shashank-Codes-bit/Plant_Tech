@@ -88,3 +88,7 @@ credentials.json
 .credentials
 
 !.env.example
+
+# NurseryPOS backups on the VM
+deploy/backups/
+deploy/backup.log
