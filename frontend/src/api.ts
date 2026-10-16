@@ -2,6 +2,8 @@ import { Platform } from "react-native";
 
 const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 export const API = `${BASE}/api`;
+const APP_KEY = process.env.EXPO_PUBLIC_APP_KEY ?? "";
+const AUTH = { "X-App-Key": APP_KEY };
 
 async function handle(res: Response) {
   if (!res.ok) {
@@ -16,14 +18,14 @@ async function handle(res: Response) {
 }
 
 export async function apiGet(path: string) {
-  const res = await fetch(`${API}${path}`);
+  const res = await fetch(`${API}${path}`, { headers: AUTH });
   return handle(res);
 }
 
 export async function apiPost(path: string, body?: any) {
   const res = await fetch(`${API}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...AUTH, "Content-Type": "application/json" },
     body: JSON.stringify(body ?? {}),
   });
   return handle(res);
@@ -32,14 +34,14 @@ export async function apiPost(path: string, body?: any) {
 export async function apiPut(path: string, body?: any) {
   const res = await fetch(`${API}${path}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...AUTH, "Content-Type": "application/json" },
     body: JSON.stringify(body ?? {}),
   });
   return handle(res);
 }
 
 export async function apiDelete(path: string) {
-  const res = await fetch(`${API}${path}`, { method: "DELETE" });
+  const res = await fetch(`${API}${path}`, { method: "DELETE", headers: AUTH });
   return handle(res);
 }
 
@@ -53,7 +55,7 @@ export async function uploadImage(uri: string): Promise<string> {
   } else {
     form.append("file", { uri, name, type: "image/jpeg" } as any);
   }
-  const res = await fetch(`${API}/upload`, { method: "POST", body: form });
+  const res = await fetch(`${API}/upload`, { method: "POST", headers: AUTH, body: form });
   const data = await handle(res);
   return data.path;
 }

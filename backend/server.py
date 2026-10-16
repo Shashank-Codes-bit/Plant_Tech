@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Response
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Response, Request
+from fastapi.responses import JSONResponse
 from fastapi.concurrency import run_in_threadpool
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -8,6 +9,7 @@ import os
 import logging
 import uuid
 import base64
+import hmac
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -26,6 +28,9 @@ db = client[os.environ['DB_NAME']]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
+
+APP_API_KEY = os.environ.get("APP_API_KEY", "")
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -129,7 +134,7 @@ class PurchaseIn(BaseModel):
 
 
 class ImagePayload(BaseModel):
-    image_base64: str
+    image_base64: str = Field(max_length=MAX_IMAGE_BYTES * 4 // 3 + 64)
 
 
 # ============================ Helpers ============================
@@ -497,11 +502,20 @@ async def dashboard_summary():
 
 
 # ============================ AI ============================
+async def _run_ai(coro):
+    try:
+        return await coro
+    except ai_client.BadImage as e:
+        raise HTTPException(400, str(e))
+    except ai_client.AIUnavailable as e:
+        raise HTTPException(503, str(e))
+
+
 @api_router.post("/ai/identify-plant")
 async def ai_identify(body: ImagePayload):
     products = await db.products.find({"deleted_at": None}, {"_id": 0}).to_list(2000)
     catalog = [p["name"] for p in products]
-    result = await ai_client.identify_plant(body.image_base64, catalog)
+    result = await _run_ai(ai_client.identify_plant(body.image_base64, catalog))
 
     matched = None
     name = result.get("matched_catalog_name", "")
@@ -518,7 +532,7 @@ async def ai_identify(body: ImagePayload):
 
 @api_router.post("/ai/scan-invoice")
 async def ai_scan_invoice(body: ImagePayload):
-    result = await ai_client.scan_invoice(body.image_base64)
+    result = await _run_ai(ai_client.scan_invoice(body.image_base64))
     # try to match each item to an existing product
     products = await db.products.find({"deleted_at": None}, {"_id": 0}).to_list(2000)
     for it in result["items"]:
@@ -532,7 +546,9 @@ async def ai_scan_invoice(body: ImagePayload):
 # ============================ Upload / Files ============================
 @api_router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    data = await file.read()
+    data = await file.read(MAX_IMAGE_BYTES + 1)
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(413, "Photo too large (max 8 MB)")
     ext = (file.filename or "img.jpg").split(".")[-1].lower()
     if ext not in ("jpg", "jpeg", "png", "webp"):
         ext = "jpg"
@@ -560,7 +576,11 @@ async def get_file(path: str):
     doc = await db.uploads.find_one({"path": path})
     if not doc:
         raise HTTPException(404, "File not found")
-    content, ctype = await run_in_threadpool(storage_client.get_object, path)
+    try:
+        content, ctype = await run_in_threadpool(storage_client.get_object, path)
+    except Exception as e:
+        logger.warning("File fetch failed for %s: %s", path, e)
+        raise HTTPException(404, "File not found")
     return Response(content=content, media_type=ctype)
 
 
@@ -570,6 +590,23 @@ async def root():
 
 
 app.include_router(api_router)
+
+
+@app.middleware("http")
+async def require_app_key(request: Request, call_next):
+    """Shared-secret check so a public URL can't be used to read data or spend AI credits."""
+    path = request.url.path
+    exempt = (
+        not APP_API_KEY
+        or request.method == "OPTIONS"
+        or not path.startswith("/api")
+        or (request.method == "GET" and path.startswith("/api/files/"))
+    )
+    if not exempt:
+        given = request.headers.get("x-app-key", "")
+        if not hmac.compare_digest(given, APP_API_KEY):
+            return JSONResponse({"detail": "Unauthorized"}, status_code=401)
+    return await call_next(request)
 
 app.add_middleware(
     CORSMiddleware,
@@ -592,6 +629,8 @@ async def on_startup():
         logger.info("Storage initialized")
     except Exception as e:
         logger.error("Storage init failed: %s", e)
+    if not APP_API_KEY:
+        logger.warning("APP_API_KEY is not set - API is open to anyone with the URL")
 
 
 @app.on_event("shutdown")

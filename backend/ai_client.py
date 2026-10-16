@@ -1,137 +1,184 @@
-"""Gemini-powered plant identification and purchase-invoice OCR."""
+"""Claude-powered plant identification and purchase-invoice OCR."""
 import os
-import json
-import uuid
+import io
+import base64
 import logging
+from typing import List
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+import anthropic
+from PIL import Image, ImageOps
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
-MODEL_PROVIDER = "gemini"
-MODEL_NAME = "gemini-3-flash-preview"
+MODEL_NAME = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
+EFFORT_PLANT = os.environ.get("CLAUDE_EFFORT_PLANT", "low")
+EFFORT_INVOICE = os.environ.get("CLAUDE_EFFORT_INVOICE", "medium")
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
+MAX_IMAGE_EDGE = 1568  # longest edge Claude uses without further downscaling
+
+_client = None
 
 
-def _extract_json(text: str) -> dict:
-    """Pull a JSON object out of a model response that may be fenced."""
-    if not text:
-        return {}
-    cleaned = text.strip()
-    if cleaned.startswith("```"):
-        # remove ```json ... ``` fences
-        cleaned = cleaned.strip("`")
-        if cleaned.lower().startswith("json"):
-            cleaned = cleaned[4:]
-    start = cleaned.find("{")
-    end = cleaned.rfind("}")
-    if start == -1 or end == -1:
-        return {}
+class AIUnavailable(Exception):
+    """Claude could not be reached or is rate limited; safe to retry."""
+
+
+def _get_client() -> anthropic.AsyncAnthropic:
+    global _client
+    if _client is None:
+        _client = anthropic.AsyncAnthropic()  # reads ANTHROPIC_API_KEY
+    return _client
+
+
+class PlantId(BaseModel):
+    plant_name: str
+    scientific_name: str
+    confidence: int
+    alternatives: List[str]
+    matched_catalog_name: str
+
+
+class InvoiceItem(BaseModel):
+    name: str
+    quantity: float
+    purchase_price: float
+
+
+class InvoiceScan(BaseModel):
+    supplier: str
+    invoice_number: str
+    date: str
+    total: float
+    items: List[InvoiceItem]
+
+
+class BadImage(Exception):
+    """The uploaded payload is not a readable image."""
+
+
+def _prepare_image(image_base64: str) -> str:
+    """Strip data-URL prefix, fix EXIF rotation, downscale and re-encode as JPEG."""
+    raw = image_base64.strip()
+    if raw.startswith("data:") and "," in raw:
+        raw = raw.split(",", 1)[1]
     try:
-        return json.loads(cleaned[start:end + 1])
+        img = Image.open(io.BytesIO(base64.b64decode(raw)))
+        img.load()
     except Exception as e:
-        logger.warning("Failed to parse AI JSON: %s", e)
-        return {}
+        raise BadImage("Could not read the photo, please retake it") from e
+    img = ImageOps.exif_transpose(img)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    img.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return base64.standard_b64encode(buf.getvalue()).decode("ascii")
+
+
+async def _ask(system: str, prompt: str, image_base64: str, schema, effort: str, max_tokens: int):
+    """Send one photo + prompt to Claude; return the parsed schema object, or None on refusal."""
+    content = [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                     "data": _prepare_image(image_base64)}},
+        {"type": "text", "text": prompt},
+    ]
+    try:
+        resp = await _get_client().beta.messages.parse(
+            model=MODEL_NAME,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": content}],
+            output_format=schema,
+            output_config={"effort": effort},
+            betas=[FALLBACK_BETA],
+            fallbacks="default",
+        )
+    except anthropic.RateLimitError as e:
+        logger.warning("Claude rate limited: %s", e)
+        raise AIUnavailable("AI is busy, please try again in a moment") from e
+    except anthropic.APIStatusError as e:
+        logger.error("Claude API error %s: %s", e.status_code, e)
+        if e.status_code >= 500:
+            raise AIUnavailable("AI service error, please try again") from e
+        raise
+    except anthropic.APIConnectionError as e:
+        logger.error("Claude connection error: %s", e)
+        raise AIUnavailable("Could not reach AI service, check internet") from e
+    except ValueError as e:
+        # Output did not validate against the schema (e.g. refusal text or truncation).
+        logger.warning("Claude output not parseable: %s", e)
+        return None
+
+    u = resp.usage
+    logger.info("Claude %s stop=%s in=%s out=%s", resp.model, resp.stop_reason,
+                u.input_tokens, u.output_tokens)
+    if resp.stop_reason == "refusal":
+        logger.warning("Claude declined: %s", resp.stop_details)
+        return None
+    return resp.parsed_output
 
 
 async def identify_plant(image_base64: str, catalog: list[str]) -> dict:
     """Identify a plant from a photo and try to match to the inventory catalog."""
     catalog_text = ", ".join(catalog[:120]) if catalog else "none"
     system = (
-        "You are an expert botanist and plant nursery assistant. "
-        "You identify plants and nursery products from photos. "
-        "You always respond with ONLY a compact JSON object, no prose, no markdown fences."
+        "You are an expert botanist and plant nursery assistant in India. "
+        "You identify plants and nursery products (pots, soil, fertilizers, tools) from photos "
+        "taken at a nursery counter."
     )
     prompt = (
         "Identify the plant or nursery product in this photo.\n"
         f"The nursery currently stocks these products: {catalog_text}.\n"
-        "Return JSON with EXACTLY these keys:\n"
-        "{\n"
-        '  "plant_name": string (common commercial name),\n'
-        '  "scientific_name": string (botanical name or empty string),\n'
-        '  "confidence": integer 0-100,\n'
-        '  "alternatives": array of up to 3 alternative common names,\n'
-        '  "matched_catalog_name": the single closest product name from the stocked list, or empty string if none is a good match\n'
-        "}"
+        "- plant_name: common commercial name as used in Indian nurseries\n"
+        "- scientific_name: botanical name, or empty string\n"
+        "- confidence: integer 0-100\n"
+        "- alternatives: up to 3 alternative common names\n"
+        "- matched_catalog_name: the single closest product name from the stocked list, "
+        "copied exactly, or empty string if none is a good match"
     )
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"identify-{uuid.uuid4()}",
-        system_message=system,
-    ).with_model(MODEL_PROVIDER, MODEL_NAME)
+    data = await _ask(system, prompt, image_base64, PlantId, EFFORT_PLANT, 2000)
+    if data is None:
+        data = PlantId(plant_name="Unknown Plant", scientific_name="", confidence=0,
+                       alternatives=[], matched_catalog_name="")
 
-    msg = UserMessage(text=prompt, file_contents=[ImageContent(image_base64=image_base64)])
-    resp = await chat.send_message(msg)
-    data = _extract_json(resp if isinstance(resp, str) else str(resp))
-
-    conf = data.get("confidence", 0)
-    try:
-        conf = int(conf)
-    except Exception:
-        conf = 0
+    conf = max(0, min(100, data.confidence))
     label = "High" if conf >= 80 else ("Medium" if conf >= 50 else "Low")
     return {
-        "plant_name": data.get("plant_name", "Unknown Plant"),
-        "scientific_name": data.get("scientific_name", ""),
+        "plant_name": data.plant_name or "Unknown Plant",
+        "scientific_name": data.scientific_name,
         "confidence": conf,
         "confidence_label": label,
-        "alternatives": data.get("alternatives", []) or [],
-        "matched_catalog_name": data.get("matched_catalog_name", "") or "",
+        "alternatives": data.alternatives[:3],
+        "matched_catalog_name": data.matched_catalog_name,
     }
 
 
 async def scan_invoice(image_base64: str) -> dict:
     """Extract structured purchase-invoice data from a photo."""
     system = (
-        "You are an OCR and data extraction assistant for a plant nursery. "
-        "You extract supplier purchase invoice details from a photo. "
-        "You always respond with ONLY a compact JSON object, no prose, no markdown fences."
+        "You are an OCR and data extraction assistant for a plant nursery in India. "
+        "You extract supplier purchase invoice details from a photo. Bills may be printed "
+        "or handwritten and may mix English and Hindi."
     )
     prompt = (
         "Extract the purchase invoice details from this photo.\n"
-        "Return JSON with EXACTLY these keys:\n"
-        "{\n"
-        '  "supplier": string,\n'
-        '  "invoice_number": string,\n'
-        '  "date": string (as printed, or empty),\n'
-        '  "total": number,\n'
-        '  "items": [ { "name": string, "quantity": number, "purchase_price": number } ]\n'
-        "}\n"
-        "purchase_price is the per-unit cost. If a field is missing use empty string or 0."
+        "- supplier, invoice_number, date (as printed): empty string if missing\n"
+        "- total: grand total as a number, 0 if missing\n"
+        "- items: one entry per line item; purchase_price is the per-unit cost "
+        "(divide the line amount by quantity if only the amount is printed)"
     )
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"invoice-{uuid.uuid4()}",
-        system_message=system,
-    ).with_model(MODEL_PROVIDER, MODEL_NAME)
+    data = await _ask(system, prompt, image_base64, InvoiceScan, EFFORT_INVOICE, 8000)
+    if data is None:
+        data = InvoiceScan(supplier="", invoice_number="", date="", total=0, items=[])
 
-    msg = UserMessage(text=prompt, file_contents=[ImageContent(image_base64=image_base64)])
-    resp = await chat.send_message(msg)
-    data = _extract_json(resp if isinstance(resp, str) else str(resp))
-
-    items = []
-    for it in data.get("items", []) or []:
-        try:
-            qty = float(it.get("quantity", 0) or 0)
-        except Exception:
-            qty = 0
-        try:
-            price = float(it.get("purchase_price", 0) or 0)
-        except Exception:
-            price = 0
-        items.append({
-            "name": str(it.get("name", "")).strip(),
-            "quantity": qty,
-            "purchase_price": price,
-        })
-    try:
-        total = float(data.get("total", 0) or 0)
-    except Exception:
-        total = 0
     return {
-        "supplier": data.get("supplier", "") or "",
-        "invoice_number": data.get("invoice_number", "") or "",
-        "date": data.get("date", "") or "",
-        "total": total,
-        "items": items,
+        "supplier": data.supplier,
+        "invoice_number": data.invoice_number,
+        "date": data.date,
+        "total": data.total,
+        "items": [
+            {"name": it.name.strip(), "quantity": it.quantity, "purchase_price": it.purchase_price}
+            for it in data.items
+        ],
     }

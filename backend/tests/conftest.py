@@ -10,7 +10,7 @@ BASE_URL = os.environ["EXPO_PUBLIC_BACKEND_URL"].rstrip("/") if os.environ.get("
 
 # Fallback to frontend .env
 if not BASE_URL:
-    fe = Path("/app/frontend/.env")
+    fe = Path(__file__).parent.parent.parent / "frontend" / ".env"
     for line in fe.read_text().splitlines():
         if line.startswith("EXPO_PUBLIC_BACKEND_URL="):
             BASE_URL = line.split("=", 1)[1].strip().strip('"').rstrip("/")
@@ -25,5 +25,5 @@ def base_url():
 @pytest.fixture
 def api_client():
     s = requests.Session()
-    s.headers.update({"Content-Type": "application/json"})
+    s.headers.update({"Content-Type": "application/json", "X-App-Key": os.environ.get("APP_API_KEY", "")})
     return s

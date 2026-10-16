@@ -1,15 +1,15 @@
 {
   "expo": {
     "name": "NurseryPOS",
-    "slug": "frontend",
+    "slug": "nurserypos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "nurserypos",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.phototopay.hlg2nq",
+      "bundleIdentifier": "com.planteck.nurserypos",
       "infoPlist": {
         "NSCameraUsageDescription": "Scan plants and invoices to bill faster",
         "NSPhotoLibraryUsageDescription": "Add product photos from your gallery"
@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1B4D3E"
       },
-      "package": "com.emergent.phototopay.hlg2nq",
+      "package": "com.planteck.nurserypos",
+      "versionCode": 1,
       "permissions": ["android.permission.CAMERA"]
     },
     "web": {
