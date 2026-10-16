@@ -1,5 +1,4 @@
 // Design tokens for NurseryPOS. Light theme only — max contrast for outdoor use.
-// Keys match the "color" block of /app/design_guidelines.json.
 
 import { useMemo } from "react";
 import { Appearance, StyleSheet, useColorScheme } from "react-native";

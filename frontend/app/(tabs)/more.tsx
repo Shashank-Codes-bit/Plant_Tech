@@ -19,7 +19,6 @@ export default function More() {
     { icon: "text-box-search", label: "Scan Purchase Invoice", sub: "Add stock from supplier bill", onPress: () => router.push("/scan-invoice"), testID: "more-scan-invoice" },
     { icon: "shape-outline", label: "Categories", sub: "Manage product categories", onPress: () => router.push("/categories"), testID: "more-categories" },
     { icon: "store-cog", label: "Business Info", sub: "Edit nursery details & tax", onPress: () => router.push("/business-settings"), testID: "more-business" },
-    { icon: "chart-line", label: "AI Insights", sub: "Coming soon", onPress: () => router.push("/ai-insights"), testID: "more-insights", badge: "Soon" },
   ];
 
   return (
@@ -51,11 +50,6 @@ export default function More() {
               <Text style={s.rowLabel}>{it.label}</Text>
               <Text style={s.rowSub}>{it.sub}</Text>
             </View>
-            {it.badge && (
-              <View style={s.soon}>
-                <Text style={s.soonText}>{it.badge}</Text>
-              </View>
-            )}
             <Icon name="chevron-right" size={24} color={colors.muted} />
           </Pressable>
         ))}
@@ -109,11 +103,4 @@ const useStyles = makeStyles((colors) => ({
   },
   rowLabel: { fontSize: 17, fontWeight: "700", color: colors.onSurface },
   rowSub: { fontSize: 14, color: colors.muted, marginTop: 2 },
-  soon: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: colors.warning,
-  },
-  soonText: { fontSize: 12, fontWeight: "800", color: colors.onWarning },
 }));

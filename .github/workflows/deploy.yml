@@ -28,7 +28,7 @@ jobs:
       - run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
       - name: Offline smoke test (fake Claude, in-memory Mongo)
         working-directory: backend
-        run: python -m pytest -n 0 tests/test_smoke_mocked.py -q
+        run: python -m pytest -q
 
   deploy:
     needs: test

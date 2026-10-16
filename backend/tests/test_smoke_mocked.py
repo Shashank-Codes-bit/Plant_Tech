@@ -2,7 +2,7 @@
 
 The real FastAPI app and the real Anthropic SDK are exercised; MongoDB is replaced by
 mongomock and the Claude HTTP API by a mock transport, so no keys or network are needed.
-Run: cd backend && python -m pytest -n 0 tests/test_smoke_mocked.py
+Run: cd backend && python -m pytest
 """
 import base64
 import io
@@ -61,6 +61,11 @@ def _photo_b64(size=(4000, 3000), fmt="PNG"):
 def client():
     server.db = AsyncMongoMockClient()["smoke"]
     with TestClient(server.app) as c:
+        assert c.get("/api/products", headers=KEY).json() == []  # new shops start empty
+        for name, cat in (("Money Plant", "Indoor Plants"), ("Snake Plant", "Indoor Plants")):
+            r = c.post("/api/products", json={"name": name, "category": cat, "selling_price": 250, "stock": 10},
+                       headers=KEY)
+            assert r.status_code == 200, r.text
         yield c
 
 
@@ -89,9 +94,11 @@ def test_api_requires_app_key(client):
     assert client.get("/api/", headers=KEY).json() == {"message": "NurseryPOS API"}
 
 
-def test_seeded_products(client):
-    products = client.get("/api/products", headers=KEY).json()
-    assert any(p["name"] == "Money Plant" for p in products)
+def test_starter_categories_only(client):
+    cats = [c["name"] for c in client.get("/api/categories", headers=KEY).json()]
+    assert "Indoor Plants" in cats and len(cats) == 12
+    names = [p["name"] for p in client.get("/api/products", headers=KEY).json()]
+    assert names == ["Money Plant", "Snake Plant"]  # only what the test itself added
 
 
 def test_identify_plant_request_and_match(client, sent):
