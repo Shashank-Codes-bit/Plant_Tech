@@ -78,6 +78,16 @@ Backups go to `deploy/backups/` and are kept for 14 days. To restore:
 docker compose exec -T mongo mongorestore --archive --gzip < backups/<file>
 ```
 
+## Demo shop
+A showcase shop with 25 plants, 15 other products, regular customers and orders that keep coming in during shop
+hours (staging: Green House, owner 9654346434). Demo rows are marked `demo`; the shop's own data is never touched.
+```bash
+cd ~/Plant_Tech-staging/deploy
+docker compose exec web python demo_data.py seed --phone <owner phone>    # once (--force starts again)
+crontab -e   # add:  */15 * * * * bash /home/ubuntu/Plant_Tech-staging/deploy/demo-tick.sh staging <owner phone> >> /home/ubuntu/nurserypos-demo.log 2>&1
+docker compose exec web python demo_data.py remove --phone <owner phone>  # take the demo data out again
+```
+
 ## Settings
 - **Claude model:** set `CLAUDE_MODEL` in `.env`, then run `docker compose up -d`. The default is `claude-sonnet-5-5`.
 - **Photo storage:** `STORAGE_BACKEND=r2` (default) or `local` (the VM's disk, in the `data` volume).
