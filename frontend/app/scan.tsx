@@ -8,10 +8,11 @@ import * as Haptics from "expo-haptics";
 import { apiPost, fileUrl } from "@/src/api";
 import { formatCurrency } from "@/src/format";
 import { makeStyles, radius, spacing, useTheme } from "@/src/theme";
-import { Button, Icon, Stepper } from "@/src/components/ui";
+import { Button, Field, Icon, Stepper } from "@/src/components/ui";
 import { useToast } from "@/src/components/toast";
 import { useCart } from "@/src/cart-context";
 import { pickFromGallery, takePhoto } from "@/src/hooks/useImageCapture";
+import { setPendingPhoto } from "@/src/pending-photo";
 
 const SCANNER_IMG =
   "https://images.pexels.com/photos/36163263/pexels-photo-36163263.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940";
@@ -29,6 +30,11 @@ export default function Scan() {
   const [stage, setStage] = useState<Stage>("idle");
   const [result, setResult] = useState<any>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoB64, setPhotoB64] = useState<string | null>(null);
+  // "Bill without stock": a one-off cart line for something the nursery doesn't track.
+  const [looseOpen, setLooseOpen] = useState(false);
+  const [looseName, setLooseName] = useState("");
+  const [loosePrice, setLoosePrice] = useState("");
   const [qty, setQty] = useState(1);
   const [permDenied, setPermDenied] = useState(false);
 
@@ -41,6 +47,9 @@ export default function Scan() {
     }
     if (outcome.status !== "ok") return;
     setPhotoUri(outcome.result.uri);
+    setPhotoB64(outcome.result.base64);
+    setLooseOpen(false);
+    setLoosePrice("");
     setStage("analyzing");
     setQty(1);
     try {
@@ -65,6 +74,38 @@ export default function Scan() {
       photo_path: p.photo_path,
       botanical_name: p.botanical_name,
       stock: p.stock,
+    });
+    setStage("added");
+  }
+
+  const knownName = result?.plant_name && result.plant_name !== "Unknown Plant" ? result.plant_name : "";
+
+  // Not in stock: stay in the bill. The new-plant form gets this photo, so no retake.
+  function addAsNew() {
+    setPendingPhoto(photoUri && photoB64 ? { uri: photoUri, base64: photoB64 } : null);
+    router.push({
+      pathname: "/product/new",
+      params: {
+        name: knownName,
+        botanical: result?.scientific_name ?? "",
+        category: result?.suggested_category ?? "",
+        mode: "sell",
+      },
+    });
+  }
+
+  function openLoose() {
+    setLooseName(knownName);
+    setLooseOpen(true);
+  }
+
+  function addLoose() {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    addItem({
+      product_id: `loose-${Date.now().toString(36)}`,
+      name: looseName.trim(),
+      price: Number(loosePrice),
+      quantity: qty,
     });
     setStage("added");
   }
@@ -121,7 +162,7 @@ export default function Scan() {
           <View style={{ gap: spacing.md }}>
             <Text style={[s.hint, { textAlign: "center" }]}>We couldn&apos;t identify that. Try again or search manually.</Text>
             <Button title="Retake Photo" icon="camera-retake" onPress={() => capture("camera")} testID="scan-retry" />
-            <Button title="Search Products" icon="magnify" variant="secondary" onPress={() => router.replace("/search")} testID="scan-error-search" />
+            <Button title="Search Products" icon="magnify" variant="secondary" onPress={() => router.push("/search")} testID="scan-error-search" />
           </View>
         )}
 
@@ -173,21 +214,32 @@ export default function Scan() {
               </View>
             ) : (
               <View style={s.matchCard}>
-                <Text style={s.noMatch}>No matching product in your inventory.</Text>
-                <Button title="Search Products" icon="magnify" variant="secondary" onPress={() => router.replace("/search")} testID="scan-search-products" />
-                <Button
-                  title="Add as New Product"
-                  icon="plus-box"
-                  variant="outline"
-                  onPress={() => router.replace({ pathname: "/product/new", params: { name: result.plant_name, botanical: result.scientific_name } })}
-                  testID="scan-add-new"
-                  style={{ marginTop: spacing.sm }}
-                />
+                <Text style={s.noMatch}>Not in your stock yet. You can still add it to this bill:</Text>
+                <Button title="Add as New Plant" icon="plus-box" onPress={addAsNew} testID="scan-add-new" />
+                <Button title="Bill Without Stock" icon="cash-plus" variant="secondary" onPress={openLoose} testID="scan-bill-loose" />
+                {looseOpen && (
+                  <View style={s.looseBox}>
+                    <Field label="Item name" value={looseName} onChangeText={setLooseName} placeholder="e.g. Rose plant" testID="scan-loose-name" />
+                    <Field label="Price ₹ (each)" value={loosePrice} onChangeText={setLoosePrice} keyboardType="numeric" placeholder="0" testID="scan-loose-price" />
+                    <View style={s.qtyRow}>
+                      <Text style={s.qtyLabel}>Quantity</Text>
+                      <Stepper value={qty} onChange={(v) => setQty(Math.max(1, v))} min={1} testID="scan-loose-qty" />
+                    </View>
+                    <Button
+                      title={`Add to Bill · ${formatCurrency((Number(loosePrice) || 0) * qty)}`}
+                      icon="cart-plus"
+                      onPress={addLoose}
+                      disabled={!looseName.trim() || !(Number(loosePrice) > 0)}
+                      testID="scan-loose-add"
+                    />
+                  </View>
+                )}
+                <Button title="Search My Products" icon="magnify" variant="outline" size="md" onPress={() => router.push("/search")} testID="scan-search-products" />
               </View>
             )}
 
             <View style={{ flexDirection: "row", gap: spacing.md }}>
-              <Button title="Choose Different" variant="secondary" size="md" onPress={() => router.replace("/search")} style={{ flex: 1 }} testID="scan-choose-different" />
+              <Button title="Choose Different" variant="secondary" size="md" onPress={() => router.push("/search")} style={{ flex: 1 }} testID="scan-choose-different" />
               <Button title="Retake" icon="camera-retake" variant="outline" size="md" onPress={() => capture("camera")} style={{ flex: 1 }} testID="scan-retake" />
             </View>
           </View>
@@ -300,6 +352,7 @@ const useStyles = makeStyles((colors) => ({
   qtyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   qtyLabel: { fontSize: 17, fontWeight: "700", color: colors.onSurface },
   noMatch: { fontSize: 16, color: colors.onSurface, marginBottom: spacing.sm },
+  looseBox: { gap: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.divider },
 
   successCircle: {
     width: 96,

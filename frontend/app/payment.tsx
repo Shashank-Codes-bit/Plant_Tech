@@ -48,7 +48,8 @@ export default function Payment() {
       }
       return apiPost("/invoices", {
         items: items.map((i) => ({
-          product_id: i.product_id,
+          // "loose-…" lines (billed without stock) have no product to deduct stock from
+          product_id: i.product_id.startsWith("loose-") ? null : i.product_id,
           name: i.name,
           quantity: i.quantity,
           price: i.price,

@@ -8,7 +8,6 @@ from pymongo import ReturnDocument
 import os
 import logging
 import uuid
-import base64
 import hmac
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -515,7 +514,8 @@ async def _run_ai(coro):
 async def ai_identify(body: ImagePayload):
     products = await db.products.find({"deleted_at": None}, {"_id": 0}).to_list(2000)
     catalog = [p["name"] for p in products]
-    result = await _run_ai(ai_client.identify_plant(body.image_base64, catalog))
+    categories = [c["name"] for c in await db.categories.find({}, {"_id": 0, "name": 1}).to_list(500)]
+    result = await _run_ai(ai_client.identify_plant(body.image_base64, catalog, categories))
 
     matched = None
     name = result.get("matched_catalog_name", "")
@@ -549,24 +549,22 @@ async def upload_file(file: UploadFile = File(...)):
     data = await file.read(MAX_IMAGE_BYTES + 1)
     if len(data) > MAX_IMAGE_BYTES:
         raise HTTPException(413, "Photo too large (max 8 MB)")
-    ext = (file.filename or "img.jpg").split(".")[-1].lower()
-    if ext not in ("jpg", "jpeg", "png", "webp"):
-        ext = "jpg"
-    path = f"{storage_client.APP_NAME}/uploads/{uuid.uuid4()}.{ext}"
-    content_type = file.content_type or "image/jpeg"
-    await run_in_threadpool(storage_client.put_object, path, data, content_type)
-    await db.uploads.insert_one({"path": path, "created_at": now_iso()})
-    return {"path": path}
+    return await _store_photo(ai_client.normalize_photo, data)
 
 
 @api_router.post("/upload-base64")
 async def upload_base64(body: ImagePayload):
-    raw = body.image_base64
-    if "," in raw and raw.strip().startswith("data:"):
-        raw = raw.split(",", 1)[1]
-    data = base64.b64decode(raw)
+    return await _store_photo(ai_client.normalize_photo_b64, body.image_base64)
+
+
+async def _store_photo(normalize, raw) -> dict:
+    """Validate and shrink a photo (always stored as JPEG, max 1568 px), then save it."""
+    try:
+        jpeg = await run_in_threadpool(normalize, raw)
+    except ai_client.BadImage as e:
+        raise HTTPException(400, str(e))
     path = f"{storage_client.APP_NAME}/uploads/{uuid.uuid4()}.jpg"
-    await run_in_threadpool(storage_client.put_object, path, data, "image/jpeg")
+    await run_in_threadpool(storage_client.put_object, path, jpeg, "image/jpeg")
     await db.uploads.insert_one({"path": path, "created_at": now_iso()})
     return {"path": path}
 

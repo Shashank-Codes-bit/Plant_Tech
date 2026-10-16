@@ -40,7 +40,10 @@ export default function ScanInvoice() {
     if (outcome.status !== "ok") return;
     setLocalUri(outcome.result.uri);
     setStage("analyzing");
-    uploadImage(outcome.result.uri).then(setImagePath).catch(() => {});
+    // The bill photo is kept for records only; reading the bill doesn't depend on it.
+    uploadImage(outcome.result.base64)
+      .then(setImagePath)
+      .catch(() => toast.show("Bill photo not saved, items are still read", "info"));
     try {
       const r = await apiPost("/ai/scan-invoice", { image_base64: outcome.result.base64 });
       setSupplier(r.supplier || "");
@@ -57,7 +60,7 @@ export default function ScanInvoice() {
       );
       setStage("review");
     } catch (e: any) {
-      toast.show("Could not read invoice", "error");
+      toast.show(e.message || "Could not read invoice", "error");
       setStage("idle");
     }
   }

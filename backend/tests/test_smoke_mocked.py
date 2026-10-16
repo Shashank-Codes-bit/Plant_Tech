@@ -33,7 +33,8 @@ import server  # noqa: E402
 
 KEY = {"X-App-Key": "smoke-key"}
 PLANT = {"plant_name": "Money Plant", "scientific_name": "Epipremnum aureum", "confidence": 91,
-         "alternatives": ["Pothos"], "matched_catalog_name": "Money Plant"}
+         "alternatives": ["Pothos"], "matched_catalog_name": "Money Plant",
+         "suggested_category": "indoor plants"}
 INVOICE = {"supplier": "Green Farms", "invoice_number": "GF-12", "date": "12/10/2026", "total": 1250,
            "items": [{"name": "Snake Plant", "quantity": 5, "purchase_price": 200}]}
 
@@ -100,6 +101,7 @@ def test_identify_plant_request_and_match(client, sent):
     data = r.json()
     assert data["confidence_label"] == "High"
     assert data["matched_product"]["name"] == "Money Plant"
+    assert data["suggested_category"] == "Indoor Plants"  # mapped to the real category's spelling
 
     headers, body = sent[-1]
     assert body["model"] == ai_client.MODEL_NAME
@@ -148,6 +150,21 @@ def test_overloaded_claude_is_503(client):
     finally:
         ai_client._client = None
     assert r.status_code == 503
+
+
+def test_upload_base64_is_shrunk_and_served(client):
+    r = client.post("/api/upload-base64", json={"image_base64": _photo_b64()}, headers=KEY)
+    assert r.status_code == 200, r.text
+    f = client.get(f"/api/files/{r.json()['path']}")
+    assert f.status_code == 200 and f.headers["content-type"] == "image/jpeg"
+    assert max(Image.open(io.BytesIO(f.content)).size) <= ai_client.MAX_IMAGE_EDGE
+
+
+def test_upload_rejects_non_images(client):
+    html = base64.b64encode(b"<html>not a photo</html>").decode()
+    assert client.post("/api/upload-base64", json={"image_base64": html}, headers=KEY).status_code == 400
+    r = client.post("/api/upload", files={"file": ("a.jpg", b"<html>", "image/jpeg")}, headers=KEY)
+    assert r.status_code == 400
 
 
 def test_upload_then_fetch_without_key(client):

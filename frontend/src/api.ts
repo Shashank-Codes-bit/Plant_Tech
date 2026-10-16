@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 export const API = `${BASE}/api`;
 const APP_KEY = process.env.EXPO_PUBLIC_APP_KEY ?? "";
@@ -45,18 +43,11 @@ export async function apiDelete(path: string) {
   return handle(res);
 }
 
-// Upload an image (from a local uri) as multipart. Works on native + web.
-export async function uploadImage(uri: string): Promise<string> {
-  const name = `photo-${Date.now()}.jpg`;
-  const form = new FormData();
-  if (Platform.OS === "web") {
-    const blob = await (await fetch(uri)).blob();
-    form.append("file", blob, name);
-  } else {
-    form.append("file", { uri, name, type: "image/jpeg" } as any);
-  }
-  const res = await fetch(`${API}/upload`, { method: "POST", headers: AUTH, body: form });
-  const data = await handle(res);
+// Upload a photo (base64 from useImageCapture) and return its storage path.
+// JSON, not multipart: Expo's fetch rejects React Native's {uri, name, type} FormData parts,
+// so multipart uploads never left the phone on Android.
+export async function uploadImage(base64: string): Promise<string> {
+  const data = await apiPost("/upload-base64", { image_base64: base64 });
   return data.path;
 }
 

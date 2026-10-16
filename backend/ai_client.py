@@ -37,6 +37,7 @@ class PlantId(BaseModel):
     confidence: int
     alternatives: List[str]
     matched_catalog_name: str
+    suggested_category: str
 
 
 class InvoiceItem(BaseModel):
@@ -57,13 +58,10 @@ class BadImage(Exception):
     """The uploaded payload is not a readable image."""
 
 
-def _prepare_image(image_base64: str) -> str:
-    """Strip data-URL prefix, fix EXIF rotation, downscale and re-encode as JPEG."""
-    raw = image_base64.strip()
-    if raw.startswith("data:") and "," in raw:
-        raw = raw.split(",", 1)[1]
+def normalize_photo(data: bytes) -> bytes:
+    """Check the bytes are a real image; fix EXIF rotation, downscale, re-encode as JPEG."""
     try:
-        img = Image.open(io.BytesIO(base64.b64decode(raw)))
+        img = Image.open(io.BytesIO(data))
         img.load()
     except Exception as e:
         raise BadImage("Could not read the photo, please retake it") from e
@@ -73,7 +71,23 @@ def _prepare_image(image_base64: str) -> str:
     img.thumbnail((MAX_IMAGE_EDGE, MAX_IMAGE_EDGE))
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=85)
-    return base64.standard_b64encode(buf.getvalue()).decode("ascii")
+    return buf.getvalue()
+
+
+def normalize_photo_b64(image_base64: str) -> bytes:
+    """Like normalize_photo, for base64 input (a data: URL prefix is allowed)."""
+    raw = image_base64.strip()
+    if raw.startswith("data:") and "," in raw:
+        raw = raw.split(",", 1)[1]
+    try:
+        data = base64.b64decode(raw)
+    except Exception as e:
+        raise BadImage("Could not read the photo, please retake it") from e
+    return normalize_photo(data)
+
+
+def _prepare_image(image_base64: str) -> str:
+    return base64.standard_b64encode(normalize_photo_b64(image_base64)).decode("ascii")
 
 
 async def _ask(system: str, prompt: str, image_base64: str, schema, effort: str, max_tokens: int):
@@ -119,9 +133,11 @@ async def _ask(system: str, prompt: str, image_base64: str, schema, effort: str,
     return resp.parsed_output
 
 
-async def identify_plant(image_base64: str, catalog: list[str]) -> dict:
-    """Identify a plant from a photo and try to match to the inventory catalog."""
+async def identify_plant(image_base64: str, catalog: list[str], categories: list[str] | None = None) -> dict:
+    """Identify a plant from a photo, match it to the inventory catalog and suggest a category."""
     catalog_text = ", ".join(catalog[:120]) if catalog else "none"
+    categories = categories or []
+    category_text = ", ".join(categories) if categories else "none"
     system = (
         "You are an expert botanist and plant nursery assistant in India. "
         "You identify plants and nursery products (pots, soil, fertilizers, tools) from photos "
@@ -130,17 +146,21 @@ async def identify_plant(image_base64: str, catalog: list[str]) -> dict:
     prompt = (
         "Identify the plant or nursery product in this photo.\n"
         f"The nursery currently stocks these products: {catalog_text}.\n"
+        f"Its product categories are: {category_text}.\n"
         "- plant_name: common commercial name as used in Indian nurseries\n"
         "- scientific_name: botanical name, or empty string\n"
         "- confidence: integer 0-100\n"
         "- alternatives: up to 3 alternative common names\n"
         "- matched_catalog_name: the single closest product name from the stocked list, "
-        "copied exactly, or empty string if none is a good match"
+        "copied exactly, or empty string if none is a good match\n"
+        "- suggested_category: the best fitting category from the category list, copied exactly, "
+        "or empty string"
     )
     data = await _ask(system, prompt, image_base64, PlantId, EFFORT_PLANT, 2000)
     if data is None:
         data = PlantId(plant_name="Unknown Plant", scientific_name="", confidence=0,
-                       alternatives=[], matched_catalog_name="")
+                       alternatives=[], matched_catalog_name="", suggested_category="")
+    category_by_lower = {c.lower(): c for c in categories}
 
     conf = max(0, min(100, data.confidence))
     label = "High" if conf >= 80 else ("Medium" if conf >= 50 else "Low")
@@ -151,6 +171,7 @@ async def identify_plant(image_base64: str, catalog: list[str]) -> dict:
         "confidence_label": label,
         "alternatives": data.alternatives[:3],
         "matched_catalog_name": data.matched_catalog_name,
+        "suggested_category": category_by_lower.get(data.suggested_category.strip().lower(), ""),
     }
 
 
