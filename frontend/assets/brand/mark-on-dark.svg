@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Hara Hisaab">
+  <!-- Hara Hisaab mark ("Sprouting Rupee") for the brand green (#1B5E3B) or other dark backgrounds -->
+  <path d="M60 50 V31" stroke="#9BDB8F" stroke-width="6" stroke-linecap="round"/>
+  <path d="M60 35 C49 35 41 29 39 18 C50 18 58 24 60 35 Z" fill="#9BDB8F"/>
+  <path d="M60 31 C62 19 72 12 85 12 C83 24 73 31 60 31 Z" fill="#9BDB8F"/>
+  <path d="M36 50 H84 M36 64 H84 M50 50 C77 50 77 78 50 78 H40 L75 106" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

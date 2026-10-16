@@ -25,7 +25,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1B4D3E"
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
+        "backgroundColor": "#1B5E3B"
       },
       "package": "com.planteck.nurserypos",
       "versionCode": 1,
@@ -43,9 +44,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-image.png",
-          "imageWidth": 200,
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#1B4D3E"
+          "backgroundColor": "#1B5E3B"
         }
       ],
       [
