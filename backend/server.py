@@ -18,7 +18,7 @@ from starlette.middleware.cors import CORSMiddleware  # noqa: E402
 
 import storage_client  # noqa: E402
 from db import get_db  # noqa: E402
-from routers import ai, auth, business, customers, drafts, files, library, products, purchases, sales, staff  # noqa: E402
+from routers import ai, auth, business, carts, customers, files, library, products, purchases, sales, staff  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ INDEXES = {
     "library": [("id", True), ("name_key", False)],
     "uploads": [("path", False)],
     "ai_usage": [("business_id", False)],
-    "drafts": [("user_id", True)],
+    "carts": [([("business_id", 1), ("customer_id", 1)], True)],  # one saved order per customer
 }
 
 
@@ -50,6 +50,7 @@ async def ensure_indexes(db):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = get_db()
+    await db.drafts.drop()  # replaced by per-customer carts (one-time clean-up; nothing if already gone)
     await ensure_indexes(db)
     await library.seed_library(db)
     try:
@@ -63,7 +64,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="NurseryPOS API", lifespan=lifespan)
-for module in (auth, staff, business, library, products, customers, drafts, sales, purchases, ai, files):
+for module in (auth, staff, business, library, products, customers, carts, sales, purchases, ai, files):
     app.include_router(module.router)
 app.include_router(sales.public_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])

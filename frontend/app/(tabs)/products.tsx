@@ -67,7 +67,7 @@ export default function Products() {
   const filtered = !!(search || category || stock);
 
   return (
-    <Screen>
+    <Screen edgeBottom={false}>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 10, gap: 10, backgroundColor: colors.surface,
         borderBottomWidth: 1, borderBottomColor: colors.line }}>
         <T v="title">{t("Products")}</T>

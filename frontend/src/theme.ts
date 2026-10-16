@@ -30,6 +30,7 @@ export const colors = {
 
   red: "#B91C1C",
   redLine: "#F3C9C9",
+  redTint: "#FDECEC",
 
   whatsapp: "#128C4A",
   white: "#FFFFFF",

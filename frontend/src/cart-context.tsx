@@ -1,17 +1,18 @@
-// The order being built: its customer (a must), items and discount. It is the person's draft order:
-// saved on the server (one per person) so it survives closing the app or changing phones, and kept on the
-// phone too for a quick start. Making the bill or discarding it removes the draft.
+// The order being built: its customer (a must), items and discount. Each customer has one saved order on
+// the server, so a worker can start Kavita's order, bill Rahul meanwhile, and Kavita's items come back
+// when anyone in the shop picks her again. Saved orders are never listed; billing or discarding removes them.
 // product_id "loose-…" = a line billed without stock; the server gets product_id null for it.
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+// price = the price for this order; list_price = the shop's price when the item was added.
+import React, { createContext, useContext, useRef, useState } from "react";
 
 import { apiDelete, apiGet, apiPut } from "@/src/api";
 import { useAuth } from "@/src/auth";
-import { storage } from "@/src/utils/storage";
 
 export type CartItem = {
   product_id: string;
   name: string;
   price: number;
+  list_price?: number | null;
   quantity: number;
   gst_percent?: number;
   image_path?: string | null;
@@ -20,100 +21,144 @@ export type CartItem = {
 
 export type OrderCustomer = { id: string; name: string; phone: string; purchase_count?: number };
 
-type Draft = { customer: OrderCustomer | null; items: CartItem[]; discount: number };
+type Order = { uid: string | null; customer: OrderCustomer | null; items: CartItem[]; discount: number };
+type Saved = { items: CartItem[]; discount: number } | null;
 
 type CartContextType = {
   customer: OrderCustomer | null;
-  setCustomer: (c: OrderCustomer | null) => void;
   items: CartItem[];
   addItem: (item: CartItem) => void;
   setQuantity: (product_id: string, qty: number) => void;
+  setPrice: (product_id: string, price: number) => void;
   removeItem: (product_id: string) => void;
-  clear: () => void;
   discount: number;
   setDiscount: (d: number) => void;
   count: number;
   total: number;
   gstIncluded: number;
-  hasDraft: boolean;
-  ready: boolean; // this person's draft has been loaded
+  openFor: (c: OrderCustomer) => Promise<number>; // this customer's order; returns how many items (quantity) were saved
+  moveTo: (c: OrderCustomer) => Promise<number>; // the same items, for another customer (wrong one picked)
+  startNew: () => void; // leave this order (it stays saved) and start fresh
+  discard: () => Promise<void>; // throw this order away
+  beforeBill: () => Promise<void>; // send the last change first, then nothing more
+  billed: () => void;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
-const STORAGE_KEY = "nurserypos_cart_v4";
-const EMPTY: Draft = { customer: null, items: [], discount: 0 };
+const SAVE_AFTER_MS = 600;
 
 export const isLoose = (id: string) => id.startsWith("loose-");
+const howMany = (items: CartItem[]) => items.reduce((s, i) => s + i.quantity, 0);
+
+const body = (o: Order) => ({
+  customer_id: o.customer!.id, discount: o.discount,
+  items: o.items.map((i) => ({ ...i, list_price: i.list_price ?? null, gst_percent: i.gst_percent ?? 0, image_path: i.image_path ?? null, stock: i.stock ?? null })),
+});
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { user, can } = useAuth();
+  const { user } = useAuth();
   const uid = user?.id ?? null;
-  const sells = can("sell");
-  const [draft, setDraft] = useState<Draft>(EMPTY);
-  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(undefined);
-  const onServer = useRef(false);
+  const blank: Order = { uid, customer: null, items: [], discount: 0 };
+  const [state, setState] = useState<Order>(blank);
+  const order = state.uid === uid ? state : blank; // a new log in starts with no order
+  const latest = useRef(order);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sending = useRef<Promise<unknown>>(Promise.resolve());
 
-  // Load this person's draft: the server's copy wins; the phone's copy is the fallback when offline.
-  useEffect(() => {
-    let live = true;
-    (async () => {
-      let d: Draft = EMPTY;
-      if (uid) {
-        const saved = await storage.getItem<any>(STORAGE_KEY, null);
-        if (saved?.uid === uid) d = { customer: saved.customer ?? null, items: saved.items ?? [], discount: saved.discount ?? 0 };
-        if (sells) {
-          try {
-            const server = await apiGet("/orders/draft");
-            d = server ? { customer: server.customer, items: server.items ?? [], discount: server.discount ?? 0 } : EMPTY;
-            onServer.current = !!server;
-          } catch {
-            // offline: keep the phone's copy; it is sent when it next changes
-          }
-        }
-      }
-      if (!live) return;
-      setDraft(d);
-      setLoadedFor(uid);
-    })();
-    return () => {
-      live = false;
-    };
-  }, [uid, sells]);
+  const send = (o: Order) => {
+    sending.current = sending.current.then(() => apiPut("/orders/cart", body(o)).catch(() => {}));
+    return sending.current;
+  };
+  const cancel = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  // Send a waiting change now (before leaving this customer).
+  const flush = () => {
+    if (!timer.current) return sending.current;
+    cancel();
+    return send(latest.current);
+  };
 
-  // Save every change: on the phone at once, on the server a moment later.
-  useEffect(() => {
-    if (!uid || loadedFor !== uid) return;
-    storage.setItem(STORAGE_KEY, { uid, ...draft } as any);
-    if (!sells) return;
-    const empty = !draft.customer && !draft.items.length;
-    const id = setTimeout(() => {
-      if (empty) {
-        if (onServer.current) apiDelete("/orders/draft").catch(() => {});
-        onServer.current = false;
-      } else {
-        apiPut("/orders/draft", {
-          customer_id: draft.customer?.id ?? null, discount: draft.discount,
-          items: draft.items.map((i) => ({ ...i, gst_percent: i.gst_percent ?? 0, image_path: i.image_path ?? null, stock: i.stock ?? null })),
-        }).then(() => { onServer.current = true; }).catch(() => {});
-      }
-    }, empty ? 0 : 600);
-    return () => clearTimeout(id);
-  }, [draft, uid, loadedFor, sells]);
+  const put = (next: Order) => {
+    latest.current = next;
+    setState(next);
+  };
+  const change = (fn: (o: Order) => Order) => {
+    const base = latest.current.uid === uid ? latest.current : blank;
+    const next = fn(base);
+    put(next);
+    if (!next.customer) return;
+    cancel();
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      send(latest.current);
+    }, SAVE_AFTER_MS);
+  };
+  const setItems = (fn: (prev: CartItem[]) => CartItem[]) => change((o) => ({ ...o, items: fn(o.items) }));
 
-  const setItems = (fn: (prev: CartItem[]) => CartItem[]) => setDraft((d) => ({ ...d, items: fn(d.items) }));
+  async function load(c: OrderCustomer): Promise<Saved> {
+    try {
+      const s = await apiGet(`/orders/cart?customer_id=${encodeURIComponent(c.id)}`);
+      return s ? { items: s.items ?? [], discount: s.discount ?? 0 } : null;
+    } catch {
+      return null; // offline: start empty; it is saved when it next changes
+    }
+  }
+
+  async function openFor(c: OrderCustomer) {
+    await flush();
+    if (latest.current.customer?.id === c.id && latest.current.uid === uid) return howMany(latest.current.items);
+    const saved = await load(c);
+    put({ uid, customer: c, items: saved?.items ?? [], discount: saved?.discount ?? 0 });
+    return howMany(saved?.items ?? []);
+  }
+
+  async function moveTo(c: OrderCustomer) {
+    const from = latest.current.uid === uid ? latest.current : blank;
+    if (from.customer?.id === c.id) return 0;
+    cancel();
+    await sending.current;
+    const saved = await load(c);
+    if (from.customer) apiDelete(`/orders/cart?customer_id=${encodeURIComponent(from.customer.id)}`).catch(() => {});
+    const extra = (saved?.items ?? []).filter((s) => !from.items.some((i) => i.product_id === s.product_id));
+    change(() => ({ uid, customer: c, items: [...from.items, ...extra], discount: from.discount || saved?.discount || 0 }));
+    return extra.length;
+  }
+
+  function startNew() {
+    flush();
+    put(blank);
+  }
+
+  async function discard() {
+    const c = latest.current.uid === uid ? latest.current.customer : null;
+    cancel();
+    await sending.current;
+    put(blank);
+    if (c) await apiDelete(`/orders/cart?customer_id=${encodeURIComponent(c.id)}`).catch(() => {});
+  }
+
+  async function beforeBill() {
+    cancel();
+    await sending.current; // a save still on its way must land before the bill clears the saved order
+  }
+
   const addItem = (item: CartItem) =>
     setItems((prev) =>
       prev.some((i) => i.product_id === item.product_id)
         ? prev.map((i) => (i.product_id === item.product_id ? { ...i, quantity: i.quantity + item.quantity } : i))
-        : [...prev, item],
+        : [...prev, { ...item, list_price: item.list_price ?? item.price }],
     );
   const setQuantity = (id: string, qty: number) =>
     setItems((prev) => (qty <= 0 ? prev.filter((i) => i.product_id !== id) : prev.map((i) => (i.product_id === id ? { ...i, quantity: qty } : i))));
+  const setPrice = (id: string, price: number) =>
+    setItems((prev) => prev.map((i) => (i.product_id === id ? { ...i, price: Math.max(0, price) } : i)));
   const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.product_id !== id));
 
-  const { items, customer } = draft;
+  const { items, customer } = order;
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const d = Math.min(draft.discount, subtotal);
+  const d = Math.min(order.discount, subtotal);
   const factor = subtotal ? (subtotal - d) / subtotal : 1;
   // prices include GST: the tax inside a line is amount * rate / (100 + rate)
   const gstIncluded = items.reduce((s, i) => {
@@ -123,12 +168,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider value={{
-      customer, setCustomer: (c) => setDraft((x) => ({ ...x, customer: c })),
-      items, addItem, setQuantity, removeItem, clear: () => setDraft(EMPTY),
-      discount: d, setDiscount: (v) => setDraft((x) => ({ ...x, discount: v })),
-      count: items.reduce((s, i) => s + i.quantity, 0), total: subtotal - d, gstIncluded,
-      hasDraft: !!customer || items.length > 0,
-      ready: !!uid && loadedFor === uid,
+      customer, items, addItem, setQuantity, setPrice, removeItem,
+      discount: d, setDiscount: (v) => change((x) => ({ ...x, discount: v })),
+      count: howMany(items), total: subtotal - d, gstIncluded,
+      openFor, moveTo, startNew, discard, beforeBill, billed: () => put(blank),
     }}>
       {children}
     </CartContext.Provider>

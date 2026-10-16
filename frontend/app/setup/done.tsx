@@ -59,7 +59,7 @@ export default function SetupDone() {
       <View style={{ flex: 1, gap: 12, padding: spacing.xl }}>
         <Option icon="sprout" title={t("Add my products")} subtitle={t("Type a name or take a photo")} testID="setup-add-products"
           onPress={() => { go("/(tabs)/products"); setTimeout(() => router.push("/products/new"), 50); }} />
-        <Option icon="account-plus" title={t("Add a worker")} subtitle={t("Give staff their own login")}
+        <Option icon="account-plus" title={t("Add an employee")} subtitle={t("Give each employee their own login")}
           onPress={() => { go("/(tabs)"); setTimeout(() => router.push("/more/staff-edit"), 50); }} />
         <View style={{ flex: 1 }} />
         <Button title={t("Start selling")} icon="cart" onPress={() => go("/(tabs)")} disabled={!saved} testID="setup-start" />

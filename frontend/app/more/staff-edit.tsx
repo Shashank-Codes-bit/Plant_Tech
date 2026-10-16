@@ -23,7 +23,7 @@ export default function StaffEdit() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const list = useQuery<Worker[]>({ queryKey: ["staff"], queryFn: () => apiGet("/staff"), enabled: !!id });
   const worker = list.data?.find((w) => w.id === id);
-  if (id && !worker) return <Screen bg={colors.surface}><Header title={t("Worker")} /><LoadingView /></Screen>;
+  if (id && !worker) return <Screen bg={colors.surface}><Header title={t("Employee")} /><LoadingView /></Screen>;
   return <WorkerForm worker={worker} />;
 }
 
@@ -44,7 +44,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
 
   const phone10 = normalizePhone(phone);
   const ok = !!name.trim() && (isNew ? !!phone10 && pin.length >= 4 : pin.length === 0 || pin.length >= 4);
-  const first = name.trim().split(" ")[0] || t("this worker");
+  const first = name.trim().split(" ")[0] || t("this employee");
 
   const PERMS: { p: keyof Perms; label: string; hint: string }[] = [
     { p: "sell", label: t("Make bills"), hint: t("New orders and payments") },
@@ -81,7 +81,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={isNew ? t("Add worker") : worker!.name} />
+      <Header title={isNew ? t("Add employee") : worker!.name} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24}>
         <Field label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" testID="staff-name" />
         {isNew ? (

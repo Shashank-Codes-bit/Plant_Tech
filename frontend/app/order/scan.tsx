@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { apiGet, apiPost, uploadImage } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { useCart } from "@/src/cart-context";
-import { OrderCustomerBar } from "@/src/components/order-customer";
+import { DiscardOrder, OrderCustomerBar } from "@/src/components/order-customer";
 import { CategoryPicker } from "@/src/components/category-picker";
 import { useToast } from "@/src/components/toast";
 import { Badge, BottomBar, Button, Field, Header, Icon, Screen, Segmented, Stepper, T, Thumb } from "@/src/components/ui";
@@ -32,6 +32,8 @@ export default function OrderScan() {
   const router = useRouter();
   const toast = useToast();
   const cart = useCart();
+  // Opened with no customer (a reload, an old link): pick one first. Not when the order is cleared while open (Discard).
+  const [openedWithout] = useState(() => !cart.customer);
   const [stage, setStage] = useState<Stage>({ kind: "start" });
   const [photo, setPhoto] = useState<CaptureResult | null>(null);
 
@@ -71,7 +73,7 @@ export default function OrderScan() {
     else toast.show(t("Added. Scan the next one."), "success");
   };
 
-  if (cart.ready && !cart.customer) return <Redirect href="/order/customer" />;
+  if (openedWithout) return <Redirect href="/order/customer" />;
   if (stage.kind === "found") {
     return <Found product={stage.product} confidence={stage.confidence} photoUri={photo?.uri} onBack={restart} onAdded={added} />;
   }
@@ -98,7 +100,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={t("Add items")} close onBack={() => router.back()} testID="scan-close" />
+      <Header title={t("Add items")} close onBack={() => router.back()} testID="scan-close" right={<DiscardOrder />} />
       <View style={{ paddingHorizontal: spacing.lg, paddingBottom: 12 }}><OrderCustomerBar /></View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: spacing.lg }}>
         {!query && (

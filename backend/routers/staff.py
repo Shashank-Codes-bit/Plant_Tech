@@ -1,4 +1,4 @@
-"""Owner manages workers: add, change permissions or password, switch off."""
+"""Owner manages employees (role "worker" in the data): add, change permissions or password, switch off."""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -66,7 +66,7 @@ async def update_staff(worker_id: str, body: StaffPatch, owner: dict = Depends(a
     worker = await db.users.find_one({"id": worker_id, "business_id": owner["business_id"], "role": "worker"},
                                      {"_id": 0})
     if not worker:
-        raise HTTPException(404, "Worker not found")
+        raise HTTPException(404, "Employee not found")
     update: dict = {}
     if body.name is not None:
         update["name"] = body.name.strip()

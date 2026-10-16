@@ -21,7 +21,7 @@ import invoice_html
 import storage_client
 from common import IST, date_key, money, new_id, normalize_in_phone, now_ist, now_iso
 from db import get_db
-from routers import drafts
+from routers import carts
 from routers.products import context, record_stock
 
 router = APIRouter(prefix="/api", tags=["sales"])
@@ -142,9 +142,12 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
     for l in body.items:
         p = products.get(l.product_id) if l.product_id else None
         cat = cats.get(p.get("category_id")) if p else None
-        lines.append({"product_id": l.product_id, "name": l.name.strip(), "quantity": l.quantity, "price": l.price,
-                      "gst_percent": (cat or {}).get("gst_percent", 0) if gst_registered else 0,
-                      "cost_price": (p or {}).get("cost_price", 0)})
+        line = {"product_id": l.product_id, "name": l.name.strip(), "quantity": l.quantity, "price": l.price,
+                "gst_percent": (cat or {}).get("gst_percent", 0) if gst_registered else 0,
+                "cost_price": (p or {}).get("cost_price", 0)}
+        if p and money(l.price) != money(p.get("selling_price", 0)):
+            line["list_price"] = p.get("selling_price", 0)  # sold at a different price than the shop price
+        lines.append(line)
     totals = price_lines(lines, body.discount)
 
     if new_customer:
@@ -161,13 +164,18 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
         "public_token": secrets.token_urlsafe(16), "date_key": date_key(), "created_at": now_iso(),
     }
     await db.invoices.insert_one(invoice)
-    await drafts.clear(db, user["id"])  # the order is billed: its draft is done
+    await carts.clear(db, bid, customer_id)  # billed: this customer's saved order is done
     if customer_id:
         await db.customers.update_one({"id": customer_id},
                                       {"$inc": {"total_purchases": invoice["grand_total"], "purchase_count": 1},
                                        "$set": {"last_purchase_at": invoice["created_at"]}})
     invoice.pop("_id", None)
-    return invoice
+    return _shown(invoice)
+
+
+def _shown(inv: dict) -> dict:
+    """A bill as the app gets it: without the purchase cost of each line (that is only for the profit report)."""
+    return {**inv, "items": [{k: v for k, v in it.items() if k != "cost_price"} for it in inv.get("items", [])]}
 
 
 DATE = r"\d{4}-\d{2}-\d{2}"
@@ -243,7 +251,7 @@ async def _get_invoice(user: dict, invoice_id: str) -> dict:
 
 @router.get("/invoices/{invoice_id}")
 async def get_invoice(invoice_id: str, user: dict = Depends(auth.require("sell"))):
-    return await _get_invoice(user, invoice_id)
+    return _shown(await _get_invoice(user, invoice_id))
 
 
 @router.get("/invoices/{invoice_id}/share")
@@ -342,18 +350,77 @@ async def sales_report(range: Literal["day", "today", "week", "month"] = "week",
                                         {"_id": 0}).to_list(50000)
     buckets = [0.0] * len(labels)
     by_method = {"Cash": 0.0, "UPI": 0.0, "Card": 0.0}
-    sold: dict[str, float] = {}
+    sold: dict[str, dict] = {}
     profit = 0.0
     for inv in invs:
         buckets[idx(inv)] += inv["grand_total"]
         by_method[inv.get("payment_method", "Cash")] += inv["grand_total"]
         for it in inv["items"]:
-            sold[it["name"]] = sold.get(it["name"], 0) + it["quantity"]
+            row = sold.setdefault(it["name"], {"name": it["name"], "quantity": 0.0, "amount": 0.0})
+            row["quantity"] += it["quantity"]
+            row["amount"] += it.get("net", it["price"] * it["quantity"])  # after the bill's discount
             if it.get("cost_price"):  # profit only counts items with a known cost
                 profit += (it.get("net", it["price"] * it["quantity"]) - it.get("tax", 0)) - it["cost_price"] * it["quantity"]
-    top = sorted(sold.items(), key=lambda kv: -kv[1])[:5]
+    items = sorted(sold.values(), key=lambda r: (-r["quantity"], -r["amount"], r["name"]))
     return {"range": range, "start": keys[0], "end": keys[-1],
             "sales": money(sum(i["grand_total"] for i in invs)), "orders": len(invs),
             "profit": money(profit), "buckets": [{"label": l, "sales": money(v)} for l, v in zip(labels, buckets)],
             "by_method": {k: money(v) for k, v in by_method.items()},
-            "top": [{"name": n, "quantity": q} for n, q in top]}
+            "items": [{**r, "amount": money(r["amount"])} for r in items],  # every item sold in the period
+            "top": [{"name": r["name"], "quantity": r["quantity"]} for r in items[:5]]}  # for app versions before 'items'
+
+
+@router.get("/reports/employees")
+async def employees_report(range: Literal["day", "week", "month"] = "day",  # noqa: A002
+                           on: str = Query("", alias="date", pattern=f"^({DATE})?$"),
+                           owner: dict = Depends(auth.require("owner"))):
+    """Who billed what in a day, week or month: the owner and every employee (switched-off ones only if
+    they billed), most sales first. `price_changes` = lines sold at a price other than the shop price."""
+    db = get_db()
+    bid = owner["business_id"]
+    anchor = datetime.strptime(on, "%Y-%m-%d").date() if on else now_ist().date()
+    keys, _, _ = _report_buckets(range, anchor)
+    invs = await db.invoices.find({"business_id": bid, "date_key": {"$in": keys}},
+                                  {"_id": 0, "grand_total": 1, "discount": 1, "created_at": 1, "created_by": 1,
+                                   "customer_id": 1, "items.quantity": 1, "items.price": 1, "items.list_price": 1}).to_list(50000)
+    users = await db.users.find({"business_id": bid, "role": {"$in": ["owner", "worker"]}},
+                                {"_id": 0, "id": 1, "name": 1, "role": 1, "active": 1}).to_list(500)
+    known = {u["id"]: u for u in users}
+    people: dict[str, dict] = {}
+
+    def person(pid: str) -> dict:
+        u = known.get(pid, {})
+        return people.setdefault(pid, {
+            "id": pid, "name": u.get("name", ""), "role": "owner" if u.get("role") == "owner" else "employee",
+            "active": bool(u) and u.get("active", True), "orders": 0, "sales": 0.0, "items": 0.0, "discount": 0.0,
+            "customers": set(), "first_at": None, "last_at": None, "price_lines": 0, "price_less": 0.0})
+
+    for u in users:
+        if u.get("active", True) or u["role"] == "owner":
+            person(u["id"])
+    for inv in invs:
+        by = inv.get("created_by") or {}
+        r = person(by.get("id", "?"))
+        r["name"] = r["name"] or by.get("name", "")
+        r["orders"] += 1
+        r["sales"] += inv["grand_total"]
+        r["discount"] += inv.get("discount", 0)
+        if inv.get("customer_id"):
+            r["customers"].add(inv["customer_id"])
+        r["first_at"] = min(x for x in (r["first_at"], inv["created_at"]) if x)
+        r["last_at"] = max(x for x in (r["last_at"], inv["created_at"]) if x)
+        for it in inv.get("items", []):
+            r["items"] += it["quantity"]
+            if it.get("list_price") is not None:
+                r["price_lines"] += 1
+                r["price_less"] += (it["list_price"] - it["price"]) * it["quantity"]
+    total = sum(r["sales"] for r in people.values())
+    rows = []
+    for r in people.values():
+        lines, less = r.pop("price_lines"), r.pop("price_less")
+        rows.append({**r, "sales": money(r["sales"]), "discount": money(r["discount"]), "customers": len(r["customers"]),
+                     "avg_bill": money(r["sales"] / r["orders"]) if r["orders"] else 0,
+                     "share": round(r["sales"] / total, 4) if total else 0,
+                     "price_changes": {"lines": lines, "less": money(less)}})
+    rows.sort(key=lambda r: (-r["sales"], r["role"] != "owner", r["name"].lower()))
+    return {"range": range, "start": keys[0], "end": keys[-1], "sales": money(total), "orders": len(invs), "people": rows}

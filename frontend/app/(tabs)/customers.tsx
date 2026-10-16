@@ -23,7 +23,7 @@ export default function Customers() {
   const shown = (q.data ?? []).filter((c) => !s || c.name.toLowerCase().includes(s) || (digits.length >= 3 && c.phone.includes(digits)));
 
   return (
-    <Screen>
+    <Screen edgeBottom={false}>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 12, gap: 10, backgroundColor: colors.surface }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <T v="title">{t("Customers")}</T>

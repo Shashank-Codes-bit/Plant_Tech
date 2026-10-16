@@ -1,5 +1,7 @@
 // New order, step 1: who is buying? Every order has a customer (name + phone), so bills can be sent on
-// WhatsApp and each customer's history is complete. Search, or add a new one.
+// WhatsApp and each customer's history is complete. Search, or add a new one. Picking a customer opens
+// their saved order if they have one (items added earlier, by anyone in the shop).
+// With ?change=1 (the "Change" on an order): the items move to the customer picked.
 import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -10,7 +12,7 @@ import { apiGet, apiPost } from "@/src/api";
 import { OrderCustomer, useCart } from "@/src/cart-context";
 import { useToast } from "@/src/components/toast";
 import { Button, Field, Header, Icon, PhoneField, Screen, T } from "@/src/components/ui";
-import { formatPhone, normalizePhone } from "@/src/format";
+import { formatPhone, normalizePhone, plural } from "@/src/format";
 import { colors, fonts, radius, spacing } from "@/src/theme";
 
 export default function OrderCustomerStep() {
@@ -25,6 +27,7 @@ export default function OrderCustomerStep() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
+  const [opening, setOpening] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setTimeout(() => setQ(typed.trim()), 300);
@@ -35,10 +38,25 @@ export default function OrderCustomerStep() {
   const results = found.data ?? [];
   const noMatch = !!q && found.isSuccess && !results.length;
 
-  function choose(c: OrderCustomer) {
-    cart.setCustomer(c);
-    if (change) router.back();
-    else router.replace("/order/scan");
+  async function choose(c: OrderCustomer) {
+    if (opening) return;
+    setOpening(c.id);
+    try {
+      if (change) {
+        const extra = await cart.moveTo(c);
+        if (extra) toast.show(t("{{name}}'s saved items were added too", { name: c.name }), "success");
+        router.back();
+        return;
+      }
+      const saved = await cart.openFor(c);
+      router.replace("/order/scan");
+      if (saved) {
+        toast.show(t("{{name}}'s saved order: {{items}}", { name: c.name, items: plural(saved, "1 item", "{{n}} items") }), "success");
+        router.push("/order/cart");
+      }
+    } finally {
+      setOpening(null);
+    }
   }
 
   function startAdding() {
@@ -53,7 +71,7 @@ export default function OrderCustomerStep() {
     setBusy(true);
     try {
       const c = await apiPost("/customers", { name: name.trim(), phone: `+91${phone10}` });
-      choose({ id: c.id, name: c.name, phone: c.phone, purchase_count: 0 });
+      await choose({ id: c.id, name: c.name, phone: c.phone, purchase_count: 0 });
     } catch (e: any) {
       toast.show(e.message, "error");
     } finally {
@@ -123,8 +141,8 @@ export default function OrderCustomerStep() {
                 <T v="bold">{c.name}</T>
                 <T v="small">{formatPhone(c.phone)}</T>
               </View>
-              {!!c.purchase_count && <T v="caption">{c.purchase_count === 1 ? t("1 order") : t("{{n}} orders", { n: c.purchase_count })}</T>}
-              <Icon name="chevron-right" size={24} color={colors.muted} />
+              {!!c.purchase_count && <T v="caption">{plural(c.purchase_count, "1 order", "{{n}} orders")}</T>}
+              {opening === c.id ? <ActivityIndicator color={colors.green} /> : <Icon name="chevron-right" size={24} color={colors.muted} />}
             </Pressable>
           )}
         />

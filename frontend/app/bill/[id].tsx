@@ -113,6 +113,11 @@ export default function Bill() {
               <View style={{ flex: 1 }}>
                 <T v="bold">{it.name}</T>
                 <T v="small">{formatQty(it.quantity)} × {formatCurrency(it.price)}{it.gst_percent ? ` · GST ${it.gst_percent}%` : ""}</T>
+                {it.list_price != null && it.list_price !== it.price && (
+                  <T v="caption" testID={`bill-shop-price-${it.name}`}>
+                    {t("Shop price")} <T v="caption" style={{ textDecorationLine: "line-through" }}>{formatCurrency(it.list_price)}</T>
+                  </T>
+                )}
               </View>
               <T v="bold">{formatCurrency(it.amount)}</T>
             </View>

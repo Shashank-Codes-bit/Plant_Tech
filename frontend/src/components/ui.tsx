@@ -1,5 +1,5 @@
 // UI kit matching the approved prototype: icon + label on actions, 56+ touch targets, big numbers.
-import React from "react";
+import React, { createContext, useContext } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -34,11 +34,20 @@ export function T({ v = "body", color, style, ...rest }: TextProps & { v?: TextV
 }
 
 // ------------------------------ layout ------------------------------
-export function Screen({ children, bg = colors.page, edgeTop = true, style }: {
-  children: React.ReactNode; bg?: string; edgeTop?: boolean; style?: StyleProp<ViewStyle>;
+// Keeps everything clear of the phone's status bar and its bottom buttons. Tab screens pass
+// edgeBottom={false}: the tab bar already sits above the buttons.
+const BottomEdge = createContext(0);
+
+export function Screen({ children, bg = colors.page, edgeTop = true, edgeBottom = true, style }: {
+  children: React.ReactNode; bg?: string; edgeTop?: boolean; edgeBottom?: boolean; style?: StyleProp<ViewStyle>;
 }) {
   const insets = useSafeAreaInsets();
-  return <View style={[{ flex: 1, backgroundColor: bg, paddingTop: edgeTop ? insets.top : 0 }, style]}>{children}</View>;
+  const bottom = edgeBottom ? insets.bottom : 0;
+  return (
+    <BottomEdge.Provider value={bottom}>
+      <View style={[{ flex: 1, backgroundColor: bg, paddingTop: edgeTop ? insets.top : 0, paddingBottom: bottom }, style]}>{children}</View>
+    </BottomEdge.Provider>
+  );
 }
 
 export function Header({ title, onBack, right, close, testID }: {
@@ -62,10 +71,11 @@ export function Header({ title, onBack, right, close, testID }: {
   );
 }
 
+// The last thing on a Screen. Its white runs down behind the phone's buttons; its buttons stay above them.
 export function BottomBar({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
-  const insets = useSafeAreaInsets();
+  const edge = useContext(BottomEdge);
   return (
-    <View style={[{ gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.lg,
+    <View style={[{ gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: edge + spacing.lg, marginBottom: -edge,
       backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.line }, style]}>
       {children}
     </View>

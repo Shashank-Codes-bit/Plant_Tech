@@ -102,6 +102,7 @@ def test_reports(client):
         assert sum(b["sales"] for b in rep["buckets"]) == 750
     assert rep["profit"] == 450 and rep["by_method"]["Cash"] == 750
     assert rep["top"] == [{"name": "Money Plant", "quantity": 3}]
+    assert [(i["name"], i["quantity"]) for i in rep["items"]] == [("Money Plant", 3)] and rep["items"][0]["amount"] > 0
     # A chosen period: a week is Monday to Sunday, a month is the calendar month.
     week = shop.get("/api/reports/sales", params={"range": "week", "date": "2026-10-14"}).json()
     assert (week["start"], week["end"]) == ("2026-10-12", "2026-10-18") and len(week["buckets"]) == 7
@@ -178,25 +179,83 @@ def test_customer_needs_name_and_phone_and_can_be_found(client):
     assert client.post("/api/customers", headers=wh, json={"name": "Walk", "phone": "9811100011"}).status_code == 200
 
 
-def test_one_draft_order_per_person_until_billed(client):
+def test_one_saved_order_per_customer(client):
+    import asyncio
+    from datetime import datetime, timedelta, timezone
+    import db as db_module
+
     shop = Shop(client)
-    pot = shop.product("Clay Pot", 100, 5)
-    c = shop.post("/api/customers", {"name": "Anita", "phone": "9811122334"}).json()
-    assert shop.get("/api/orders/draft").json() is None
-    item = {"product_id": pot["id"], "name": "Clay Pot", "quantity": 2, "price": 100}
-    r = client.put("/api/orders/draft", headers=shop.h, json={"customer_id": c["id"], "items": [item]})
-    assert r.status_code == 200
-    d = shop.get("/api/orders/draft").json()
-    assert d["customer"]["name"] == "Anita" and d["items"][0]["quantity"] == 2
-    client.put("/api/orders/draft", headers=shop.h, json={"customer_id": c["id"], "items": [{**item, "quantity": 3}]})
-    assert shop.get("/api/orders/draft").json()["items"][0]["quantity"] == 3  # still one draft, replaced
-    assert client.put("/api/orders/draft", headers=shop.h, json={"customer_id": "other-shop"}).status_code == 400
-    # a worker has their own draft
+    pot = shop.product("Clay Pot", 100, 9)
+    kavita = shop.post("/api/customers", {"name": "Kavita", "phone": "9811122334"}).json()
+    rahul = shop.post("/api/customers", {"name": "Rahul", "phone": "9811155667"}).json()
+    item = {"product_id": pot["id"], "name": "Clay Pot", "quantity": 2, "price": 90, "list_price": 100}
+    put = lambda h, body: client.put("/api/orders/cart", headers=h, json=body)  # noqa: E731
+    get = lambda h, cid: client.get("/api/orders/cart", headers=h, params={"customer_id": cid}).json()  # noqa: E731
+
+    assert get(shop.h, kavita["id"]) is None
+    assert put(shop.h, {"customer_id": kavita["id"], "items": [item]}).status_code == 200
+    assert put(shop.h, {"customer_id": rahul["id"], "items": [{**item, "quantity": 1}]}).status_code == 200
+    assert get(shop.h, kavita["id"])["items"][0]["quantity"] == 2  # both kept side by side
+    assert get(shop.h, rahul["id"])["items"][0]["quantity"] == 1
+    # anyone in the shop entering Kavita gets her order
     _, wh = shop.worker()
-    assert client.get("/api/orders/draft", headers=wh).json() is None
-    # billing removes it
-    shop.post("/api/invoices", {"items": [item], "customer_id": c["id"]})
-    assert shop.get("/api/orders/draft").json() is None
-    client.put("/api/orders/draft", headers=shop.h, json={"customer_id": c["id"]})
-    assert client.delete("/api/orders/draft", headers=shop.h).status_code == 200
-    assert shop.get("/api/orders/draft").json() is None
+    assert get(wh, kavita["id"])["items"][0]["price"] == 90
+    # billing Rahul clears only Rahul's
+    shop.post("/api/invoices", {"items": [{"product_id": pot["id"], "name": "Clay Pot", "quantity": 1, "price": 100}],
+                                "customer_id": rahul["id"]})
+    assert get(shop.h, rahul["id"]) is None and get(shop.h, kavita["id"]) is not None
+    # discard
+    assert client.delete("/api/orders/cart", headers=shop.h, params={"customer_id": kavita["id"]}).status_code == 200
+    assert get(shop.h, kavita["id"]) is None
+    # another shop's customer is refused; an empty order is not kept
+    other = Shop(client, phone="9822299887", name="Other")
+    stranger = other.post("/api/customers", {"name": "X", "phone": "9811100055"}).json()
+    assert put(shop.h, {"customer_id": stranger["id"], "items": [item]}).status_code == 400
+    put(shop.h, {"customer_id": kavita["id"], "items": []})
+    assert get(shop.h, kavita["id"]) is None
+    # a saved order untouched for 8 days is dropped
+    put(shop.h, {"customer_id": kavita["id"], "items": [item]})
+    old = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+    asyncio.run(db_module.state.db.carts.update_many({}, {"$set": {"updated_at": old}}))
+    assert get(shop.h, kavita["id"]) is None
+
+
+def test_price_given_in_the_order_is_kept_with_the_shop_price(client):
+    shop = Shop(client, gst=False)
+    plant = shop.product("Areca Palm", 600, 5)
+    inv = _order(shop, [{"product_id": plant["id"], "name": "Areca Palm", "quantity": 2, "price": 550}]).json()
+    line = inv["items"][0]
+    assert line["price"] == 550 and line["list_price"] == 600 and inv["grand_total"] == 1100
+    same = _order(shop, [{"product_id": plant["id"], "name": "Areca Palm", "quantity": 1, "price": 600}]).json()
+    assert "list_price" not in same["items"][0]
+    # the purchase cost never goes out with a bill
+    assert "cost_price" not in line
+    assert all("cost_price" not in it for it in client.get(f"/api/invoices/{inv['id']}", headers=shop.h).json()["items"])
+
+
+def test_employee_report_shows_who_billed_what(client):
+    shop = Shop(client, gst=False)
+    plant = shop.product("Jade", 200, 50)
+    ramesh, rh = shop.worker()
+    old = shop.post("/api/staff", {"name": "Old hand", "phone": "9811177711", "password": "4821"}).json()
+
+    def bill(headers, q, price=200, phone="9811100099"):
+        r = client.post("/api/invoices", headers=headers, json={
+            "items": [{"product_id": plant["id"], "name": "Jade", "quantity": q, "price": price}],
+            "customer_phone": phone, "customer_name": f"Customer {phone[-2:]}"})
+        assert r.status_code == 200, r.text
+
+    bill(shop.h, 1)  # owner: 200
+    bill(rh, 2, price=180)  # Ramesh: 360, one line 40 under the shop price
+    bill(rh, 3, phone="9811100022")  # Ramesh: 600, another customer
+    assert client.patch(f"/api/staff/{old['id']}", headers=shop.h, json={"active": False}).status_code == 200
+
+    rep = client.get("/api/reports/employees", headers=shop.h, params={"range": "day"}).json()
+    assert rep["sales"] == 1160 and rep["orders"] == 3
+    assert "Old hand" not in {p["name"] for p in rep["people"]}  # switched off and no bills
+    r = rep["people"][0]  # most sales first
+    assert (r["id"], r["name"], r["role"], r["orders"], r["sales"], r["items"], r["customers"], r["avg_bill"]) ==         (ramesh, "Ramesh", "employee", 2, 960, 5, 2, 480)
+    assert r["price_changes"] == {"lines": 1, "less": 40} and r["first_at"] <= r["last_at"]
+    o = next(p for p in rep["people"] if p["role"] == "owner")
+    assert o["orders"] == 1 and o["sales"] == 200 and abs(r["share"] + o["share"] - 1) < 0.001
+    assert client.get("/api/reports/employees", headers=rh).status_code == 403  # owner only

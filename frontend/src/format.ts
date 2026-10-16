@@ -13,6 +13,11 @@ export function formatQty(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+// "1 item" / "3 items": plural(n, "1 item", "{{n}} items")
+export function plural(n: number, one: string, many: string): string {
+  return n === 1 ? i18n.t(one) : i18n.t(many, { n: formatQty(n) });
+}
+
 export function formatTime(iso?: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" }).toLowerCase();

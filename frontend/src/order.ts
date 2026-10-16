@@ -1,4 +1,4 @@
-// Turning the order (the person's draft) into a bill. Used by the Pay and UPI screens.
+// Turning the customer's order into a bill (the server then removes their saved order). Used by the Pay and UPI screens.
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,13 +21,14 @@ export function useCreateBill() {
     if (busy || !cart.items.length || !cart.customer) return;
     setBusy(true);
     try {
+      await cart.beforeBill();
       const inv: Invoice = await apiPost("/invoices", {
         items: cart.items.map((i) => ({ product_id: isLoose(i.product_id) ? null : i.product_id, name: i.name, quantity: i.quantity, price: i.price })),
         customer_id: cart.customer.id,
         discount: cart.discount,
         payment_method: method,
       });
-      cart.clear();
+      cart.billed();
       qc.invalidateQueries();
       // Close the order screens; the bill opens on top of Home.
       router.dismissTo("/(tabs)");

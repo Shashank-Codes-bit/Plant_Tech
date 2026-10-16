@@ -52,7 +52,7 @@ export default function Welcome() {
           style={{ flexDirection: "row", gap: 12, alignItems: "center", padding: 14, borderRadius: radius.md, backgroundColor: colors.page }}>
           <Icon name="account-hard-hat" size={26} color={colors.inkSoft} />
           <T v="small" style={{ flex: 1, color: colors.inkSoft }}>
-            {t("Worker? Log in with the phone number and password your owner gave you.")}
+            {t("Employee? Log in with the phone number and PIN your owner gave you.")}
           </T>
         </Pressable>
       </View>

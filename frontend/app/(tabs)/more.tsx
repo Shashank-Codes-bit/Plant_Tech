@@ -11,7 +11,7 @@ import { Permission, useAuth } from "@/src/auth";
 import { BrandMark } from "@/src/components/brand";
 import { confirm } from "@/src/confirm";
 import { Badge, Icon, IconName, Row, Screen, T } from "@/src/components/ui";
-import { formatPhone } from "@/src/format";
+import { formatPhone, plural } from "@/src/format";
 import { colors, radius, spacing } from "@/src/theme";
 import { resetTo } from "@/src/nav";
 
@@ -43,7 +43,7 @@ export default function More() {
   ];
 
   return (
-    <Screen>
+    <Screen edgeBottom={false}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 10, paddingBottom: spacing["2xl"] }}>
         <T v="title" style={{ marginBottom: 4 }}>{isOwner ? t("More") : t("Me")}</T>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: radius.lg, backgroundColor: colors.surface,
@@ -53,7 +53,7 @@ export default function More() {
           </View>
           <View style={{ flex: 1 }}>
             <T v="bodyLarge">{user?.name}</T>
-            <T v="small">{isOwner ? t("Owner · {{shop}}", { shop }) : t("Worker at {{shop}}", { shop })}</T>
+            <T v="small">{isOwner ? t("Owner · {{shop}}", { shop }) : t("Employee at {{shop}}", { shop })}</T>
             {!!user?.phone && <T v="small">{formatPhone(user.phone)}</T>}
           </View>
         </View>
@@ -62,8 +62,8 @@ export default function More() {
           <>
             <Row title={t("Sales reports")} subtitle={t("Today, week, month")} left={<MenuIcon name="chart-bar" />} chevron
               onPress={() => router.push("/more/reports")} testID="more-reports" />
-            <Row title={t("Staff")} left={<MenuIcon name="account-multiple" />} chevron testID="more-staff"
-              subtitle={staff.data ? (staff.data.length === 1 ? t("1 worker") : t("{{n}} workers", { n: staff.data.length })) : t("Workers and what they can do")}
+            <Row title={t("Employees")} left={<MenuIcon name="account-multiple" />} chevron testID="more-staff"
+              subtitle={staff.data ? [plural(staff.data.length, "1 employee", "{{n}} employees"), t("who sold what")].join(" · ") : t("Who sold what, and their logins")}
               onPress={() => router.push("/more/staff")} />
             <Row title={t("Shop details")} subtitle={t("Name, address, UPI, GST")} left={<MenuIcon name="store" />} chevron
               onPress={() => router.push("/more/shop")} testID="more-shop" />

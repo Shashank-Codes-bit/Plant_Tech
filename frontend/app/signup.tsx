@@ -41,7 +41,7 @@ export default function Signup() {
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 4, gap: 18 }} bottomOffset={24}>
         <View style={{ gap: 4 }}>
           <T v="heading">{t("Create your account")}</T>
-          <T v="body" color={colors.inkSoft}>{t("You are the owner. You can add workers later.")}</T>
+          <T v="body" color={colors.inkSoft}>{t("You are the owner. You can add employees later.")}</T>
         </View>
         <Field label={t("Your name")} value={name} onChangeText={setName} autoCapitalize="words" testID="signup-name" />
         <PhoneField label={t("Phone number")} value={phone} onChangeText={setPhone} testID="signup-phone" />

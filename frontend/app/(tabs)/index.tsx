@@ -1,4 +1,5 @@
-// Home: the shop (its logo, or ours when it has none), New order (or the unfinished draft), and today's numbers.
+// Home: the shop (its logo, or ours when it has none), New order, and today's numbers. Saved orders are not
+// shown here: a customer's saved items come back when they are picked in New order.
 // The owner sees the whole shop's day; a worker sees their own sales.
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -11,8 +12,7 @@ import { useCart } from "@/src/cart-context";
 import { OrderRow, OrderSummary } from "@/src/components/order-row";
 import { Badge, Card, EmptyState, ErrorView, Icon, Screen, SectionTitle, T, Thumb } from "@/src/components/ui";
 import { BrandIcon } from "@/src/components/brand";
-import { confirm } from "@/src/confirm";
-import { formatCurrency, formatQty } from "@/src/format";
+import { formatCurrency } from "@/src/format";
 import { useRefreshOnFocus } from "@/src/hooks/useRefreshOnFocus";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -28,17 +28,13 @@ export default function Home() {
   const d = today.data;
   const shop = user?.business?.name || t("Your shop");
 
-  // One draft order per person: New order continues it until it is billed or discarded.
   function startOrder() {
-    if (!cart.customer) router.push("/order/customer");
-    else router.push(cart.count ? "/order/cart" : "/order/scan");
-  }
-  async function discard() {
-    if (await confirm(t("Discard this order?"), t("Its items are removed. The customer stays saved."), t("Discard"), true)) cart.clear();
+    cart.startNew(); // the order on screen (if any) stays saved for its customer
+    router.push("/order/customer");
   }
 
   return (
-    <Screen>
+    <Screen edgeBottom={false}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16, paddingBottom: spacing["2xl"] }}
         refreshControl={<RefreshControl refreshing={today.isRefetching} onRefresh={today.refetch} tintColor={colors.green} />}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 4 }}>
@@ -53,11 +49,10 @@ export default function Home() {
               style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: colors.greenTint, alignItems: "center", justifyContent: "center" }}>
               <T v="number" color={colors.greenDark}>{(user?.name || "?").charAt(0).toUpperCase()}</T>
             </Pressable>
-          ) : <Badge text={t("Worker")} tone="blue" />}
+          ) : <Badge text={t("Employee")} tone="blue" />}
         </View>
 
         {can("sell") ? (
-          <View style={{ gap: 8 }}>
           <Pressable testID="home-new-order" accessibilityRole="button" onPress={startOrder}
             style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 18, paddingHorizontal: 16, minHeight: 100,
               borderRadius: radius.xl, backgroundColor: pressed ? colors.greenDark : colors.green })}>
@@ -65,22 +60,11 @@ export default function Home() {
               <Icon name="cart-plus" size={30} color={colors.green} />
             </View>
             <View style={{ flex: 1 }}>
-              <T v="title" color={colors.white}>{cart.hasDraft ? t("Continue order") : t("New order")}</T>
-              <T v="label" color={colors.greenOnDark}>
-                {cart.hasDraft
-                  ? [cart.customer?.name, cart.count ? t("{{n}} items · {{total}}", { n: formatQty(cart.count), total: formatCurrency(cart.total) }) : t("no items yet")]
-                    .filter(Boolean).join(" · ")
-                  : t("Choose the customer, then add plants")}
-              </T>
+              <T v="title" color={colors.white}>{t("New order")}</T>
+              <T v="label" color={colors.greenOnDark}>{t("Choose the customer, then add plants")}</T>
             </View>
             <Icon name="chevron-right" size={28} color={colors.white} />
           </Pressable>
-          {cart.hasDraft && (
-            <Pressable onPress={discard} testID="home-discard-order" style={{ alignSelf: "flex-end", minHeight: 44, justifyContent: "center", paddingHorizontal: 8 }}>
-              <T v="bold" color={colors.red}>{t("Discard this order")}</T>
-            </Pressable>
-          )}
-          </View>
         ) : (
           <Card>
             <EmptyState icon="lock" title={t("Billing is off for you")} subtitle={t("Ask the shop owner to turn it on.")} />

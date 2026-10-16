@@ -21,7 +21,8 @@ export class ApiError extends Error {
 
 async function request(method: string, path: string, body?: unknown) {
   const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const sent = token; // a reply to a request sent before the saved login came back must not log out
+  if (sent) headers.Authorization = `Bearer ${sent}`;
   if (body !== undefined) headers["Content-Type"] = "application/json";
   let res: Response;
   try {
@@ -36,7 +37,7 @@ async function request(method: string, path: string, body?: unknown) {
       if (typeof data?.detail === "string") msg = data.detail;
       else if (Array.isArray(data?.detail)) msg = data.detail[0]?.msg ?? msg;
     } catch {}
-    if (res.status === 401 && token && onUnauthorized) onUnauthorized();
+    if (res.status === 401 && sent && sent === token && onUnauthorized) onUnauthorized();
     throw new ApiError(msg, res.status);
   }
   return res.json();

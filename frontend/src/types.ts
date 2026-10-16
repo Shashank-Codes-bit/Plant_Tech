@@ -24,6 +24,7 @@ export type Category = { id: string; name: string; gst_percent: number; product_
 
 export type InvoiceLine = {
   product_id: string | null; name: string; quantity: number; price: number; gst_percent: number;
+  list_price?: number; // the shop price, kept when this bill gave a different price
   amount: number; net: number; tax: number;
 };
 
