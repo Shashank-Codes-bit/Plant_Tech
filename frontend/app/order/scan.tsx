@@ -153,7 +153,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
               style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 72, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
               <Thumb path={p.image_path} size={52} />
               <View style={{ flex: 1 }}>
-                <T v="bold" numberOfLines={1}>{p.name}</T>
+                <T v="bold">{p.name}</T>
                 <T v="small" color={p.out_of_stock ? colors.red : colors.muted}>
                   {p.out_of_stock ? t("Out of stock") : t("{{n}} in stock", { n: formatQty(p.stock) })}
                 </T>

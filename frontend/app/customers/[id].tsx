@@ -60,7 +60,7 @@ export default function CustomerDetail() {
                   borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <T v="bold">{formatDate(b.created_at)}</T>
-                  <T v="small" numberOfLines={1}>
+                  <T v="small">
                     {b.items.map((i) => (i.quantity > 1 ? `${i.name} × ${formatQty(i.quantity)}` : i.name)).join(", ")}
                   </T>
                 </View>

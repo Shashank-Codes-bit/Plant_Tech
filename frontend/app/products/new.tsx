@@ -80,7 +80,7 @@ export default function NewProduct() {
 
   if (form) {
     return (
-      <Screen bg={colors.surface}>
+      <Screen>
         <Header title={t("New product")} onBack={() => setForm(null)} />
         <ProductForm initial={form} isNew onSave={save} saving={saving} />
       </Screen>
@@ -105,7 +105,7 @@ export default function NewProduct() {
               <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: radius.lg, backgroundColor: colors.page }}>
                 <Thumb path={p.image_path} size={52} />
                 <View style={{ flex: 1 }}>
-                  <T v="bold" numberOfLines={1}>{p.name}</T>
+                  <T v="bold">{p.name}</T>
                   <T v="small" color={p.low_stock ? colors.amber : colors.muted}>
                     {p.out_of_stock ? t("Out of stock") : p.low_stock ? t("Only {{n}} left", { n: formatQty(p.stock) }) : t("{{n}} in stock", { n: formatQty(p.stock) })}
                   </T>
@@ -126,8 +126,8 @@ export default function NewProduct() {
                   borderWidth: 2, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
                 <Thumb path={e.image_path} size={52} />
                 <View style={{ flex: 1 }}>
-                  <T v="bold" numberOfLines={1}>{e.name}{e.name_hi ? `  ·  ${e.name_hi}` : ""}</T>
-                  <T v="small" numberOfLines={1}>{e.default_category}</T>
+                  <T v="bold">{e.name}{e.name_hi ? `  ·  ${e.name_hi}` : ""}</T>
+                  <T v="small">{e.default_category}</T>
                 </View>
                 <Icon name="chevron-right" size={26} color={colors.muted} />
               </Pressable>

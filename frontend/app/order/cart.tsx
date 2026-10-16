@@ -35,7 +35,7 @@ export default function OrderCart() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Thumb path={it.image_path} size={56} icon={isLoose(it.product_id) ? "tag-outline" : "sprout"} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <T v="bold" numberOfLines={2}>{it.name}</T>
+                <T v="bold">{it.name}</T>
                 <T v="small">{t("{{price}} each", { price: formatCurrency(it.price) })}{isLoose(it.product_id) ? ` · ${t("not from stock")}` : ""}</T>
               </View>
               <T v="number">{formatCurrency(it.price * it.quantity)}</T>
@@ -68,7 +68,7 @@ export default function OrderCart() {
             <T v="label">{t("Total")}</T>
             {cart.gstIncluded > 0.004 && <T v="small">{t("Includes GST {{gst}}", { gst: formatCurrency(cart.gstIncluded) })}</T>}
           </View>
-          <T v="amount" numberOfLines={1} adjustsFontSizeToFit testID="cart-total">{formatCurrency(cart.total)}</T>
+          <T v="amount" testID="cart-total">{formatCurrency(cart.total)}</T>
         </View>
         <Button title={t("Take payment")} icon="cash-register" onPress={() => router.push("/order/pay")} testID="cart-pay" />
       </BottomBar>

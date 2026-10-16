@@ -115,9 +115,9 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | E.8 | Stock `2.5` (e.g. kg of soil) | Saved; shown as 2.5 | 3 | | |
 | E.9 | Very long name (120 characters) | Saves; list shows it on one line with "…"; bill wraps it | 2 | | |
 | E.10 | Sell a product down to 0 | Stays in the list with a red "Out of stock" badge; counted in "Low stock" | 1 | | |
-| E.11 | Low stock filter | Shows exactly the products at or below their "Warn me below" number | 1 | | |
-| E.12 | Product → Add stock 10 | Stock +10; History shows "Added +10 · you · time" | 1 | | |
-| E.13 | Remove more than in stock | Can't: stepper stops at stock, server refuses if forced | 1 | | |
+| E.11 | Products filters: Category, Stock (In / Low / Out of stock), Sort (price, stock, newest) together | Count line says "N of M products"; list matches; "Clear all" resets | 1 | | |
+| E.12 | Product → Add stock → +10 → Add | "3 → 13 in stock after this" before saving; stock and History update ("Stock added +10") | 1 | | |
+| E.13 | Product → Remove → reason "Plant died" | History shows "Plant died −N"; can't remove more than in stock | 1 | | |
 | E.14 | Edit name, category, price, warn level | Saved; old bills keep the old name and price | 1 | | |
 | E.15 | Edit → add own photo for a product that shows the shared picture | Own photo now shows; note changes to "Your own photo" | 2 | | |
 | E.16 | Owner deletes a product | Gone from list and search; old bills still show it | 1 | | |
@@ -130,7 +130,8 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | F.1 | Shop A adds "Snake Plant" with its own photo | Shop B adding Snake Plant sees that picture | 1 | | |
 | F.2 | Admin (9654346434): More → Shared pictures | List of all library plants; filters work; "New" badge on F.1's picture | 1 | | |
 | F.3 | Admin: "Looks good" on a New picture | Badge changes to Checked | 2 | | |
-| F.4 | Admin: Remove a picture | Shops without their own photo show the plant icon again | 1 | | |
+| F.4 | Admin: tap a plant → Remove picture → Remove | Asks first; then "No picture"; shops without their own photo show the plant icon again | 1 | | |
+| F.4a | Admin: edit Hindi name; Delete from library | Hindi name shows in Add product suggestions; deleted plant no longer suggested | 2 | | |
 | F.5 | Admin: New photo for a plant | Replaces it for every shop that uses the shared picture | 2 | | |
 | F.6 | Non-admin owner opens `/more/library` in the browser | Sent back to More; API returns 403 | 1 | | |
 | F.7 | A shop's own photo after F.4/F.5 | Still shows its own photo | 2 | | |
@@ -199,8 +200,12 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | I.1 | After 3 bills (Cash ₹100, UPI ₹200, Card ₹300) | Today ₹600, 3 orders, Cash/UPI/Card split right | 1 | | |
 | I.2 | Bill at 11:58 pm and 12:02 am (phone time India) | Land on different days in Orders and Reports | 2 | | |
 | I.3 | Phone set to another time zone | "Today" still means today in India | 3 | | |
-| I.4 | Orders: tap each day chip | Totals match that day's bills | 1 | | |
-| I.5 | Reports Today / Week / Month | Totals equal the sum of the bills in Orders for those days | 1 | | |
+| I.4 | Orders with no filter | Every order ever made, newest first, in days with each day's total; scrolling loads older ones; ends with "That's all the orders" | 1 | | |
+| I.4a | Orders: Dates → Today / Yesterday / This week / This month / Choose dates (from–to) | List and the green total box change together; day totals add up to the box | 1 | | |
+| I.4b | Orders: Payment → UPI, then Made by → a worker, then search a phone's last 4 digits | Each filter narrows the list; "Clear all" brings everything back | 1 | | |
+| I.4c | Orders as a worker | No "Made by" filter; only their own bills whatever they pick | 1 | | |
+| I.5 | Reports: Date, Week, Month; ◀ ▶ and tapping the date to pick a day / week / month | Totals equal Orders filtered to the same dates; can't go past today; "Back to today" | 1 | | |
+| I.5a | Reports Week | Always Monday to Sunday (e.g. 12–18 Oct) | 2 | | |
 | I.6 | Profit | Counts only items with a cost price; says "about" | 2 | | |
 | I.7 | Best sellers | Top 5 by quantity | 2 | | |
 | I.8 | Brand-new shop | Friendly empty states everywhere; nothing shows NaN, undefined or ₹NaN | 1 | | |
@@ -252,7 +257,7 @@ Owner A adds worker W (Staff → Add worker). Test with W logged in on a second 
 | N.2 | Slow network (phone hotspot on 2G) | Spinners on buttons, no double saves, no frozen screens | 1 | | |
 | N.3 | Server down (ask Claude to stop staging for 2 minutes) | Errors, then everything works again without reinstalling | 2 | | |
 | N.4 | Phone back button on every screen | Goes to the previous screen; from Home exits the app; never to Welcome/Login when logged in | 1 | | |
-| N.5 | Small phone (5", 360 dp wide) | Nothing cut off or overlapping on any screen | 1 | | |
+| N.5 | Small phone (5", 360 dp wide) | Nothing cut off or overlapping on any screen; no "…" in names or amounts | 1 | | |
 | N.6 | Phone Settings → Display: largest font + largest display size | Text bigger but no overlaps; buttons still tappable | 1 | | |
 | N.7 | Dark mode on the phone | App stays light and readable | 2 | | |
 | N.8 | Leave the app on Home for 30 min, come back | Numbers refresh when you return to the tab | 2 | | |

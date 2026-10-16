@@ -1,15 +1,16 @@
-// Pick a product's category; shows each category's GST % when the shop is GST registered.
-// "New category" adds one on the spot (GST 0%; the owner can change it in Categories).
+// Category of a product: a select field that opens a list (with each category's GST % when the shop is
+// GST registered). "New category" adds one on the spot (GST 0%; the owner can change it in Categories).
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { apiGet, apiPost } from "@/src/api";
 import { useAuth } from "@/src/auth";
+import { OptionRow, SelectField, Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
-import { Button, Chip, Field, T } from "@/src/components/ui";
-import { colors, fonts } from "@/src/theme";
+import { Button, Field, T } from "@/src/components/ui";
+import { colors } from "@/src/theme";
 import type { Category } from "@/src/types";
 
 export function useCategories() {
@@ -23,9 +24,10 @@ export function CategoryPicker({ value, onChange, label }: { value: string | nul
   const { user } = useAuth();
   const cats = useCategories();
   const gst = !!user?.business?.gst_registered;
-  const [adding, setAdding] = useState(false);
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const chosen = cats.data?.find((c) => c.id === value);
 
   async function add() {
     setBusy(true);
@@ -33,8 +35,8 @@ export function CategoryPicker({ value, onChange, label }: { value: string | nul
       const c: Category = await apiPost("/categories", { name: name.trim(), gst_percent: 0 });
       await qc.invalidateQueries({ queryKey: ["categories"] });
       onChange(c.id);
-      setAdding(false);
       setName("");
+      setOpen(false);
     } catch (e: any) {
       toast.show(e.message, "error");
     } finally {
@@ -43,24 +45,23 @@ export function CategoryPicker({ value, onChange, label }: { value: string | nul
   }
 
   return (
-    <View style={{ gap: 8 }}>
-      <T v="label">{label ?? t("Category")}</T>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+    <>
+      <SelectField label={label ?? t("Category")} value={chosen?.name} placeholder={t("Choose a category")} onPress={() => setOpen(true)}
+        testID="category-select"
+        right={chosen && gst ? <T v="bold" color={colors.inkSoft}>{t("{{n}}% GST", { n: chosen.gst_percent })}</T> : undefined} />
+      <Sheet visible={open} onClose={() => setOpen(false)} title={t("Category")}>
         {(cats.data ?? []).map((c) => (
-          <Chip key={c.id} label={c.name} active={value === c.id} testID={`cat-${c.name}`}
-            onPress={() => onChange(value === c.id ? null : c.id)}
-            right={gst ? (
-              <Text style={{ fontFamily: fonts.extrabold, fontSize: 14, color: value === c.id ? colors.white : colors.muted }}>{c.gst_percent}%</Text>
-            ) : undefined} />
+          <OptionRow key={c.id} label={c.name} sub={gst ? t("{{n}}% GST", { n: c.gst_percent }) : undefined} selected={value === c.id}
+            onPress={() => { onChange(c.id); setOpen(false); }} testID={`cat-${c.name}`} />
         ))}
-        {!adding && <Chip label={t("+ New category")} onPress={() => setAdding(true)} testID="cat-new" />}
-      </View>
-      {adding && (
-        <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
-          <Field style={{ flex: 1 }} value={name} onChangeText={setName} placeholder={t("e.g. Seeds")} autoFocus autoCapitalize="words" />
-          <Button title={t("Add")} size="md" onPress={add} loading={busy} disabled={!name.trim()} />
+        <View style={{ gap: 8, marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line }}>
+          <T v="label">{t("New category")}</T>
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
+            <Field style={{ flex: 1 }} value={name} onChangeText={setName} placeholder={t("e.g. Seeds")} autoCapitalize="words" testID="cat-new-name" />
+            <Button title={t("Add")} icon="plus" size="md" onPress={add} loading={busy} disabled={!name.trim()} testID="cat-new-add" />
+          </View>
         </View>
-      )}
-    </View>
+      </Sheet>
+    </>
   );
 }

@@ -6,10 +6,10 @@ import base64
 import os
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
@@ -158,17 +158,68 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
     return invoice
 
 
-@router.get("/invoices")
-async def list_invoices(day: str = "", search: str = "", limit: int = 200,
-                        user: dict = Depends(auth.require("sell"))):
+DATE = r"\d{4}-\d{2}-\d{2}"
+
+
+def _filters(user: dict, day: str, date_from: str, date_to: str, method: str, made_by: str, search: str) -> dict:
+    """Orders filter shared by the list and its totals. Workers only ever see their own bills."""
     q = _scope(user)
     if day:
         q["date_key"] = day
-    if search:
-        q["$or"] = [{f: {"$regex": re.escape(search), "$options": "i"}}
-                    for f in ("invoice_number", "customer_name", "customer_phone")]
-    invs = await get_db().invoices.find(q, {"_id": 0}).sort("created_at", -1).to_list(min(limit, 1000))
+    elif date_from or date_to:
+        q["date_key"] = {k: v for k, v in (("$gte", date_from), ("$lte", date_to)) if v}
+    if method:
+        q["payment_method"] = method
+    if made_by and _sees_all(user):
+        q["created_by.id"] = made_by
+    if search.strip():
+        text = re.escape(search.strip())
+        digits = re.sub(r"\D", "", search)
+        ors = [{f: {"$regex": text, "$options": "i"}} for f in ("invoice_number", "customer_name")]
+        if len(digits) >= 3:
+            ors.append({"customer_phone": {"$regex": digits[-10:]}})
+        q["$or"] = ors
+    return q
+
+
+def date_q():  # a fresh Query per parameter: FastAPI must not share one between parameters
+    return Query("", pattern=f"^({DATE})?$")
+
+
+def method_q():
+    return Query("", pattern="^(Cash|UPI|Card)?$")
+
+
+@router.get("/invoices")
+async def list_invoices(day: str = date_q(), date_from: str = date_q(), date_to: str = date_q(),
+                        method: str = method_q(), made_by: str = "", search: str = Query("", max_length=60),
+                        before: str = "", limit: int = Query(50, ge=1, le=200),
+                        user: dict = Depends(auth.require("sell"))):
+    """Newest first. For the next page pass `before` = created_at of the last bill you got."""
+    q = _filters(user, day, date_from, date_to, method, made_by, search)
+    if before:
+        q["created_at"] = {"$lt": before}
+    invs = await get_db().invoices.find(q, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     return [_summary(i) for i in invs]
+
+
+@router.get("/invoices/summary")
+async def invoices_summary(day: str = date_q(), date_from: str = date_q(), date_to: str = date_q(),
+                           method: str = method_q(), made_by: str = "", search: str = Query("", max_length=60),
+                           user: dict = Depends(auth.require("sell"))):
+    """Totals for the same filters as the list: all of them, not just the loaded page, and per day."""
+    q = _filters(user, day, date_from, date_to, method, made_by, search)
+    invs = await get_db().invoices.find(q, {"_id": 0, "grand_total": 1, "payment_method": 1, "date_key": 1}).to_list(200000)
+    by_method = {"Cash": 0.0, "UPI": 0.0, "Card": 0.0}
+    by_day: dict[str, dict] = {}
+    for i in invs:
+        by_method[i.get("payment_method", "Cash")] = by_method.get(i.get("payment_method", "Cash"), 0) + i["grand_total"]
+        d = by_day.setdefault(i["date_key"], {"orders": 0, "sales": 0.0})
+        d["orders"] += 1
+        d["sales"] += i["grand_total"]
+    return {"orders": len(invs), "sales": money(sum(i["grand_total"] for i in invs)),
+            "by_method": {k: money(v) for k, v in by_method.items()},
+            "by_day": {k: {"orders": v["orders"], "sales": money(v["sales"])} for k, v in by_day.items()}}
 
 
 async def _get_invoice(user: dict, invoice_id: str) -> dict:
@@ -245,29 +296,36 @@ async def today(user: dict = Depends(auth.require("sell"))):
             "by_method": {k: money(v) for k, v in by_method.items()}, "recent": [_summary(i) for i in invs[:20]]}
 
 
-def _report_buckets(range_: str) -> tuple[list[str], list[str], callable]:
-    """(day keys to load, bucket labels, invoice -> bucket index)."""
-    today_dt = now_ist()
-    if range_ == "today":
+def _report_buckets(range_: str, anchor: date) -> tuple[list[str], list[str], callable]:
+    """(day keys to load, bucket labels, invoice -> bucket index) for the day, the Monday-Sunday week,
+    or the calendar month that contains `anchor`."""
+    if range_ == "day":
         labels = ["8am", "10am", "12pm", "2pm", "4pm", "6pm", "8pm"]
 
         def idx(inv):
             hour = datetime.fromisoformat(inv["created_at"]).astimezone(IST).hour
             return min(max((hour - 8) // 2, 0), len(labels) - 1)
-        return [date_key(today_dt)], labels, idx
+        return [anchor.isoformat()], labels, idx
     if range_ == "week":
-        days = [today_dt - timedelta(days=d) for d in range(6, -1, -1)]
-        keys = [date_key(d) for d in days]
-        return keys, [d.strftime("%a") for d in days], lambda inv: keys.index(inv["date_key"])
-    first = today_dt.replace(day=1)
-    keys = [date_key(first + timedelta(days=d)) for d in range((today_dt - first).days + 1)]
-    return keys, ["Wk 1", "Wk 2", "Wk 3", "Wk 4"], lambda inv: min((int(inv["date_key"][-2:]) - 1) // 7, 3)
+        monday = anchor - timedelta(days=anchor.weekday())
+        days = [monday + timedelta(days=d) for d in range(7)]
+        keys = [d.isoformat() for d in days]
+        return keys, [f"{d.strftime('%a')} {d.day}" for d in days], lambda inv: keys.index(inv["date_key"])
+    first = anchor.replace(day=1)
+    last = (first + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    keys = [(first + timedelta(days=d)).isoformat() for d in range(last.day)]
+    labels = [f"{s}–{min(s + 6, last.day)}" for s in range(1, last.day + 1, 7)]
+    return keys, labels, lambda inv: (int(inv["date_key"][-2:]) - 1) // 7
 
 
 @router.get("/reports/sales")
-async def sales_report(range: Literal["today", "week", "month"] = "week",  # noqa: A002
+async def sales_report(range: Literal["day", "today", "week", "month"] = "week",  # noqa: A002
+                       on: str = Query("", alias="date", pattern=f"^({DATE})?$"),
                        user: dict = Depends(auth.require("reports"))):
-    keys, labels, idx = _report_buckets(range)
+    """Sales for a day, a week (Monday to Sunday) or a month; `date` picks which one (default: today)."""
+    anchor = datetime.strptime(on, "%Y-%m-%d").date() if on else now_ist().date()
+    range = "day" if range == "today" else range  # noqa: A001
+    keys, labels, idx = _report_buckets(range, anchor)
     invs = await get_db().invoices.find({"business_id": user["business_id"], "date_key": {"$in": keys}},
                                         {"_id": 0}).to_list(50000)
     buckets = [0.0] * len(labels)
@@ -282,7 +340,8 @@ async def sales_report(range: Literal["today", "week", "month"] = "week",  # noq
             if it.get("cost_price"):  # profit only counts items with a known cost
                 profit += (it.get("net", it["price"] * it["quantity"]) - it.get("tax", 0)) - it["cost_price"] * it["quantity"]
     top = sorted(sold.items(), key=lambda kv: -kv[1])[:5]
-    return {"range": range, "sales": money(sum(i["grand_total"] for i in invs)), "orders": len(invs),
+    return {"range": range, "start": keys[0], "end": keys[-1],
+            "sales": money(sum(i["grand_total"] for i in invs)), "orders": len(invs),
             "profit": money(profit), "buckets": [{"label": l, "sales": money(v)} for l, v in zip(labels, buckets)],
             "by_method": {k: money(v) for k, v in by_method.items()},
             "top": [{"name": n, "quantity": q} for n, q in top]}

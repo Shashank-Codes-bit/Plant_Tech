@@ -52,8 +52,8 @@ export default function Customers() {
                 <T v="number" color={colors.greenDark}>{c.name.charAt(0).toUpperCase()}</T>
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <T v="bold" numberOfLines={1}>{c.name}</T>
-                <T v="small" numberOfLines={1}>{formatPhone(c.phone) || t("No phone")}</T>
+                <T v="bold">{c.name}</T>
+                <T v="small">{formatPhone(c.phone) || t("No phone")}</T>
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <T v="bold">{formatCurrency(c.total_purchases)}</T>

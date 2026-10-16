@@ -56,7 +56,7 @@ export function Header({ title, onBack, right, close, testID }: {
       >
         <Icon name={close ? "close" : "chevron-left"} size={32} color={colors.ink} />
       </Pressable>
-      {!!title && <T v="title" style={{ flex: 1 }} numberOfLines={1}>{title}</T>}
+      {!!title && <T v="title" style={{ flex: 1 }}>{title}</T>}
       {right}
     </View>
   );
@@ -111,7 +111,7 @@ export function Button({ title, onPress, variant = "primary", icon, size = "lg",
       }, style]}
     >
       {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={size === "lg" ? 28 : 24} color={fg} /> : null}
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={2}
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE}
         style={{ fontFamily: fonts.bold, fontSize: size === "lg" ? 20 : 18, lineHeight: size === "lg" ? 26 : 23, color: fg, textAlign: "center", flexShrink: 1 }}>{title}</Text>
     </Pressable>
   );
@@ -207,7 +207,7 @@ export function Segmented<V extends string>({ options, value, onChange }: {
         <Pressable key={o.value} testID={`seg-${o.value}`} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: o.value === value }}
           style={{ flex: 1, minHeight: 50, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 12, alignItems: "center", justifyContent: "center",
             backgroundColor: o.value === value ? colors.green : "transparent" }}>
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={2}
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE}
             style={{ fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, textAlign: "center", color: o.value === value ? colors.white : colors.ink }}>{o.label}</Text>
         </Pressable>
       ))}
@@ -281,8 +281,8 @@ export function Row({ title, subtitle, left, right, onPress, testID, chevron }: 
         borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
       {left}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <T v="bold" numberOfLines={1}>{title}</T>
-        {!!subtitle && <T v="small" numberOfLines={1}>{subtitle}</T>}
+        <T v="bold">{title}</T>
+        {!!subtitle && <T v="small">{subtitle}</T>}
       </View>
       {right}
       {chevron && <Icon name="chevron-right" size={26} color={colors.muted} />}

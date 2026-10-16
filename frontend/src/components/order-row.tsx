@@ -27,8 +27,8 @@ export function OrderRow({ o, showBy }: { o: OrderSummary; showBy?: boolean }) {
       style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 10, minHeight: 68,
         borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <T v="bold" numberOfLines={1}>{o.customer_name || t("Walk-in customer")}</T>
-        <T v="small" numberOfLines={1}>{meta}</T>
+        <T v="bold">{o.customer_name || t("Walk-in customer")}</T>
+        <T v="small">{meta}</T>
       </View>
       <T v="number">{formatCurrency(o.grand_total)}</T>
     </Pressable>

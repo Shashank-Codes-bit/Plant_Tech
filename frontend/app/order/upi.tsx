@@ -37,7 +37,7 @@ export default function OrderUpi() {
           <View style={{ padding: 18, borderRadius: radius.xl, borderWidth: 2, borderColor: colors.line, backgroundColor: colors.white }} testID="upi-qr">
             <QRCode value={upiLink(b.upi_id, b.name, cart.total)} size={240} color={colors.ink} backgroundColor={colors.white} />
           </View>
-          <T v="amount" numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(cart.total)}</T>
+          <T v="amount">{formatCurrency(cart.total)}</T>
           <T v="small" style={{ textAlign: "center" }}>{t("To: {{shop}} · {{upi}}", { shop: b.name, upi: b.upi_id })}</T>
         </View>
       )}

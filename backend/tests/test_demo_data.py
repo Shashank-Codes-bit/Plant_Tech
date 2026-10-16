@@ -29,12 +29,12 @@ def test_seed_then_ticks(client):
     assert all(p["stock"] >= 0 for p in products)
     assert {c["name"] for c in shop.get("/api/categories").json()} >= {"Garden Tools", "Herbs", "Pots"}
 
-    today = shop.get("/api/dashboard/today").json()
+    today = shop.get("/api/invoices/summary", params={"day": NOW.date().isoformat()}).json()
     assert today["orders"] > 0 and today["sales"] > 0
     invs = run(db.invoices.find({"demo": True}, {"_id": 0, "created_at": 1, "date_key": 1}).to_list(5000))
     assert all(datetime.fromisoformat(i["created_at"]) <= NOW for i in invs)  # nothing from the future
     assert min(i["date_key"] for i in invs) >= (NOW - timedelta(days=30)).date().isoformat()
-    month = shop.get("/api/reports/sales?range=month").json()
+    month = shop.get("/api/reports/sales", params={"range": "month", "date": NOW.date().isoformat()}).json()
     assert month["orders"] > 100 and month["profit"] > 0 and month["top"]
     assert len(shop.get("/api/customers").json()) == 18
 

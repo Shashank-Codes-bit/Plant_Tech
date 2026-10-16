@@ -17,7 +17,7 @@ export type StockEntry = {
 
 export type LibraryEntry = {
   id: string; name: string; name_hi: string; botanical: string; default_category: string;
-  image_path: string | null; image_status: "new" | "live" | null; source: "seed" | "shop";
+  image_path: string | null; image_status: "new" | "live" | "none" | null; source: "seed" | "shop";
 };
 
 export type Category = { id: string; name: string; gst_percent: number; product_count?: number };

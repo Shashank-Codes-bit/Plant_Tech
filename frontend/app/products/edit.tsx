@@ -10,7 +10,6 @@ import { confirm } from "@/src/confirm";
 import { ProductForm } from "@/src/components/product-form";
 import { useToast } from "@/src/components/toast";
 import { Button, Header, LoadingView, Screen } from "@/src/components/ui";
-import { colors } from "@/src/theme";
 import type { Product } from "@/src/types";
 
 export default function EditProduct() {
@@ -51,7 +50,7 @@ export default function EditProduct() {
   }
 
   return (
-    <Screen bg={colors.surface}>
+    <Screen>
       <Header title={t("Edit product")} />
       {!p ? <LoadingView /> : (
         <ProductForm isNew={false} onSave={save} saving={saving}

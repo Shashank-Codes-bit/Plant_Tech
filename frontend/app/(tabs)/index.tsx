@@ -34,7 +34,7 @@ export default function Home() {
           {!!user?.business?.logo_path && <Thumb path={user.business.logo_path} size={52} icon="store" tint={colors.surface} contain />}
           <View style={{ flex: 1 }}>
             <T v="label">{isOwner ? formatToday() : shop}</T>
-            <T v="title" numberOfLines={1}>{isOwner ? shop : t("Hello, {{name}}", { name: user?.name ?? "" })}</T>
+            <T v="title">{isOwner ? shop : t("Hello, {{name}}", { name: user?.name ?? "" })}</T>
           </View>
           {isOwner ? (
             <Pressable accessibilityLabel={t("Account")} onPress={() => router.push("/(tabs)/more")}
@@ -46,18 +46,18 @@ export default function Home() {
 
         {can("sell") ? (
           <Pressable testID="home-new-order" accessibilityRole="button" onPress={() => router.push("/order/scan")}
-            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 16, padding: 20, minHeight: 112, borderRadius: radius.xl,
-              backgroundColor: pressed ? colors.greenDark : colors.green })}>
-            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
-              <Icon name="cart-plus" size={34} color={colors.green} />
+            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 18, paddingHorizontal: 16, minHeight: 100,
+              borderRadius: radius.xl, backgroundColor: pressed ? colors.greenDark : colors.green })}>
+            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+              <Icon name="cart-plus" size={30} color={colors.green} />
             </View>
             <View style={{ flex: 1 }}>
               <T v="title" color={colors.white}>{t("New order")}</T>
-              <T v="body" color={colors.greenOnDark}>
+              <T v="label" color={colors.greenOnDark}>
                 {cart.count ? t("{{n}} items waiting · {{total}}", { n: cart.count, total: formatCurrency(cart.total) }) : t("Scan or search a plant")}
               </T>
             </View>
-            <Icon name="chevron-right" size={34} color={colors.white} />
+            <Icon name="chevron-right" size={28} color={colors.white} />
           </Pressable>
         ) : (
           <Card>
@@ -73,12 +73,15 @@ export default function Home() {
               <T v="label">{t("Today's sales")}</T>
               <T v="bold" color={colors.inkSoft}>{d.orders === 1 ? t("1 order") : t("{{n}} orders", { n: d.orders })}</T>
             </View>
-            <T v="amount" numberOfLines={1} adjustsFontSizeToFit testID="home-sales">{formatCurrency(d.sales)}</T>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {(["Cash", "UPI", "Card"] as const).map((m) => (
-                <View key={m} style={{ flex: 1, padding: 10, borderRadius: radius.md, backgroundColor: colors.page }}>
-                  <T v="label">{t(m)}</T>
-                  <T v="number" numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 20 }}>{formatCurrency(d.by_method[m])}</T>
+            <T v="amount" testID="home-sales">{formatCurrency(d.sales)}</T>
+            {/* One row per payment type: full amounts at any screen width, nothing cut off. */}
+            <View style={{ borderRadius: radius.md, backgroundColor: colors.page, paddingHorizontal: 14 }}>
+              {(["Cash", "UPI", "Card"] as const).map((m, i) => (
+                <View key={m} style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48,
+                  borderTopWidth: i ? 1 : 0, borderTopColor: colors.line }}>
+                  <Icon name={m === "Cash" ? "cash" : m === "UPI" ? "qrcode" : "credit-card-outline"} size={22} color={colors.inkSoft} />
+                  <T v="bold" style={{ flex: 1 }}>{t(m)}</T>
+                  <T v="number" style={{ fontSize: 20 }}>{formatCurrency(d.by_method[m])}</T>
                 </View>
               ))}
             </View>

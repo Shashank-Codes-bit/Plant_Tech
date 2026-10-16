@@ -1,15 +1,16 @@
 // Product details form, used by Add product and Edit product.
 // Picture: the shop's own photo wins; otherwise the shared library picture is shown.
 import { useState } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
+import { Image } from "expo-image";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
-import { uploadImage } from "@/src/api";
+import { fileUrl, uploadImage } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { CategoryPicker } from "@/src/components/category-picker";
 import { useToast } from "@/src/components/toast";
-import { BottomBar, Button, Field, T, Thumb } from "@/src/components/ui";
+import { BottomBar, Button, Field, Icon, T } from "@/src/components/ui";
 import { pickFromGallery, takePhoto } from "@/src/hooks/useImageCapture";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -53,7 +54,6 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
   }
 
   const picture = v.photo_path || v.library_image;
-  const note = v.photo_path ? t("Your own photo") : v.library_image ? t("Shared picture. Add your own photo to use it instead.") : t("No picture yet");
   const ok = !!v.name.trim() && v.selling_price !== "" && !uploading;
 
   function save() {
@@ -71,42 +71,63 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
 
   return (
     <>
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
-        <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
-          <Thumb path={picture} size={96} />
-          <View style={{ flex: 1, gap: 8 }}>
-            <T v="small">{uploading ? t("Uploading…") : note}</T>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Button title={t("Photo")} icon="camera" variant="outline" size="md" style={{ flex: 1, paddingHorizontal: 8 }} onPress={() => photo("camera")} />
-              <Button title={t("Gallery")} icon="image-outline" variant="outline" size="md" style={{ flex: 1, paddingHorizontal: 8 }} onPress={() => photo("gallery")} />
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 14 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
+        <Section title={t("Picture")}>
+          <View style={{ flexDirection: "row", gap: 14 }}>
+            <Pressable onPress={() => photo("gallery")} accessibilityLabel={t("Choose a picture")}
+              style={{ width: 112, height: 112, borderRadius: radius.lg, overflow: "hidden", backgroundColor: colors.greenTint,
+                alignItems: "center", justifyContent: "center", borderWidth: picture ? 0 : 2, borderStyle: "dashed", borderColor: colors.greenMid }}>
+              {picture ? <Image source={{ uri: fileUrl(picture) }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+                : uploading ? <ActivityIndicator color={colors.green} /> : <Icon name="camera-plus-outline" size={40} color={colors.greenMid} />}
+            </Pressable>
+            <View style={{ flex: 1, gap: 8, justifyContent: "center" }}>
+              <View>
+                <T v="bold">{uploading ? t("Uploading…") : v.photo_path ? t("Your own photo") : v.library_image ? t("Shared picture") : t("No picture yet")}</T>
+                <T v="caption">{v.photo_path ? t("Shown on bills and in your list") : v.library_image ? t("Add your own photo to use it instead") : t("Customers recognise plants faster")}</T>
+              </View>
+              <Button title={t("Take photo")} icon="camera" variant="outline" size="md" style={{ paddingHorizontal: 10, minHeight: 50 }} onPress={() => photo("camera")} />
+              <Button title={t("From gallery")} icon="image-outline" variant="outline" size="md" style={{ paddingHorizontal: 10, minHeight: 50 }} onPress={() => photo("gallery")} />
             </View>
           </View>
-        </View>
+        </Section>
 
-        <Field label={t("Product name")} value={v.name} onChangeText={(name) => set({ name })} autoCapitalize="words" testID="product-name" />
-        <CategoryPicker value={v.category_id} onChange={(category_id) => set({ category_id })} />
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          <Field style={{ flex: 1 }} label={gst ? t("Price ₹ (incl. GST)") : t("Price ₹")} value={v.selling_price} keyboardType="decimal-pad"
-            onChangeText={(x) => set({ selling_price: num(x) })} placeholder="0" testID="product-price" inputStyle={{ fontSize: 24 }} />
-          {isNew && (
-            <Field style={{ flex: 1 }} label={t("How many now")} value={v.stock} keyboardType="decimal-pad"
-              onChangeText={(x) => set({ stock: num(x) })} placeholder="0" testID="product-stock" inputStyle={{ fontSize: 24 }} />
-          )}
-        </View>
-        <View style={{ flexDirection: "row", gap: 12 }}>
+        <Section title={t("Details")}>
+          <Field label={t("Product name")} value={v.name} onChangeText={(name) => set({ name })} autoCapitalize="words" testID="product-name"
+            placeholder={t("e.g. Money Plant")} />
+          <CategoryPicker value={v.category_id} onChange={(category_id) => set({ category_id })} />
+        </Section>
+
+        <Section title={t("Price and stock")}>
+          <Field label={gst ? t("Selling price ₹ (includes GST)") : t("Selling price ₹")} value={v.selling_price} keyboardType="decimal-pad"
+            onChangeText={(x) => set({ selling_price: num(x) })} placeholder="0" testID="product-price" inputStyle={{ fontSize: 26 }} />
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            {isNew && (
+              <Field style={{ flex: 1 }} label={t("Stock now")} value={v.stock} keyboardType="decimal-pad"
+                onChangeText={(x) => set({ stock: num(x) })} placeholder="0" testID="product-stock" />
+            )}
+            <Field style={{ flex: 1 }} label={t("Warn me below")} value={v.min_stock} keyboardType="decimal-pad"
+              onChangeText={(x) => set({ min_stock: num(x) })} testID="product-min" />
+          </View>
           {isOwner && (
-            <Field style={{ flex: 1 }} label={t("Cost price ₹")} hint={t("Only the owner sees this")} value={v.cost_price} keyboardType="decimal-pad"
+            <Field label={t("Cost price ₹")} hint={t("For profit in reports. Only you see this.")} value={v.cost_price} keyboardType="decimal-pad"
               onChangeText={(x) => set({ cost_price: num(x) })} placeholder="0" testID="product-cost" />
           )}
-          <Field style={{ flex: 1 }} label={t("Warn me below")} hint={t("Low stock alert")} value={v.min_stock} keyboardType="decimal-pad"
-            onChangeText={(x) => set({ min_stock: num(x) })} testID="product-min" />
-        </View>
+        </Section>
         {extra}
       </KeyboardAwareScrollView>
       <BottomBar>
         <Button title={t("Save product")} icon="content-save" onPress={save} loading={saving} disabled={!ok} testID="product-save" />
       </BottomBar>
     </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+      <T v="label" style={{ fontSize: 14, letterSpacing: 0.6, textTransform: "uppercase", color: colors.muted }}>{title}</T>
+      {children}
+    </View>
   );
 }
 

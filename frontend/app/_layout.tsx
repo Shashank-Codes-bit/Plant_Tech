@@ -14,6 +14,7 @@ import { useEffect } from "react";
 
 import { AuthProvider } from "@/src/auth";
 import { CartProvider } from "@/src/cart-context";
+import { ConfirmHost } from "@/src/confirm";
 import { ErrorBoundary } from "@/src/components/error-boundary";
 import { ToastProvider } from "@/src/components/toast";
 import { queryClient } from "@/src/query-client";
@@ -48,6 +49,7 @@ export default function RootLayout() {
                   <ToastProvider>
                     <StatusBar style="dark" />
                     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.page } }} />
+                    <ConfirmHost />
                   </ToastProvider>
                 </CartProvider>
               </AuthProvider>

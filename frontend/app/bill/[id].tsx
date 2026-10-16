@@ -76,7 +76,7 @@ export default function Bill() {
             <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.green, alignItems: "center", justifyContent: "center", marginBottom: 6 }}>
               <Icon name="check-bold" size={50} color={colors.white} />
             </View>
-            <T v="amount" numberOfLines={1} adjustsFontSizeToFit>{t("{{amount}} paid", { amount: formatCurrency(inv.grand_total) })}</T>
+            <T v="amount">{t("{{amount}} paid", { amount: formatCurrency(inv.grand_total) })}</T>
             <T v="body" color={colors.inkSoft}>{[t(inv.payment_method), t("Bill {{no}}", { no: inv.invoice_number }), formatTime(inv.created_at)].join(" · ")}</T>
             <T v="small">{t("Stock updated automatically")}</T>
           </View>
