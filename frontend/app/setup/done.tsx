@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { apiPut } from "@/src/api";
@@ -10,10 +10,13 @@ import { Button, Icon, IconName, Screen, T } from "@/src/components/ui";
 import { colors, radius, spacing } from "@/src/theme";
 import { resetTo } from "@/src/nav";
 
-function Option({ icon, title, subtitle, onPress, testID }: { icon: IconName; title: string; subtitle: string; onPress: () => void; testID?: string }) {
+function Option({ icon, title, subtitle, onPress, disabled, testID }: {
+  icon: IconName; title: string; subtitle: string; onPress: () => void; disabled?: boolean; testID?: string;
+}) {
   return (
-    <Pressable testID={testID} onPress={onPress}
-      style={{ flexDirection: "row", alignItems: "center", gap: 16, padding: 14, minHeight: 80, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.lineStrong }}>
+    <Pressable testID={testID} onPress={onPress} disabled={disabled} accessibilityState={{ disabled }}
+      style={{ flexDirection: "row", alignItems: "center", gap: 16, padding: 14, minHeight: 80, borderRadius: radius.lg, borderWidth: 2,
+        borderColor: colors.lineStrong, opacity: disabled ? 0.5 : 1 }}>
       <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: colors.greenTint, alignItems: "center", justifyContent: "center" }}>
         <Icon name={icon} size={30} color={colors.green} />
       </View>
@@ -30,22 +33,33 @@ export default function SetupDone() {
   const router = useRouter();
   const toast = useToast();
   const { user, refresh } = useAuth();
-  const [saved, setSaved] = useState(false);
+  const [state, setState] = useState<"saving" | "saved" | "failed">("saving");
+  const saved = state === "saved";
+
+  // Every choice below waits for this: until the shop is marked set up, the tabs send owners back to setup.
+  const save = async (): Promise<"saved" | "failed"> => {
+    try {
+      await apiPut("/business", { onboarding_done: true });
+      const u = await refresh();
+      if (!u?.business?.onboarding_done) throw new Error(t("Your shop could not be saved. Please try again."));
+      return "saved";
+    } catch (e: any) {
+      toast.show(e.message, "error");
+      return "failed";
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        await apiPut("/business", { onboarding_done: true });
-        await refresh();
-        setSaved(true);
-      } catch (e: any) {
-        toast.show(e.message, "error");
-      }
-    })();
+    (async () => setState(await save()))();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const go = (href: any) => resetTo(router, href);
+  const retry = async () => {
+    setState("saving");
+    setState(await save());
+  };
+
+  const go = (href: Href, then?: Href) => resetTo(router, href, then);
 
   return (
     <Screen bg={colors.surface}>
@@ -58,10 +72,12 @@ export default function SetupDone() {
       </View>
       <View style={{ flex: 1, gap: 12, padding: spacing.xl }}>
         <Option icon="sprout" title={t("Add my products")} subtitle={t("Type a name or take a photo")} testID="setup-add-products"
-          onPress={() => { go("/(tabs)/products"); setTimeout(() => router.push("/products/new"), 50); }} />
+          disabled={!saved} onPress={() => go("/(tabs)/products", "/products/new")} />
         <Option icon="account-plus" title={t("Add an employee")} subtitle={t("Give each employee their own login")}
-          onPress={() => { go("/(tabs)"); setTimeout(() => router.push("/more/staff-edit"), 50); }} />
+          disabled={!saved} onPress={() => go("/(tabs)", "/more/staff-edit")} />
+        {state === "saving" && <T v="small" color={colors.muted} style={{ textAlign: "center" }}>{t("Saving your shop")}</T>}
         <View style={{ flex: 1 }} />
+        {state === "failed" && <Button title={t("Try again")} icon="refresh" variant="outline" onPress={retry} testID="setup-retry" />}
         <Button title={t("Start selling")} icon="cart" onPress={() => go("/(tabs)")} disabled={!saved} testID="setup-start" />
       </View>
     </Screen>

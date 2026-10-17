@@ -79,6 +79,7 @@ Known limits, so a ❌ here is "expected for now". Decide if any must change bef
 | C.10 | Kill the app on step 3, reopen | Comes back to setup with steps 1–2 already filled | 1 | | |
 | C.11 | Back from step 4 to 1 and forward again | Typed values still there | 2 | | |
 | C.12 | Done → "Add my products" / "Add a employee" / "Start selling" | Each opens the right screen; back button then goes to Home, never back into setup | 1 | | |
+| C.12a | On a slow connection, tap "Add my products" the moment Done appears | Options stay dimmed with "Saving your shop" until saved; then Add product opens, and closing it shows Products (never setup step 1) | 1 | | |
 
 ## D. Roles: what a employee can and can't do
 Owner A adds employee W (Employees → Manage → Add employee). Test with W logged in on a second phone or the browser.

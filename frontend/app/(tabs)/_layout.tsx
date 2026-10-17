@@ -1,12 +1,14 @@
 // Bottom tabs. Owner: Home · Orders · Products · Customers · More.
 // Worker: the same, minus what the owner hasn't allowed, and "Me" instead of More.
-import { Redirect, Tabs } from "expo-router";
+import { useEffect } from "react";
+import { Redirect, Tabs, useRouter } from "expo-router";
 import type { ColorValue } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/src/auth";
 import { Icon, IconName } from "@/src/components/ui";
+import { takePendingOpen } from "@/src/nav";
 import { colors, fonts } from "@/src/theme";
 
 const icon = (name: IconName) => function TabIcon({ color }: { color: ColorValue }) {
@@ -16,7 +18,16 @@ const icon = (name: IconName) => function TabIcon({ color }: { color: ColorValue
 export default function TabsLayout() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { ready, user, isOwner, can } = useAuth();
+  const showing = ready && !!user && !(isOwner && !user.business?.onboarding_done);
+
+  useEffect(() => {
+    if (!showing) return;
+    const next = takePendingOpen(); // e.g. Add product, asked for on the last setup screen
+    if (next) router.push(next);
+  }, [showing, router]);
+
   if (!ready) return null;
   if (!user) return <Redirect href="/welcome" />;
   if (isOwner && !user.business?.onboarding_done) return <Redirect href="/setup/shop" />;
