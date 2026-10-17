@@ -1,4 +1,4 @@
-# Hara Hisaab: where we are (session notes, 18 Oct 2026)
+# Hara Hisaab: where we are (session notes, 18 Oct 2026, end of day)
 
 Hand-over notes so the next session can pick up without the old chat. No secrets here: keys and
 passwords live only in the VM's `deploy/.env` and in EAS, and the owner enters them.
@@ -30,7 +30,11 @@ passwords live only in the VM's `deploy/.env` and in EAS, and the owner enters t
 - **Owner's browser test app:** `nurserypos-web-staging` at http://localhost:8083, pointed at the staging API.
   - **One web server at a time:** stop 8082 before starting 8083 and vice versa. Two web servers with `--clear` collide (EBUSY).
   - **Stale route types:** after adding route files, restart the dev server if `tsc` complains about typed routes.
-- **Phone:** the QA APK, "Hara Hisaab QA" (`com.planteck.nurserypos.qa`, EAS profile `staging`, channel staging). **The owner's phone still runs an APK older than 86c0b9e; it needs the new 1.1.0 build** (expo-image-manipulator is a new native module, so an OTA update can't deliver this round).
+- **Phone:** the QA APK, "Hara Hisaab QA" (`com.planteck.nurserypos.qa`, EAS profile `staging`, channel staging).
+  - **Current QA build: 1.1.0 (versionCode 2), EAS build `50a49b3b-4d1f-442d-8da0-b49ddf364d04`, built 18 Oct 2026 from d37d61f** after the owner's browser go. APK: https://expo.dev/artifacts/eas/-5E0RBUTgsR_KA61vnKF033F5yPUIQ4OT78eih41k_w.apk (shared as a link; Expo keeps artifacts only for a limited time, so rebuild if it expires).
+  - It installs over the old QA app and keeps the login (same app ID and keystore).
+  - **OTA updates:** runtime is `appVersion`, so updates to channel `staging` now reach only 1.1.0 phones. Still no OTA or build without the owner's go.
+  - **How to build:** `npx eas-cli@latest build --profile staging --platform android --non-interactive --no-wait` from `frontend/` (logged in as the owner's Expo account; run it from PowerShell, the Bash sandbox blocks network).
 - **Backend tests:** pytest with mongomock (67 passing).
 - **App checks:** `npx tsc --noEmit`, `npx eslint app src` (warnings only, no errors) and `npm run i18n:check`. The package manager is yarn 1 (`npx yarn@1.22.22 add …`; `npx expo install` fails without yarn on PATH).
 
@@ -49,14 +53,16 @@ passwords live only in the VM's `deploy/.env` and in EAS, and the owner enters t
 
 **Checked in the local browser:** onboarding race (slow network), laptop / bill / not-a-bill alerts, similar products on a new item, Bill without GST through to the printed bill, profit field and suggestion, crop screen (square and free, drag, Use photo), two-page bill → new supplier → Suppliers detail, chips fitting at 360 px, Hindi/Hinglish search.
 
+**Owner's browser test:** passed on 18 Oct ("looks good"); the 1.1.0 QA APK was built the same day.
+
 ## Open items for next session
-1. **Hindi on a real phone:** check QA section T (especially T.7, clipped vowel marks at large font) once the 1.1.0 APK is installed.
-2. **Owner's browser test** of everything above at http://localhost:8083, then the go for the **1.1.0 QA APK** (needed for the crop module) and the phone checks: QA sections O (crop), I.11–I.13 (safe area, sheets, keyboard), M.6–M.11 (camera pages), S.
+1. **Phone checks on the 1.1.0 QA APK** (the owner is installing it): QA sections O (crop: dragging, photos taken sideways come out upright, back button), I.11–I.13 (bottom buttons, sheets, keyboard), M.6–M.11 (bill pages taken one after another with the camera), S (suppliers) and T (Hindi; especially T.7, no clipped vowel marks at the largest font). Fix whatever the owner reports.
+2. **Do not move to production yet** (owner, 18 Oct). `main` stays on 19ca6f3 (the old single-shop version); no merge of `staging` into `main` until the owner says so.
 3. **Staging backfill of catalogue names:** `docker compose exec web python enrich_library.py --limit 50` in `~/Plant_Tech-staging` (one small AI call per shop-made entry). Not run yet.
 4. **Login-wait fix (still waiting for the owner's OK).** After a page reload, a screen opened by direct link (e.g. `/more/shop`) can query before the saved login is read and spin or show "Please log in". Proposed fix: render the root `<Stack/>` only once `useAuth().ready` is true (`app/_layout.tsx`).
 5. **Welcome page and brand polish:** owner picks A / B / C on the design canvas (https://claude.ai/artifact/JNyyF5Zo4hHZAezhMRRwED, version 12), then build (see previous notes in git history).
 6. **Plant identification upgrade:** research done, no code (Opus with higher effort, top 3 answers, match against the shop's own photos, optional Pl@ntNet).
-7. **Production release:** after staging passes (QA-CHECKLIST section R). Prod still runs the old single-shop version.
+7. **Production release:** only when the owner asks (QA-CHECKLIST section R). Prod still runs the old single-shop version.
 
 ## Demo shop
 - **Account:** owner 9654346434 on staging (also the admin), "Green House" shop. It has 25 plants, 15 products, 45 customers and ~400 orders.
