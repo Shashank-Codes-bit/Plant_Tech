@@ -69,10 +69,24 @@ class InvoiceItem(BaseModel):
     purchase_price: float
 
 
+class BillPage(BaseModel):
+    page: int
+    is_bill: bool
+    supplier: str
+    supplier_gstin: str
+    invoice_number: str
+
+
 class InvoiceScan(BaseModel):
     is_bill: bool
     reason: str
+    pages: List[BillPage]
+    same_supplier: bool
+    same_bill: bool
     supplier: str
+    supplier_phone: str
+    supplier_address: str
+    supplier_gstin: str
     invoice_number: str
     date: str
     total: float
@@ -235,27 +249,46 @@ async def identify_plant(image: bytes, catalog: list[str], categories: list[str]
     }
 
 
-async def scan_invoice(images: list[bytes]) -> dict:
-    """Read a supplier bill. is_bill is False when the photo is not a bill (or Claude gave no usable answer)."""
+async def scan_invoice(images: list[bytes], shop_name: str = "") -> dict:
+    """Read a supplier bill from one or more photos of its pages.
+
+    is_bill is False when the photos are not a bill (or Claude gave no usable answer); per page, what
+    each page shows, so the route can refuse pages of different suppliers or different bills.
+    """
+    n = len(images)
+    buyer = f"The buyer is the nursery {shop_name!r}; never report it as the supplier.\n" if shop_name.strip() else ""
     prompt = (
-        "First decide whether this photo is a supplier bill, invoice, cash memo or delivery challan:\n"
-        "- is_bill: true only for such a document; false for plants, products, people, screens or anything else\n"
+        f"These {n} photo(s) should be the page(s) of one supplier bill, invoice, cash memo or delivery challan.\n"
+        "- is_bill: true only if they show such a document; false for plants, products, people, screens or anything else\n"
         "- reason: a few words explaining is_bill\n"
+        "- pages: for each photo in order, page (1-based), is_bill, and the supplier name, supplier GSTIN and "
+        "invoice number printed on that page (empty strings when that page does not show them, e.g. a continuation page)\n"
+        "- same_supplier: false if the pages clearly come from different suppliers\n"
+        "- same_bill: false if the pages clearly come from different bills (different invoice numbers or dates)\n"
         "If is_bill is false, leave every field below empty or 0 and items empty.\n"
         "Otherwise extract the purchase invoice details:\n"
-        "- supplier, invoice_number, date (as printed): empty string if missing\n"
+        f"{buyer}"
+        "- supplier (the seller's business name), supplier_phone, supplier_address, supplier_gstin, "
+        "invoice_number, date (as printed): empty string if missing\n"
         "- total: grand total as a number, 0 if missing\n"
-        "- items: one entry per line item; purchase_price is the per-unit cost "
-        "(divide the line amount by quantity if only the amount is printed)"
+        "- items: every line item exactly once across all pages (skip subtotal, carried-forward and tax lines); "
+        "purchase_price is the per-unit cost (divide the line amount by quantity if only the amount is printed)"
     )
-    data = await _ask(SYSTEM_INVOICE, prompt, images, InvoiceScan, EFFORT_INVOICE, 8000)
+    data = await _ask(SYSTEM_INVOICE, prompt, images, InvoiceScan, EFFORT_INVOICE, 16000 if n > 1 else 8000)
     if data is None:
-        data = InvoiceScan(is_bill=False, reason="no usable answer", supplier="", invoice_number="", date="",
-                           total=0, items=[])
+        data = InvoiceScan(is_bill=False, reason="no usable answer", pages=[], same_supplier=True, same_bill=True,
+                           supplier="", supplier_phone="", supplier_address="", supplier_gstin="", invoice_number="",
+                           date="", total=0, items=[])
     return {
         "is_bill": data.is_bill,
         "reason": data.reason,
+        "pages": [pg.model_dump() for pg in data.pages],
+        "same_supplier": data.same_supplier,
+        "same_bill": data.same_bill,
         "supplier": data.supplier.strip(),
+        "supplier_phone": data.supplier_phone.strip(),
+        "supplier_address": data.supplier_address.strip(),
+        "supplier_gstin": data.supplier_gstin.strip(),
         "invoice_number": data.invoice_number.strip(),
         "date": data.date.strip(),
         "total": data.total,

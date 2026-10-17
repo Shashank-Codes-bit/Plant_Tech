@@ -277,6 +277,25 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | M.3 | Edit a quantity and cost, remove a line, add a line | Saved values used; removed line not added | 1 | | |
 | M.4 | Save | Stock goes up; History shows "Supplier bill"; new products created at cost + the shop's profit margin (60% unless changed) | 1 | | |
 | M.5 | Employee saves a supplier bill | Stock added; cost prices NOT changed | 2 | | |
+| M.6 | A 3-page bill: Take photo, then Add page twice (or pick 3 from the gallery) | Three page thumbnails, each uploads (spinner, then done); "Read 3 pages" reads all items once, none repeated | 1 | | |
+| M.7 | Remove a page (×) before reading; a page whose upload failed | Removed page is gone; a failed page shows "Upload failed" and retries on tap; Read waits until all are uploaded | 2 | | |
+| M.8 | Pages from two different suppliers | Alert "Different suppliers"; the pages stay so the wrong one can be removed | 1 | | |
+| M.9 | Two different bills of the same supplier | Alert "Different bills" | 1 | | |
+| M.10 | A plant photo among bill pages | Alert "Page not recognised" naming the page | 2 | | |
+| M.11 | Try to add a 6th page | Add page buttons disappear at 5 pages | 2 | | |
+
+## S. Suppliers (owner: More → Suppliers)
+| # | Steps | Expected | P | ✅/❌ | Notes |
+|---|---|---|---|---|---|
+| S.1 | Supplier bill from a new supplier with phone, GSTIN and address printed | Review shows "New supplier" with name and phone filled; after saving, More → Suppliers lists it with phone, GSTIN and address | 1 | | |
+| S.2 | A second bill from the same supplier ("M/s Green Farms Pvt. Ltd." vs "Green Farms", or same phone / GSTIN) | Review shows the saved supplier (green card); no second supplier is created; only missing details are filled in | 1 | | |
+| S.3 | Suppliers → Add with a name, phone or GSTIN that already exists | Refused: "This supplier already exists as …" | 1 | | |
+| S.4 | Open a supplier | Phone (Call / WhatsApp), GSTIN, address, notes, total bought, every bill; tapping a bill shows its items and page photos | 1 | | |
+| S.5 | Review: Change → pick another saved supplier, or type a new name | The bill is saved under that supplier | 1 | | |
+| S.6 | Employee with stock permission saves a supplier bill | Supplier is picked or created; employee has no Suppliers menu and cannot edit suppliers | 2 | | |
+| S.7 | Edit a supplier's name | Their old bills show the new name | 2 | | |
+| S.8 | Delete a supplier with bills / without bills | With bills: not offered; without: deleted after confirming | 2 | | |
+| S.9 | Bills saved before this update | Their suppliers appear in Suppliers with the old bills linked | 1 | | |
 
 ## N. Tough conditions (phone)
 | # | Steps | Expected | P | ✅/❌ | Notes |

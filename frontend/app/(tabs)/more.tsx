@@ -71,6 +71,8 @@ export default function More() {
               onPress={() => router.push("/more/categories")} testID="more-categories" />
             <Row title={t("Supplier bill")} subtitle={t("Add stock from a supplier bill")} chevron testID="more-supplier"
               left={<MenuIcon name="file-document-outline" tint={colors.blueTint} color={colors.blue} />} onPress={() => router.push("/more/supplier-bill")} />
+            <Row title={t("Suppliers")} subtitle={t("Contacts and bills from each supplier")} chevron testID="more-suppliers"
+              left={<MenuIcon name="truck-outline" tint={colors.blueTint} color={colors.blue} />} onPress={() => router.push("/more/suppliers")} />
             {user?.is_admin && (
               <Row title={t("Shared pictures")} subtitle={t("Visible to app administrators only")} chevron testID="more-library"
                 left={<MenuIcon name="image-multiple" tint={colors.amberTint} color={colors.amber} />} onPress={() => router.push("/more/library")} />

@@ -31,7 +31,10 @@ import server  # noqa: E402
 
 PLANT = {"kind": "plant", "reason": "a potted plant", "plant_name": "Money Plant", "scientific_name": "Epipremnum aureum", "confidence": 91,
          "alternatives": ["Pothos"], "matched_catalog_name": "Money Plant", "suggested_category": "indoor plants"}
-INVOICE = {"is_bill": True, "reason": "a printed invoice", "supplier": "Green Farms", "invoice_number": "GF-12", "date": "12/10/2026", "total": 1250,
+INVOICE = {"is_bill": True, "reason": "a printed invoice", "same_supplier": True, "same_bill": True,
+           "pages": [{"page": 1, "is_bill": True, "supplier": "Green Farms", "supplier_gstin": "", "invoice_number": "GF-12"}],
+           "supplier": "Green Farms", "supplier_phone": "98111 00000", "supplier_address": "Sohna Road, Gurugram",
+           "supplier_gstin": "", "invoice_number": "GF-12", "date": "12/10/2026", "total": 1250,
            "items": [{"name": "Snake Plant", "quantity": 5, "purchase_price": 200}]}
 
 

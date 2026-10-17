@@ -41,6 +41,17 @@ export type Customer = {
   total_purchases: number; purchase_count: number; last_purchase_at?: string; created_at: string;
 };
 
+export type Supplier = {
+  id: string; name: string; phone: string; gstin: string; address: string; notes: string; created_at: string;
+  bills: number; total: number; last_bill_at: string | null;
+};
+
+export type Purchase = {
+  id: string; supplier: string; supplier_id: string; invoice_number: string; date: string; total: number;
+  image_paths: string[]; created_at: string;
+  items: { name: string; quantity: number; purchase_price: number; product_id: string | null }[];
+};
+
 export type Business = {
   id: string; name: string; address: string; phone: string; gst_registered: boolean; gstin: string;
   upi_id: string; logo_path: string | null; footer_note: string; onboarding_done: boolean;

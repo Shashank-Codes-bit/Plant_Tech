@@ -111,6 +111,68 @@ def test_scan_invoice_refuses_a_photo_that_is_not_a_bill(client, claude):
     assert r.status_code == 422 and r.json()["code"] == "not_a_bill"
 
 
+def _pages(shop, n):
+    return [shop.post("/api/upload-base64", {"image_base64": photo_b64()}).json()["path"] for _ in range(n)]
+
+
+def _page(n, supplier="Green Farms", gstin="", number="GF-12", is_bill=True):
+    return {"page": n, "is_bill": is_bill, "supplier": supplier, "supplier_gstin": gstin, "invoice_number": number}
+
+
+def test_scan_invoice_multi_page_by_paths(client, claude):
+    shop = Shop(client)
+    paths = _pages(shop, 3)
+    claude.invoice = {**claude.invoice, "pages": [_page(1), _page(2, supplier="", number=""),
+                                                  _page(3, supplier="Green Farms Pvt Ltd")]}
+    r = shop.post("/api/ai/scan-invoice", {"image_paths": paths})
+    assert r.status_code == 200, r.text
+    assert r.json()["pages"] == 3 and r.json()["supplier"] == "Green Farms"
+    _, body = claude[-1]
+    content = body["messages"][0]["content"]
+    assert [c["type"] for c in content] == ["text", "image", "text", "image", "text", "image", "text"]
+    assert content[0]["text"] == "Page 1 of 3" and "never report it as the supplier" in content[-1]["text"]
+    # AI_DAILY_LIMIT is 5 in tests: the 3 pages used 3 scans.
+    assert shop.post("/api/ai/identify-plant", {"image_base64": photo_b64()}).status_code == 200
+    assert shop.post("/api/ai/identify-plant", {"image_base64": photo_b64()}).status_code == 200
+    assert shop.post("/api/ai/identify-plant", {"image_base64": photo_b64()}).status_code == 429
+
+
+def test_scan_rejects_mixed_suppliers(client, claude):
+    shop = Shop(client)
+    paths = _pages(shop, 2)
+    claude.invoice = {**claude.invoice, "pages": [_page(1), _page(2, supplier="Blue Pots")]}
+    assert shop.post("/api/ai/scan-invoice", {"image_paths": paths}).json()["code"] == "bill_suppliers_differ"
+    claude.invoice = {**claude.invoice, "pages": [_page(1, gstin="06ABCDE1234F1Z5"), _page(2, gstin="07ABCDE1234F1Z5")]}
+    r = shop.post("/api/ai/scan-invoice", {"image_paths": paths})
+    assert r.json()["code"] == "bill_suppliers_differ"
+    assert "different suppliers" in r.json()["detail"]
+
+
+def test_check_bill_pages_unit():
+    from routers.ai import check_bill_pages
+    ok = {"is_bill": True, "same_supplier": True, "same_bill": True}
+    assert check_bill_pages({**ok, "pages": [_page(1), _page(2, supplier="", number="")]}, 2) is None
+    assert check_bill_pages({**ok, "pages": [_page(1), _page(2, number="GF-13")]}, 2).code == "bill_numbers_differ"
+    assert check_bill_pages({**ok, "pages": [_page(1), _page(2, is_bill=False)]}, 2).params == {"page": 2}
+    assert check_bill_pages({**ok, "pages": [_page(1), _page(2, supplier="Green Farm")]}, 2) is None  # a small misread
+    assert check_bill_pages({**ok, "is_bill": False, "pages": []}, 1).code == "not_a_bill"
+    two = [_page(1), _page(2)]
+    assert check_bill_pages({**ok, "same_supplier": False, "pages": two}, 2).code == "bill_suppliers_differ"  # Claude's own view
+    assert check_bill_pages({**ok, "same_bill": False, "pages": two}, 2).code == "bill_numbers_differ"
+
+
+def test_scan_page_limits_and_other_shops_pages(client, claude):
+    a, b = Shop(client), Shop(client, phone="9811155667")
+    r = a.post("/api/ai/scan-invoice", {"image_paths": ["x"] * 6})
+    assert r.status_code == 422 and r.json()["code"] == "too_many_pages"
+    assert a.post("/api/ai/scan-invoice", {"image_paths": _pages(b, 1)}).status_code == 400
+    assert a.post("/api/ai/scan-invoice", {}).status_code == 400
+    found = a.post("/api/ai/scan-invoice", {"image_base64": photo_b64()}).json()  # older apps: one photo
+    assert found["supplier_match"] is None and found["supplier_phone"] == "98111 00000"
+    a.post("/api/suppliers", {"name": "Green Farms"})
+    assert a.post("/api/ai/scan-invoice", {"image_base64": photo_b64()}).json()["supplier_match"]["name"] == "Green Farms"
+
+
 def test_uploads(client):
     shop = Shop(client)
     r = shop.post("/api/upload-base64", {"image_base64": photo_b64((4000, 3000))})
