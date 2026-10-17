@@ -292,6 +292,19 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | N.9 | Hindi keyboard typing in every text box | Text appears correctly | 2 | | |
 | N.10 | Phone storage almost full, then Download a bill | Clear error, no crash | 3 | | |
 
+## O. Photos: the crop screen (needs the 1.1.0 app)
+| # | Steps | Expected | P | ✅/❌ | Notes |
+|---|---|---|---|---|---|
+| O.1 | Any photo (Add items, Add product, product picture, logo, supplier bill), camera and gallery | The app's own crop screen opens: the photo, a white frame, Retake and Use photo only (no rotate or flip) | 1 | | |
+| O.2 | Drag a corner, an edge, and the middle of the frame | Frame resizes / moves smoothly and never leaves the photo; it can't be made tiny | 1 | | |
+| O.3 | Product photo vs logo vs bill | Product photos keep a square frame (corners only); logos and bills crop freely | 1 | | |
+| O.4 | Use photo without touching the frame | The whole photo (or the largest square) is used | 1 | | |
+| O.5 | Retake | The camera (or gallery) opens again; the old photo is gone | 1 | | |
+| O.6 | Phone's back button / the X on the crop screen | Crop screen closes; nothing is saved or uploaded | 1 | | |
+| O.7 | Photo taken sideways and upside down | Shown upright on the crop screen and saved upright | 1 | | |
+| O.8 | Bottom buttons with gesture and 3-button navigation | Retake / Use photo sit above the phone's buttons | 1 | | |
+| O.9 | Product photo on mobile data | Upload is quick (photos are shrunk on the phone to at most 1568 px) | 2 | | |
+
 ## P. Security and abuse (API, staging only)
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|

@@ -45,7 +45,7 @@ export default function NewProduct() {
   }
 
   async function scan() {
-    const out = await takePhoto();
+    const out = await takePhoto({ aspect: 1 });
     if (out.status === "denied") toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
     if (out.status !== "ok") return;
     setScanning(true);

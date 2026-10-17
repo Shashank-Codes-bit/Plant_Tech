@@ -34,8 +34,10 @@ export default function SupplierBill() {
   const [date, setDate] = useState("");
   const [items, setItems] = useState<Item[] | null>(null);
 
+  const BILL = { hint: t("Drag the corners to fit the bill") };
+
   async function read(source: "camera" | "gallery") {
-    const out = source === "camera" ? await takePhoto() : await pickFromGallery();
+    const out = source === "camera" ? await takePhoto(BILL) : await pickFromGallery(BILL);
     if (out.status === "denied") toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
     if (out.status !== "ok") return;
     setReading(true);

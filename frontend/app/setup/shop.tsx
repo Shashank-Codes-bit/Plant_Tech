@@ -28,7 +28,8 @@ function ShopStep({ biz }: { biz: Business }) {
   const [busy, setBusy] = useState(false);
 
   async function addPhoto(source: "camera" | "gallery") {
-    const outcome = source === "camera" ? await takePhoto() : await pickFromGallery();
+    const LOGO = { hint: t("Drag the corners to fit your logo") };
+    const outcome = source === "camera" ? await takePhoto(LOGO) : await pickFromGallery(LOGO);
     if (outcome.status !== "ok") return;
     setUploading(true);
     try {

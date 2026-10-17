@@ -41,7 +41,7 @@ function ShopForm({ initial }: { initial: Business }) {
   const profitBad = profit === "" || Number(profit) > 1000;
 
   async function logo() {
-    const out = await pickFromGallery();
+    const out = await pickFromGallery({ hint: t("Drag the corners to fit your logo") });
     if (out.status !== "ok") return;
     setUploading(true);
     try {

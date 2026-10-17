@@ -42,7 +42,7 @@ export default function OrderScan() {
   const [focusSearch, setFocusSearch] = useState(0);
 
   async function capture(source: "camera" | "gallery") {
-    const out = source === "camera" ? await takePhoto() : await pickFromGallery();
+    const out = source === "camera" ? await takePhoto({ aspect: 1 }) : await pickFromGallery({ aspect: 1 });
     if (out.status === "denied") {
       toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
       return;

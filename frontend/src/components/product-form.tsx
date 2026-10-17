@@ -42,7 +42,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
   const profit = user?.business?.profit_percent ?? 60;
 
   async function photo(source: "camera" | "gallery") {
-    const out = source === "camera" ? await takePhoto() : await pickFromGallery();
+    const out = source === "camera" ? await takePhoto({ aspect: 1 }) : await pickFromGallery({ aspect: 1 });
     if (out.status === "denied") toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
     if (out.status !== "ok") return;
     setUploading(true);
