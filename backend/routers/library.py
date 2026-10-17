@@ -3,6 +3,8 @@
 Each entry is one product (mostly plants) with a name, Hindi name and default category.
 A product without a shared picture gets the first clear photo a shop takes of it
 (status "new" until an app admin checks it). Admins can add, replace or remove pictures.
+Other shops only see a picture once an admin has checked it ("live"), and never see a shop-made
+entry that is marked hidden (not a nursery item).
 """
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
@@ -41,22 +43,40 @@ async def seed_library(db):
                 "created_at": now_iso(), "updated_at": now_iso()})
 
 
-def view(entry: dict) -> dict:
-    return {k: entry.get(k) for k in ("id", "name", "name_hi", "botanical", "default_category", "image_path",
-                                      "image_status", "source")}
+def picture_for(entry: dict, business_id: str | None) -> str | None:
+    """The shared picture this shop may see: checked ones, or the one its own photo filled. None = admin."""
+    if entry.get("removed") or not entry.get("image_path"):
+        return None
+    if business_id is None or entry.get("image_status") == "live" or entry.get("image_source_business_id") == business_id:
+        return entry["image_path"]
+    return None
 
 
-async def search(db, q: str, limit: int = 5) -> list[dict]:
+def view(entry: dict, business_id: str | None = None) -> dict:
+    v = {k: entry.get(k) for k in ("id", "name", "name_hi", "botanical", "default_category", "image_status", "source")}
+    v["image_path"] = picture_for(entry, business_id)
+    if v["image_path"] is None and business_id is not None:
+        v["image_status"] = "none"
+    return v
+
+
+def visible_to(entry: dict, business_id: str) -> bool:
+    return not entry.get("hidden") or entry.get("source_business_id") == business_id
+
+
+async def search(db, q: str, business_id: str, limit: int = 5) -> list[dict]:
     key = name_key(q)
     if len(key) < 2:
         return []
     found = []
     async for e in db.library.find({"removed": False}, {"_id": 0}):
+        if not visible_to(e, business_id):
+            continue
         names = [e["name_key"], name_key(e.get("name_hi", "")), *[name_key(a) for a in e.get("aliases", [])]]
         if any(key in n for n in names if n):
             found.append(e)
     found.sort(key=lambda e: (not e["name_key"].startswith(key), e["name"]))
-    return [view(e) for e in found[:limit]]
+    return [view(e, business_id) for e in found[:limit]]
 
 
 async def entry_for_new_product(db, name: str, category: str | None, business_id: str) -> str | None:

@@ -1,13 +1,15 @@
 // Add product: type a name → your own match ("add stock"), a shared-library match (picture + category),
-// or create new. Or take a photo and the AI fills in the name and category.
+// or create new. Or take a photo and the AI fills in the name and category (photos of anything a
+// nursery doesn't sell are refused, and only accepted photos are uploaded).
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { apiGet, apiPost, uploadImage } from "@/src/api";
+import { ApiError, apiGet, apiPost, uploadImage } from "@/src/api";
 import { useCategories } from "@/src/components/category-picker";
+import { choose, confirm } from "@/src/confirm";
 import { emptyProduct, ProductForm, ProductValues } from "@/src/components/product-form";
 import { useToast } from "@/src/components/toast";
 import { Button, Field, Header, Icon, Screen, T, Thumb } from "@/src/components/ui";
@@ -48,16 +50,26 @@ export default function NewProduct() {
     if (out.status !== "ok") return;
     setScanning(true);
     try {
-      const [path, r] = await Promise.all([uploadImage(out.result.base64), apiPost("/ai/identify-plant", { image_base64: out.result.base64 })]);
+      const r = await apiPost("/ai/identify-plant", { image_base64: out.result.base64 });
       if (r.matched_product) {
         toast.show(t("{{name}} is already in your products. You can add stock here.", { name: r.matched_product.name }), "info");
         router.replace({ pathname: "/products/[id]", params: { id: r.matched_product.id } });
         return;
       }
-      setForm({ ...emptyProduct, name: r.plant_name === "Unknown Plant" ? "" : r.plant_name, botanical_name: r.scientific_name || "",
+      const path = await uploadImage(out.result.base64);
+      setForm({ ...emptyProduct, name: r.plant_name, botanical_name: r.scientific_name || "",
         category_id: r.suggested_category_id ?? null, photo_path: path });
     } catch (e: any) {
-      toast.show(e.message, "error");
+      const code = e instanceof ApiError ? e.code : "";
+      if (code === "looks_like_bill") {
+        if (await confirm(t("Supplier bill detected"), e.message, t("Open supplier bill"))) router.replace("/more/supplier-bill");
+      } else if (code === "not_nursery_item" || code === "not_identified") {
+        const pick = await choose(code === "not_nursery_item" ? t("Not a nursery item") : t("Item not identified"), e.message,
+          t("Retake photo"), t("Type the name"));
+        if (pick === "yes") setTimeout(scan, 0);
+      } else {
+        toast.show(e.message, "error");
+      }
     } finally {
       setScanning(false);
     }

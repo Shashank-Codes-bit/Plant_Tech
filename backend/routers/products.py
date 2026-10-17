@@ -70,7 +70,7 @@ async def library_images(db, products: list[dict]) -> dict:
 def view(p: dict, cats: dict, lib: dict, gst_registered: bool, user: dict) -> dict:
     cat = cats.get(p.get("category_id")) or {}
     entry = lib.get(p.get("library_id")) or {}
-    library_image = entry.get("image_path") if not entry.get("removed") else None
+    library_image = library.picture_for(entry, user["business_id"])
     v = {
         "id": p["id"], "sku": p.get("sku", ""), "name": p["name"], "botanical_name": p.get("botanical_name", ""),
         "category_id": p.get("category_id"), "category": cat.get("name", ""),
@@ -136,7 +136,7 @@ async def suggest(q: str, user: dict = Depends(auth.require("sell", "stock"))):
     own = own[:5]
     taken_ids = {p.get("library_id") for p in own}
     taken_names = {name_key(p["name"]) for p in own}
-    lib = [e for e in await library.search(db, q, limit=8)
+    lib = [e for e in await library.search(db, q, user["business_id"], limit=8)
            if e["id"] not in taken_ids and name_key(e["name"]) not in taken_names][:5]
     return {"own": await views(db, user, own), "library": lib}
 

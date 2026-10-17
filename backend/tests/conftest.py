@@ -29,9 +29,9 @@ import ai_client  # noqa: E402
 import db as db_module  # noqa: E402
 import server  # noqa: E402
 
-PLANT = {"plant_name": "Money Plant", "scientific_name": "Epipremnum aureum", "confidence": 91,
+PLANT = {"kind": "plant", "reason": "a potted plant", "plant_name": "Money Plant", "scientific_name": "Epipremnum aureum", "confidence": 91,
          "alternatives": ["Pothos"], "matched_catalog_name": "Money Plant", "suggested_category": "indoor plants"}
-INVOICE = {"supplier": "Green Farms", "invoice_number": "GF-12", "date": "12/10/2026", "total": 1250,
+INVOICE = {"is_bill": True, "reason": "a printed invoice", "supplier": "Green Farms", "invoice_number": "GF-12", "date": "12/10/2026", "total": 1250,
            "items": [{"name": "Snake Plant", "quantity": 5, "purchase_price": 200}]}
 
 
@@ -55,15 +55,24 @@ def fake_claude_client(handler, max_retries=2):
                                     http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(handler)))
 
 
+class FakeClaude(list):
+    """The (headers, body) of each request sent; set .plant / .invoice to change what it answers."""
+
+    def __init__(self):
+        super().__init__()
+        self.plant, self.invoice = dict(PLANT), dict(INVOICE)
+
+
 @pytest.fixture
 def claude():
-    """Fake Claude that answers like the real API; returns the list of request bodies sent."""
-    calls = []
+    """Fake Claude that answers like the real API."""
+    calls = FakeClaude()
 
     def handler(req):
         body = json.loads(req.content)
         calls.append((dict(req.headers), body))
-        return httpx2.Response(200, json=claude_message(json.dumps(INVOICE if "OCR" in body["system"] else PLANT)))
+        reply = calls.invoice if body["system"] == ai_client.SYSTEM_INVOICE else calls.plant
+        return httpx2.Response(200, json=claude_message(json.dumps(reply)))
 
     ai_client._client = fake_claude_client(handler)
     yield calls

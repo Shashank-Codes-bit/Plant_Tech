@@ -124,11 +124,12 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | E.16 | Owner deletes a product | Gone from list and search; old bills still show it | 1 | | |
 | E.17 | Search products in Hindi (`तुलसी`) and with odd spacing (`money   plant`) | Finds them | 3 | | |
 | E.18 | 300+ products (use the demo shop) | List scrolls smoothly; search answers instantly | 2 | | |
+| E.19 | Add product → Identify from a photo of a laptop | Alert "Not a nursery item"; no form opens and the photo is not uploaded | 1 | | |
 
 ## F. Shared picture library (admin)
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|
-| F.1 | Shop A adds "Snake Plant" with its own photo | Shop B adding Snake Plant sees that picture | 1 | | |
+| F.1 | Shop A adds "Snake Plant" with its own photo | Shop B sees no picture for it until the admin taps "Looks good" (F.2); then Shop B sees that picture | 1 | | |
 | F.2 | Admin (9654346434): More → Shared pictures | List of all library plants; filters work; "New" badge on F.1's picture | 1 | | |
 | F.3 | Admin: "Looks good" on a New picture | Badge changes to Checked | 2 | | |
 | F.4 | Admin: tap a plant → Remove picture → Remove | Asks first; then "No picture"; shops without their own photo show the plant icon again | 1 | | |
@@ -153,8 +154,9 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | G.0j | Order header with 1 item | "Order · 1 item" (not "1 items") | 3 | | |
 | G.1 | Take a photo of a plant you have | "Match found", right name, Strong match / Likely match badge | 1 | | |
 | G.2 | Photo from gallery | Same as G.1 | 1 | | |
-| G.3 | Blurry photo / photo of a person | Says it can't tell, or "Not in your stock"; no crash | 1 | | |
-| G.4 | Photo of a plant you don't have | "This item is not in your products" with name filled | 1 | | |
+| G.3 | Photo of a laptop / a person / a blurry photo | Alert "Not a nursery item" (or "Item not identified") with Retake photo and Search by name; never the new-item screen | 1 | | |
+| G.3a | Photo of a supplier bill in Add items | Alert "Supplier bill detected"; Open supplier bill goes there (employees without stock permission only see the message) | 1 | | |
+| G.4 | Photo of a plant you don't have | "This item is not in your products" with name filled; similar products you do have are listed under "Already in your products?" | 1 | | |
 | G.5 | Deny camera permission | Clear message to allow it in settings; app still usable with search | 1 | | |
 | G.6 | Scan while offline | "No internet…"; back to the camera screen | 1 | | |
 | G.7 | "Not the right item? Search by name" | Back to camera + search | 2 | | |
@@ -265,7 +267,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|
 | M.1 | Photo of a clear printed bill | Items listed; matched ones say "Adds to X", others "New product" | 1 | | |
-| M.2 | Blurry bill / photo of a plant | "No items found…" and you can type them | 2 | | |
+| M.2 | Photo of a plant or a laptop on Supplier bill | Alert "Not a supplier bill"; Enter items manually opens an empty item list; the photo is not kept | 1 | | |
 | M.3 | Edit a quantity and cost, remove a line, add a line | Saved values used; removed line not added | 1 | | |
 | M.4 | Save | Stock goes up; History shows "Supplier bill"; new products created at cost + 60% | 1 | | |
 | M.5 | Employee saves a supplier bill | Stock added; cost prices NOT changed | 2 | | |

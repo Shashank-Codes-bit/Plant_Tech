@@ -1,6 +1,7 @@
 // New order: take a photo (AI finds the product) or type its name.
-// Found → pick how many → add. Not in stock → save it as a new product, or just sell it on this bill.
-import { useState } from "react";
+// Found → pick how many → add. Not in stock → save it as a new product, or sell it on this bill only.
+// Photos of anything a nursery doesn't sell (or of a bill) are refused with an explanation.
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
@@ -9,11 +10,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
-import { apiGet, apiPost, uploadImage } from "@/src/api";
+import { ApiError, apiGet, apiPost, uploadImage } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { useCart } from "@/src/cart-context";
 import { DiscardOrder, OrderCustomerBar } from "@/src/components/order-customer";
 import { CategoryPicker } from "@/src/components/category-picker";
+import { choose, confirm, notice } from "@/src/confirm";
 import { useToast } from "@/src/components/toast";
 import { Badge, BottomBar, Button, Field, Header, Icon, Screen, Segmented, Stepper, T, Thumb } from "@/src/components/ui";
 import { formatCurrency, formatQty } from "@/src/format";
@@ -25,17 +27,19 @@ type Stage =
   | { kind: "start" }
   | { kind: "checking" }
   | { kind: "found"; product: Product; confidence?: string }
-  | { kind: "new"; name: string; botanical: string; categoryId: string | null };
+  | { kind: "new"; name: string; botanical: string; categoryId: string | null; similar: Product[] };
 
 export default function OrderScan() {
   const { t } = useTranslation();
   const router = useRouter();
   const toast = useToast();
   const cart = useCart();
+  const { can } = useAuth();
   // Opened with no customer (a reload, an old link): pick one first. Not when the order is cleared while open (Discard).
   const [openedWithout] = useState(() => !cart.customer);
   const [stage, setStage] = useState<Stage>({ kind: "start" });
   const [photo, setPhoto] = useState<CaptureResult | null>(null);
+  const [focusSearch, setFocusSearch] = useState(0);
 
   async function capture(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
@@ -52,13 +56,31 @@ export default function OrderScan() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         setStage({ kind: "found", product: r.matched_product, confidence: r.confidence_label });
       } else {
-        setStage({ kind: "new", name: r.plant_name === "Unknown Plant" ? "" : r.plant_name, botanical: r.scientific_name || "",
-          categoryId: r.suggested_category_id ?? null });
+        setStage({ kind: "new", name: r.plant_name, botanical: r.scientific_name || "",
+          categoryId: r.suggested_category_id ?? null, similar: r.similar_products ?? [] });
       }
     } catch (e: any) {
-      toast.show(e.message, "error");
-      setStage({ kind: "start" });
+      restart();
+      await refused(e, source);
     }
+  }
+
+  // The photo was not of something to sell: say why, and offer the useful next step.
+  async function refused(e: any, source: "camera" | "gallery") {
+    const code = e instanceof ApiError ? e.code : "";
+    if (code === "looks_like_bill") {
+      if (!can("stock")) await notice(t("Supplier bill detected"), e.message);
+      else if (await confirm(t("Supplier bill detected"), e.message, t("Open supplier bill"))) router.push("/more/supplier-bill");
+      return;
+    }
+    if (code === "not_nursery_item" || code === "not_identified") {
+      const pick = await choose(code === "not_nursery_item" ? t("Not a nursery item") : t("Item not identified"), e.message,
+        t("Retake photo"), t("Search by name"));
+      if (pick === "yes") capture(source);
+      else if (pick === "no") setFocusSearch((n) => n + 1);
+      return;
+    }
+    toast.show(e.message, "error");
   }
 
   const restart = () => {
@@ -78,19 +100,27 @@ export default function OrderScan() {
     return <Found product={stage.product} confidence={stage.confidence} photoUri={photo?.uri} onBack={restart} onAdded={added} />;
   }
   if (stage.kind === "new") {
-    return <NotInStock initial={stage} photo={photo} onBack={restart} onAdded={added} />;
+    return <NotInStock initial={stage} photo={photo} onBack={restart} onAdded={added}
+      onPick={(p) => setStage({ kind: "found", product: p })} />;
   }
-  return <Start checking={stage.kind === "checking"} photoUri={photo?.uri} onCapture={capture}
+  return <Start checking={stage.kind === "checking"} photoUri={photo?.uri} onCapture={capture} focusSearch={focusSearch}
     onPick={(p) => setStage({ kind: "found", product: p })}
-    onNew={(name) => { setPhoto(null); setStage({ kind: "new", name, botanical: "", categoryId: null }); }} />;
+    onNew={(name) => { setPhoto(null); setStage({ kind: "new", name, botanical: "", categoryId: null, similar: [] }); }} />;
 }
 
-function Start({ checking, photoUri, onCapture, onPick, onNew }: {
+function Start({ checking, photoUri, onCapture, onPick, onNew, focusSearch }: {
   checking: boolean; photoUri?: string; onCapture: (s: "camera" | "gallery") => void; onPick: (p: Product) => void; onNew: (name: string) => void;
+  focusSearch: number;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [q, setQ] = useState("");
+  const searchRef = useRef<TextInput>(null);
+  useEffect(() => {
+    if (!focusSearch) return;
+    const id = setTimeout(() => searchRef.current?.focus(), 400); // after the alert sheet has closed
+    return () => clearTimeout(id);
+  }, [focusSearch]);
   const query = q.trim();
   const results = useQuery<Product[]>({
     queryKey: ["products", "search", query],
@@ -144,7 +174,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 60, paddingHorizontal: 14, borderWidth: 2,
             borderColor: query ? colors.green : colors.lineStrong, borderRadius: 16 }}>
             <Icon name="magnify" size={26} color={colors.muted} />
-            <TextInput testID="scan-search" value={q} onChangeText={setQ} placeholder={t("Or search by product name")}
+            <TextInput ref={searchRef} testID="scan-search" value={q} onChangeText={setQ} placeholder={t("Or search by product name")}
               placeholderTextColor={colors.muted} style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 19, color: colors.ink, minHeight: 56 }} />
             {!!q && (
               <Pressable accessibilityLabel={t("Clear")} onPress={() => setQ("")} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
@@ -286,9 +316,9 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
   );
 }
 
-function NotInStock({ initial, photo, onBack, onAdded }: {
-  initial: { name: string; botanical: string; categoryId: string | null }; photo: CaptureResult | null;
-  onBack: () => void; onAdded: (next: "scan" | "cart") => void;
+function NotInStock({ initial, photo, onBack, onAdded, onPick }: {
+  initial: { name: string; botanical: string; categoryId: string | null; similar: Product[] }; photo: CaptureResult | null;
+  onBack: () => void; onAdded: (next: "scan" | "cart") => void; onPick: (p: Product) => void;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -334,7 +364,7 @@ function NotInStock({ initial, photo, onBack, onAdded }: {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={name || t("New item")} onBack={onBack} />
+      <Header title={t("New item")} onBack={onBack} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", gap: 14, alignItems: "center", padding: 14, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
           {photo ? <Image source={{ uri: photo.uri }} style={{ width: 72, height: 72, borderRadius: 18 }} contentFit="cover" />
@@ -344,6 +374,21 @@ function NotInStock({ initial, photo, onBack, onAdded }: {
             <T v="small" color={colors.amberInk}>{t("Add it to your products, or sell it on this bill only.")}</T>
           </View>
         </View>
+
+        {initial.similar.length > 0 && (
+          <View style={{ gap: 8 }}>
+            <T v="label">{t("Already in your products?")}</T>
+            {initial.similar.map((p) => (
+              <Pressable key={p.id} testID={`new-similar-${p.name}`} onPress={() => onPick(p)}
+                style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 64, borderRadius: radius.lg,
+                  borderWidth: 1, borderColor: colors.line }}>
+                <Thumb path={p.image_path} size={44} />
+                <T v="bold" style={{ flex: 1 }}>{p.name}</T>
+                <T v="number">{formatCurrency(p.selling_price)}</T>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {canSave && (
           <Segmented value={mode} onChange={setMode}

@@ -21,11 +21,19 @@ def test_first_shop_photo_becomes_shared_picture(client):
     lib_id = a.get("/api/products/suggest", params={"q": "tulsi"}).json()["library"][0]["id"]
     photo = a.post("/api/upload-base64", {"image_base64": photo_b64()}).json()["path"]
     a.post("/api/products", {"name": "Tulsi", "library_id": lib_id, "photo_path": photo, "selling_price": 60})
+    mine = a.get("/api/products/suggest", params={"q": "tulsi"}).json()
+    assert mine["own"][0]["image_source"] == "own"
+    # Shop B sees the shared picture only after an app admin has checked it.
     entry = b.get("/api/products/suggest", params={"q": "tulsi"}).json()["library"][0]
-    assert entry["image_status"] == "new" and entry["image_path"]
+    assert entry["image_status"] == "none" and entry["image_path"] is None
     pb = b.post("/api/products", {"name": "Tulsi", "library_id": lib_id, "selling_price": 70}).json()
-    assert pb["image_source"] == "library" and pb["image_path"] == entry["image_path"]
-    assert client.get(f"/api/files/{entry['image_path']}").status_code == 200
+    assert pb["image_source"] is None
+    admin = Shop(client, phone="9000000001")
+    live = admin.post(f"/api/admin/library/{lib_id}/approve").json()
+    assert live["image_status"] == "live" and live["image_path"]
+    pb = b.get(f"/api/products/{pb['id']}").json()
+    assert pb["image_source"] == "library" and pb["image_path"] == live["image_path"]
+    assert client.get(f"/api/files/{live['image_path']}").status_code == 200
 
 
 def test_new_product_starts_a_library_entry(client):

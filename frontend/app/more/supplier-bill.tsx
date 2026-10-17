@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
-import { apiPost, uploadImage } from "@/src/api";
+import { ApiError, apiPost, uploadImage } from "@/src/api";
+import { choose } from "@/src/confirm";
 import { useToast } from "@/src/components/toast";
 import { Badge, BottomBar, Button, Field, Header, Icon, Screen, T } from "@/src/components/ui";
 import { formatCurrency } from "@/src/format";
@@ -16,6 +17,7 @@ import { colors, radius, spacing } from "@/src/theme";
 
 type Item = { key: string; product_id: string | null; matched_name: string | null; name: string; quantity: string; purchase_price: string };
 const num = (v: string) => v.replace(/[^0-9.]/g, "");
+const blank = (key: string): Item => ({ key, product_id: null, matched_name: null, name: "", quantity: "1", purchase_price: "" });
 
 export default function SupplierBill() {
   const { t } = useTranslation();
@@ -36,8 +38,8 @@ export default function SupplierBill() {
     if (out.status !== "ok") return;
     setReading(true);
     try {
-      const [path, r] = await Promise.all([uploadImage(out.result.base64), apiPost("/ai/scan-invoice", { image_base64: out.result.base64 })]);
-      setImage(path);
+      const r = await apiPost("/ai/scan-invoice", { image_base64: out.result.base64 });
+      setImage(await uploadImage(out.result.base64)); // only photos that are bills are kept
       setSupplier(r.supplier || "");
       setNumber(r.invoice_number || "");
       setDate(r.date || "");
@@ -45,7 +47,13 @@ export default function SupplierBill() {
         quantity: String(it.quantity || 1), purchase_price: String(it.purchase_price || "") })));
       if (!r.items.length) toast.show(t("No items could be read from this bill. Please add them below."), "info");
     } catch (e: any) {
-      toast.show(e.message, "error");
+      if (e instanceof ApiError && e.code === "not_a_bill") {
+        const pick = await choose(t("Not a supplier bill"), e.message, t("Retake photo"), t("Enter items manually"));
+        if (pick === "yes") setTimeout(() => read(source), 0);
+        else if (pick === "no") setItems([blank("m0")]);
+      } else {
+        toast.show(e.message, "error");
+      }
     } finally {
       setReading(false);
     }
@@ -84,7 +92,7 @@ export default function SupplierBill() {
           </View>
           <Button title={reading ? t("Reading the bill") : t("Take photo")} icon="camera" variant="scan" onPress={() => read("camera")} loading={reading} testID="sb-camera" />
           <Button title={t("Pick from gallery")} icon="image-outline" variant="outline" size="md" onPress={() => read("gallery")} disabled={reading} />
-          <Pressable onPress={() => setItems([{ key: "m0", product_id: null, matched_name: null, name: "", quantity: "1", purchase_price: "" }])}
+          <Pressable onPress={() => setItems([blank("m0")])}
             style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}>
             <T v="bold" color={colors.green}>{t("Enter items manually")}</T>
           </Pressable>
@@ -120,7 +128,7 @@ export default function SupplierBill() {
           </View>
         ))}
         <Button title={t("Add an item")} icon="plus" variant="dashed" size="md"
-          onPress={() => setItems((l) => [...l!, { key: `m${Date.now()}`, product_id: null, matched_name: null, name: "", quantity: "1", purchase_price: "" }])} />
+          onPress={() => setItems((l) => [...l!, blank(`m${Date.now()}`)])} />
         <T v="small">{t("New products are priced at cost plus 60%. You can change any price later in Products.")}</T>
       </KeyboardAwareScrollView>
       <BottomBar>
