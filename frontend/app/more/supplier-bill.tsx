@@ -32,7 +32,7 @@ export default function SupplierBill() {
 
   async function read(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
-    if (out.status === "denied") toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
+    if (out.status === "denied") toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
     if (out.status !== "ok") return;
     setReading(true);
     try {
@@ -43,7 +43,7 @@ export default function SupplierBill() {
       setDate(r.date || "");
       setItems(r.items.map((it: any, i: number) => ({ key: `${i}`, product_id: it.product_id, matched_name: it.matched_name, name: it.name,
         quantity: String(it.quantity || 1), purchase_price: String(it.purchase_price || "") })));
-      if (!r.items.length) toast.show(t("No items found on this bill. Add them below."), "info");
+      if (!r.items.length) toast.show(t("No items could be read from this bill. Please add them below."), "info");
     } catch (e: any) {
       toast.show(e.message, "error");
     } finally {
@@ -79,14 +79,14 @@ export default function SupplierBill() {
             <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.blueTint, alignItems: "center", justifyContent: "center" }}>
               <Icon name="file-document-outline" size={50} color={colors.blue} />
             </View>
-            <T v="title" style={{ textAlign: "center" }}>{t("Photo of the supplier's bill")}</T>
-            <T v="body" color={colors.inkSoft} style={{ textAlign: "center" }}>{t("AI reads the items. You check them, then the stock is added.")}</T>
+            <T v="title" style={{ textAlign: "center" }}>{t("Scan a supplier bill")}</T>
+            <T v="body" color={colors.inkSoft} style={{ textAlign: "center" }}>{t("The items are read from the bill. Review them, then add them to stock.")}</T>
           </View>
-          <Button title={reading ? t("Reading the bill…") : t("Take photo")} icon="camera" variant="scan" onPress={() => read("camera")} loading={reading} testID="sb-camera" />
+          <Button title={reading ? t("Reading the bill") : t("Take photo")} icon="camera" variant="scan" onPress={() => read("camera")} loading={reading} testID="sb-camera" />
           <Button title={t("Pick from gallery")} icon="image-outline" variant="outline" size="md" onPress={() => read("gallery")} disabled={reading} />
           <Pressable onPress={() => setItems([{ key: "m0", product_id: null, matched_name: null, name: "", quantity: "1", purchase_price: "" }])}
             style={{ minHeight: 48, alignItems: "center", justifyContent: "center" }}>
-            <T v="bold" color={colors.green}>{t("Type the items instead")}</T>
+            <T v="bold" color={colors.green}>{t("Enter items manually")}</T>
           </Pressable>
         </View>
       </Screen>
@@ -95,7 +95,7 @@ export default function SupplierBill() {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={t("Check the items")} onBack={() => setItems(null)} />
+      <Header title={t("Review items")} onBack={() => setItems(null)} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 12 }} bottomOffset={24}>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Field style={{ flex: 1.4 }} label={t("Supplier")} value={supplier} onChangeText={setSupplier} autoCapitalize="words" />
@@ -121,7 +121,7 @@ export default function SupplierBill() {
         ))}
         <Button title={t("Add an item")} icon="plus" variant="dashed" size="md"
           onPress={() => setItems((l) => [...l!, { key: `m${Date.now()}`, product_id: null, matched_name: null, name: "", quantity: "1", purchase_price: "" }])} />
-        <T v="small">{t("New products get a selling price of cost + 60%. Change it later in Products.")}</T>
+        <T v="small">{t("New products are priced at cost plus 60%. You can change any price later in Products.")}</T>
       </KeyboardAwareScrollView>
       <BottomBar>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

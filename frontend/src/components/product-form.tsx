@@ -41,7 +41,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
 
   async function photo(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
-    if (out.status === "denied") toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
+    if (out.status === "denied") toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
     if (out.status !== "ok") return;
     setUploading(true);
     try {
@@ -82,8 +82,8 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
             </Pressable>
             <View style={{ flex: 1, gap: 8, justifyContent: "center" }}>
               <View>
-                <T v="bold">{uploading ? t("Uploading…") : v.photo_path ? t("Your own photo") : v.library_image ? t("Shared picture") : t("No picture yet")}</T>
-                <T v="caption">{v.photo_path ? t("Shown on bills and in your list") : v.library_image ? t("Add your own photo to use it instead") : t("Customers recognise plants faster")}</T>
+                <T v="bold">{uploading ? t("Uploading") : v.photo_path ? t("Your own photo") : v.library_image ? t("Shared picture") : t("No picture yet")}</T>
+                <T v="caption">{v.photo_path ? t("Shown on bills and in your list") : v.library_image ? t("Add your own photo to use it instead") : t("Helps customers recognise items")}</T>
               </View>
               <Button title={t("Take photo")} icon="camera" variant="outline" size="md" style={{ paddingHorizontal: 10, minHeight: 50 }} onPress={() => photo("camera")} />
               <Button title={t("From gallery")} icon="image-outline" variant="outline" size="md" style={{ paddingHorizontal: 10, minHeight: 50 }} onPress={() => photo("gallery")} />
@@ -105,11 +105,11 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
               <Field style={{ flex: 1 }} label={t("Stock now")} value={v.stock} keyboardType="decimal-pad"
                 onChangeText={(x) => set({ stock: num(x) })} placeholder="0" testID="product-stock" />
             )}
-            <Field style={{ flex: 1 }} label={t("Warn me below")} value={v.min_stock} keyboardType="decimal-pad"
+            <Field style={{ flex: 1 }} label={t("Low-stock alert at")} value={v.min_stock} keyboardType="decimal-pad"
               onChangeText={(x) => set({ min_stock: num(x) })} testID="product-min" />
           </View>
           {isOwner && (
-            <Field label={t("Cost price ₹")} hint={t("For profit in reports. Only you see this.")} value={v.cost_price} keyboardType="decimal-pad"
+            <Field label={t("Cost price ₹")} hint={t("Used for profit in reports. Visible only to you.")} value={v.cost_price} keyboardType="decimal-pad"
               onChangeText={(x) => set({ cost_price: num(x) })} placeholder="0" testID="product-cost" />
           )}
         </Section>

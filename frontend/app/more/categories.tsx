@@ -41,15 +41,15 @@ export default function Categories() {
       <Header title={t("Categories")} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 10 }} keyboardShouldPersistTaps="handled">
         <T v="body" color={colors.inkSoft}>
-          {gst ? t("Tap a category to rename it or change its GST %. Prices include GST, and the bill shows how much of it is tax.")
-            : t("Your shop is not GST registered, so there is no tax on bills. Tap a category to rename it.")}
+          {gst ? t("Tap a category to rename it or change its GST rate. Prices include GST, and the bill shows the tax portion.")
+            : t("Your shop is not GST registered, so no tax is shown on bills. Tap a category to rename it.")}
         </T>
         {cats.isLoading && <LoadingView />}
         {(cats.data ?? []).map((c) => (
           <CategoryRow key={c.id} c={c} gst={gst} open={open === c.id} onToggle={() => setOpen(open === c.id ? null : c.id)}
             onPatch={(body) => call(() => apiPatch(`/categories/${c.id}`, body))}
             onDelete={async () => {
-              if (await confirm(t("Delete {{name}}?", { name: c.name }), t("Only possible when no product uses it."), t("Delete"), true)) {
+              if (await confirm(t("Delete {{name}}?", { name: c.name }), t("A category can only be deleted when no product uses it."), t("Delete"), true)) {
                 call(() => apiDelete(`/categories/${c.id}`));
               }
             }} />

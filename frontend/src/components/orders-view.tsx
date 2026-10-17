@@ -155,7 +155,7 @@ export function OrdersView({ start, title, onBack }: { start?: OrdersStart; titl
           }}
           renderItem={({ item }) => <View style={{ marginBottom: 8 }}><OrderRow o={item} showBy={seesAll} /></View>}
           ListEmptyComponent={<EmptyState icon="receipt-text-outline" title={filtered ? t("No orders match") : t("No orders yet")}
-            subtitle={filtered ? t("Try other filters, or Clear all.") : undefined} />}
+            subtitle={filtered ? t("Try different filters, or tap Clear all.") : undefined} />}
           ListFooterComponent={list.isFetchingNextPage ? <ActivityIndicator color={colors.green} style={{ margin: 16 }} />
             : !list.hasNextPage && sections.length ? <T v="caption" style={{ textAlign: "center", marginTop: 8 }}>{t("That's all the orders")}</T> : null}
         />
@@ -165,7 +165,7 @@ export function OrdersView({ start, title, onBack }: { start?: OrdersStart; titl
         {([["all", t("All dates")], ["today", t("Today")], ["yesterday", t("Yesterday")], ["week", t("This week")], ["month", t("This month")]] as const).map(([k, label]) => (
           <OptionRow key={k} label={label} selected={dateKind === k} onPress={() => { setDateKind(k); setSheet(""); }} testID={`orders-date-${k}`} />
         ))}
-        <OptionRow label={t("Choose dates…")} sub={dateKind === "pick" && range ? rangeLabel(range.from, range.to) : t("One day, or from – to")}
+        <OptionRow label={t("Choose dates")} sub={dateKind === "pick" && range ? rangeLabel(range.from, range.to) : t("One day, or from – to")}
           icon="calendar-range" selected={dateKind === "pick"} onPress={() => setSheet("calendar")} testID="orders-date-pick" />
       </Sheet>
       {sheet === "calendar" && (

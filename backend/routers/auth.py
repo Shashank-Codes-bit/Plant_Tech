@@ -57,9 +57,9 @@ async def register(body: RegisterIn):
     db = get_db()
     phone = normalize_in_phone(body.phone)
     if not phone:
-        raise HTTPException(400, "Enter a 10-digit Indian mobile number")
+        raise HTTPException(400, "Please enter a valid 10-digit mobile number.")
     if await db.users.find_one({"phone": phone}):
-        raise HTTPException(409, "This phone number already has an account. Log in instead.")
+        raise HTTPException(409, "An account with this phone number already exists. Please log in instead.")
     user = await _new_owner(db, name=body.name, phone=phone, password=body.password)
     return await _session(db, user)
 
@@ -69,14 +69,14 @@ async def login(body: LoginIn):
     db = get_db()
     phone = normalize_in_phone(body.phone)
     user = await db.users.find_one({"phone": phone}, {"_id": 0}) if phone else None
-    wrong = HTTPException(401, "Wrong phone number or password")
+    wrong = HTTPException(401, "Incorrect phone number or password.")
     if not user:
         raise wrong
     now = time.time()
     if user.get("locked_until", 0) > now:
-        raise HTTPException(429, "Too many wrong tries. Wait 10 minutes, or ask the owner to reset it.")
+        raise HTTPException(429, "Too many incorrect attempts. Please wait 10 minutes, or ask the shop owner to reset your PIN.")
     if not user.get("active", True):
-        raise HTTPException(403, "This login is turned off. Ask your owner.")
+        raise HTTPException(403, "This login has been turned off. Please contact the shop owner.")
     if not auth.check_password(body.password, user.get("password_hash")):
         failed = user.get("failed_logins", 0) + 1
         update = {"failed_logins": failed}
@@ -99,7 +99,7 @@ async def google(body: GoogleIn):
         user = await _new_owner(db, name=info.get("name") or info.get("email", "Owner").split("@")[0],
                                 google_sub=info["sub"], email=info.get("email"))
     elif not user.get("active", True):
-        raise HTTPException(403, "This login is turned off.")
+        raise HTTPException(403, "This login has been turned off.")
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_login_at": now_iso()}})
     return await _session(db, user)
 
@@ -115,9 +115,9 @@ async def change_password(body: PasswordIn, user: dict = Depends(auth.current_us
     """Change your own password. Google-only owners can set one without the current password.
     Logs out every other phone using this login."""
     if user.get("password_hash") and not auth.check_password(body.current_password, user["password_hash"]):
-        raise HTTPException(401, "Current password is wrong")
+        raise HTTPException(401, "The current password is incorrect.")
     if user["role"] == "owner" and len(body.new_password) < 8:
-        raise HTTPException(400, "Use at least 8 characters")
+        raise HTTPException(400, "Please use at least 8 characters.")
     db = get_db()
     tv = user.get("token_version", 0) + 1
     await db.users.update_one({"id": user["id"]},

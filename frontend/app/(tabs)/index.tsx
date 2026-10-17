@@ -61,13 +61,13 @@ export default function Home() {
             </View>
             <View style={{ flex: 1 }}>
               <T v="title" color={colors.white}>{t("New order")}</T>
-              <T v="label" color={colors.greenOnDark}>{t("Choose the customer, then add plants")}</T>
+              <T v="label" color={colors.greenOnDark}>{t("Choose the customer, then add items")}</T>
             </View>
             <Icon name="chevron-right" size={28} color={colors.white} />
           </Pressable>
         ) : (
           <Card>
-            <EmptyState icon="lock" title={t("Billing is off for you")} subtitle={t("Ask the shop owner to turn it on.")} />
+            <EmptyState icon="lock" title={t("Billing is not enabled for your login")} subtitle={t("Please ask the shop owner to enable it.")} />
           </Card>
         )}
 
@@ -117,7 +117,7 @@ export default function Home() {
               {d.scope === "shop" ? t("Today's orders") : t("Your orders today")}
             </SectionTitle>
             {d.recent.length ? d.recent.slice(0, 5).map((o) => <OrderRow key={o.id} o={o} showBy={d.scope === "shop"} />)
-              : <T v="small">{t("No orders yet today. Tap New order to make the first bill.")}</T>}
+              : <T v="small">{t("No orders yet today. Tap New order to create the first bill.")}</T>}
           </View>
         )}
       </ScrollView>

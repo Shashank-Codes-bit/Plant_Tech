@@ -21,6 +21,7 @@ import invoice_html
 import storage_client
 from common import IST, date_key, money, new_id, normalize_in_phone, now_ist, now_iso
 from db import get_db
+from errors import AppError
 from routers import carts
 from routers.products import context, record_stock
 
@@ -99,22 +100,24 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
     products = {p["id"]: p for p in await db.products.find(
         {"business_id": bid, "id": {"$in": ids}, "deleted_at": None}, {"_id": 0}).to_list(len(ids) or 1)}
     if missing := [i for i in ids if i not in products]:
-        raise HTTPException(400, f"{len(missing)} item(s) in this order are no longer in your products")
+        if len(missing) == 1:
+            raise AppError(400, "1 item in this order is no longer in your products.", "product_missing")
+        raise AppError(400, "{{n}} items in this order are no longer in your products.", "product_missing", n=len(missing))
 
     # Every bill has a customer (name + phone): a saved one, or a new one made from the phone and name.
     customer, new_customer = None, None
     if body.customer_id:
         customer = await db.customers.find_one({"id": body.customer_id, "business_id": bid}, {"_id": 0})
         if not customer:
-            raise HTTPException(400, "Customer not found")
+            raise HTTPException(400, "Customer not found.")
     else:
         phone = normalize_in_phone(body.customer_phone)
         if not phone:
-            raise HTTPException(400, "Choose the customer for this order")
+            raise HTTPException(400, "Please choose a customer for this order.")
         customer = await db.customers.find_one({"business_id": bid, "phone": phone}, {"_id": 0})
         if not customer:
             if not body.customer_name.strip():
-                raise HTTPException(400, "Enter the customer's name")
+                raise HTTPException(400, "Please enter the customer's name.")
             new_customer = {"id": new_id(), "business_id": bid, "name": body.customer_name.strip(), "phone": phone,
                             "email": "", "address": "", "notes": "", "total_purchases": 0.0, "purchase_count": 0,
                             "created_at": now_iso()}
@@ -134,7 +137,7 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
                 await db.products.update_one({"id": back_id}, {"$inc": {"stock": back_qty}})
             p = products[pid]
             have = (await db.products.find_one({"id": pid}, {"stock": 1})) or {}
-            raise HTTPException(400, f"Only {have.get('stock', 0):g} {p['name']} left in stock")
+            raise AppError(400, "Only {{n}} {{name}} left in stock.", "out_of_stock", n=f"{have.get('stock', 0):g}", name=p["name"])
         taken.append((pid, qty))
         await record_stock(db, user, updated, -qty, updated["stock"], "sale")
 
@@ -245,7 +248,7 @@ async def invoices_summary(day: str = date_q(), date_from: str = date_q(), date_
 async def _get_invoice(user: dict, invoice_id: str) -> dict:
     inv = await get_db().invoices.find_one({**_scope(user), "id": invoice_id}, {"_id": 0})
     if not inv:
-        raise HTTPException(404, "Bill not found")
+        raise HTTPException(404, "Bill not found.")
     return inv
 
 

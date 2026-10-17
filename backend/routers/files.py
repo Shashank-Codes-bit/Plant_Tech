@@ -40,16 +40,16 @@ async def upload_base64(body: ImagePayload, user: dict = Depends(auth.current_us
 async def upload(file: UploadFile = File(...), user: dict = Depends(auth.current_user)):
     data = await file.read(MAX_IMAGE_BYTES + 1)
     if len(data) > MAX_IMAGE_BYTES:
-        raise HTTPException(413, "Photo too large (max 8 MB)")
+        raise HTTPException(413, "This photo is too large. The maximum size is 8 MB.")
     return await _store(ai_client.normalize_photo, data, user["business_id"])
 
 
 @router.get("/files/{path:path}")
 async def get_file(path: str):
     if not await get_db().uploads.find_one({"path": path}):
-        raise HTTPException(404, "File not found")
+        raise HTTPException(404, "File not found.")
     try:
         content, ctype = await run_in_threadpool(storage_client.get_object, path)
     except Exception:
-        raise HTTPException(404, "File not found")
+        raise HTTPException(404, "File not found.")
     return Response(content=content, media_type=ctype, headers={"Cache-Control": "public, max-age=31536000"})

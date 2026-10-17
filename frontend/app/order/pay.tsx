@@ -72,7 +72,7 @@ export default function OrderPay() {
             ))}
           </View>
           <T v="small" style={{ textAlign: "center" }}>
-            {bill.busy ? t("Making the bill…") : t("Tap how they paid. The bill is made straight away.")}
+            {bill.busy ? t("Creating the bill") : t("Select the payment method. The bill is created immediately.")}
           </T>
         </View>
       </ScrollView>

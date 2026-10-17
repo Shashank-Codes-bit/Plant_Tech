@@ -45,10 +45,10 @@ function CategoriesStep({ gst, suggestions, existing }: { gst: boolean; suggesti
 
   return (
     <SetupFrame step={4} title={t("What do you sell?")} onNext={next} busy={busy} nextDisabled={!chosen.length}
-      subtitle={t("Tap to choose. {{n}} chosen", { n: chosen.length })}>
+      subtitle={t("Select the categories you sell. {{n}} selected", { n: chosen.length })}>
       {gst && (
         <T v="small" style={{ marginTop: -8 }}>
-          {t("% = GST for that category. Suggestions; check with your accountant and change any time.")}
+          {t("The percentage is the suggested GST rate for each category. Please confirm rates with your accountant; you can change them at any time.")}
         </T>
       )}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>

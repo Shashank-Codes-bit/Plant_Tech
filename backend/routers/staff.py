@@ -48,9 +48,9 @@ async def add_staff(body: StaffIn, owner: dict = Depends(auth.require("owner")))
     db = get_db()
     phone = normalize_in_phone(body.phone)
     if not phone:
-        raise HTTPException(400, "Enter a 10-digit Indian mobile number")
+        raise HTTPException(400, "Please enter a valid 10-digit mobile number.")
     if await db.users.find_one({"phone": phone}):
-        raise HTTPException(409, "This phone number already has a login")
+        raise HTTPException(409, "A login with this phone number already exists.")
     worker = {"id": new_id(), "business_id": owner["business_id"], "role": "worker", "name": body.name.strip(),
               "phone": phone, "email": None, "google_sub": None, "password_hash": auth.hash_password(body.password),
               "permissions": body.permissions.model_dump(), "active": True, "token_version": 0,
@@ -66,7 +66,7 @@ async def update_staff(worker_id: str, body: StaffPatch, owner: dict = Depends(a
     worker = await db.users.find_one({"id": worker_id, "business_id": owner["business_id"], "role": "worker"},
                                      {"_id": 0})
     if not worker:
-        raise HTTPException(404, "Employee not found")
+        raise HTTPException(404, "Employee not found.")
     update: dict = {}
     if body.name is not None:
         update["name"] = body.name.strip()

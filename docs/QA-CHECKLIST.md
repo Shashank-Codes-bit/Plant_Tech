@@ -107,7 +107,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|
 | E.1 | Add product: type "money" | "From the shared picture library: Money Plant · मनी प्लांट"; picking it fills name + category | 1 | | |
-| E.2 | Type a name you already have | "Already yours" with Add stock; tapping it opens that product | 1 | | |
+| E.2 | Type a name you already have | "Already in your products" with Add stock; tapping it opens that product | 1 | | |
 | E.3 | "Create new" a pot with price ₹118, stock 5 in Pots (18%) | Saved; list shows ₹118 · Pots | 1 | | |
 | E.4 | Create new with the same name as an existing product | (Known: allowed) check both show and can be told apart | 3 | | |
 | E.5 | Price blank | Save disabled | 1 | | |
@@ -151,20 +151,20 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | G.0h | Order screen: change a line's price (₹670 → ₹600) | Line total and Total use ₹600; "Shop price ~~₹670~~" under it; the product's own price is unchanged | 1 | | |
 | G.0i | Bill with a changed price | In-app bill shows "Shop price ~~₹670~~" for that line; the customer's bill / PDF shows only ₹600; nothing on a bill can be edited | 1 | | |
 | G.0j | Order header with 1 item | "Order · 1 item" (not "1 items") | 3 | | |
-| G.1 | Take a photo of a plant you have | "Plant found", right name, Sure match / Probably badge | 1 | | |
+| G.1 | Take a photo of a plant you have | "Match found", right name, Strong match / Likely match badge | 1 | | |
 | G.2 | Photo from gallery | Same as G.1 | 1 | | |
 | G.3 | Blurry photo / photo of a person | Says it can't tell, or "Not in your stock"; no crash | 1 | | |
-| G.4 | Photo of a plant you don't have | "Not in your stock yet" with name filled | 1 | | |
+| G.4 | Photo of a plant you don't have | "This item is not in your products" with name filled | 1 | | |
 | G.5 | Deny camera permission | Clear message to allow it in settings; app still usable with search | 1 | | |
 | G.6 | Scan while offline | "No internet…"; back to the camera screen | 1 | | |
-| G.7 | "Wrong plant? Search instead" | Back to camera + search | 2 | | |
+| G.7 | "Not the right item? Search by name" | Back to camera + search | 2 | | |
 | G.8 | Search 2+ letters | Results with price and stock; tap adds | 1 | | |
 | G.9 | Found product with 3 in stock: try to pick 4 | Stepper stops at 3 | 1 | | |
 | G.10 | Add the same product twice (2 + 1) | One line with 3 | 1 | | |
-| G.11 | Found product out of stock | "Out of stock in the app" + "Sell anyway" (and "Add stock" for stock users) | 1 | | |
-| G.12 | Not in stock → "Add to products": stock 1, order qty 2 | Error "at least 2"; can't save | 1 | | |
-| G.13 | Not in stock → "Just sell it" ₹50 × 2 | Line shows "not from stock"; stock unchanged after paying | 1 | | |
-| G.14 | Toggle on a 5-inch phone / narrow browser | "Add to products" / "Just sell it" fit inside their buttons | 1 | | |
+| G.11 | Found product out of stock | "Out of stock" + "Sell without stock" (and "Add stock" for stock users) | 1 | | |
+| G.12 | New item → "Add to products": stock 1, order qty 2 | Error "Must be at least 2"; can't save | 1 | | |
+| G.13 | New item → "This bill only" ₹50 × 2 | Line shows "not from stock"; stock unchanged after paying | 1 | | |
+| G.14 | Toggle on a 5-inch phone / narrow browser | "Add to products" / "This bill only" fit inside their buttons | 1 | | |
 | G.15 | Cart: remove a line, change quantities | Total updates right away | 1 | | |
 | G.16 | Discount bigger than the total (₹5000 on ₹500) | Total becomes ₹0, never negative | 1 | | |
 | G.17 | Discount `12.5` | Accepted; total shows paise | 3 | | |
@@ -181,7 +181,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | H.2 | Pay UPI with a UPI ID set | QR with the amount; scan it with GPay/PhonePe/Paytm: right payee name and amount (don't pay) | 1 | | |
 | H.3 | Pay UPI with no UPI ID in shop details | Bill made straight away as UPI | 2 | | |
 | H.4 | On the QR screen: "Change payment method" | Back to Payment; no bill made | 1 | | |
-| H.5 | Double-tap "Cash" fast / double-tap "Money received" | Only ONE bill | 1 | | |
+| H.5 | Double-tap "Cash" fast / double-tap "Payment received" | Only ONE bill | 1 | | |
 | H.6 | Pay with the network off | Error; order kept; pay again online makes exactly one bill | 1 | | |
 | H.7 | Payment screen | Shows the order's customer (no number to type) and Cash / UPI / Card | 1 | | |
 | H.8 | API: make a bill without a customer, or a new phone without a name | 400 "Choose the customer…" / "Enter the customer's name"; nothing taken from stock | 1 | | |
@@ -302,7 +302,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | P.11 | Category GST `7` | 400 "GST must be one of…" | 2 | | |
 | P.12 | `/api/customers?search=(` and `/api/invoices?search=+91` | 200 (no server error) | 1 | | |
 | P.13 | Upload 9 MB image / text file as image | Clear 4xx error | 1 | | |
-| P.14 | AI scan 301 times in a day (staging `AI_DAILY_LIMIT` can be lowered for the test) | 301st gets 429 "Today's AI scan limit is reached…" | 2 | | |
+| P.14 | AI scan 301 times in a day (staging `AI_DAILY_LIMIT` can be lowered for the test) | 301st gets 429 "The daily photo scan limit has been reached…" | 2 | | |
 | P.15 | Sign up 20 shops in a minute | (Known limit 2) note: all succeed today | 2 | | |
 | P.16 | `/i/abc` and a random 22-character token | 404 "Bill not found"; page is not indexed (noindex) | 2 | | |
 | P.17 | `/api/files/../../etc/passwd` | 4xx, never a file from the server | 1 | | |

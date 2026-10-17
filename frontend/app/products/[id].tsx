@@ -58,7 +58,7 @@ export default function ProductDetail() {
               <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 2 }}>
                 <T v="label">{t("Price")}</T>
                 <T v="title">{formatCurrency(p.selling_price)}</T>
-                {isOwner && !!p.cost_price && <T v="caption">{t("Cost {{c}} · only you see this", { c: formatCurrency(p.cost_price) })}</T>}
+                {isOwner && !!p.cost_price && <T v="caption">{t("Cost {{c}} · visible only to you", { c: formatCurrency(p.cost_price) })}</T>}
               </View>
               <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, borderWidth: 1, gap: 2,
                 borderColor: p.out_of_stock ? colors.redLine : p.low_stock ? colors.amber : colors.line,
@@ -153,14 +153,14 @@ function StockSheet({ product: p, kind, onClose, onDone }: { product: Product; k
       }>
       <T v="body" color={colors.inkSoft}>{p.name}</T>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, paddingVertical: 6 }}>
-        <Pressable accessibilityLabel={t("One less")} onPress={() => set(n - 1)} style={[round, { borderWidth: 2, borderColor: colors.lineStrong }]} testID="stock-minus">
+        <Pressable accessibilityLabel={t("Decrease quantity")} onPress={() => set(n - 1)} style={[round, { borderWidth: 2, borderColor: colors.lineStrong }]} testID="stock-minus">
           <Icon name="minus" size={32} color={colors.ink} />
         </Pressable>
         <TextInput value={text} onChangeText={(v) => setText(v.replace(/[^0-9.]/g, ""))} keyboardType="decimal-pad" selectTextOnFocus
           maxFontSizeMultiplier={MAX_FONT_SCALE} testID="stock-qty" accessibilityLabel={t("How many")}
           style={{ width: 120, height: 72, textAlign: "center", fontFamily: fonts.display, fontSize: 40, color: colors.ink,
             borderWidth: 2, borderColor: ok ? colors.green : colors.red, borderRadius: radius.lg }} />
-        <Pressable accessibilityLabel={t("One more")} onPress={() => set(n + 1)} style={[round, { backgroundColor: adding ? colors.green : colors.red }]} testID="stock-plus">
+        <Pressable accessibilityLabel={t("Increase quantity")} onPress={() => set(n + 1)} style={[round, { backgroundColor: adding ? colors.green : colors.red }]} testID="stock-plus">
           <Icon name="plus" size={32} color={colors.white} />
         </Pressable>
       </View>
@@ -170,7 +170,7 @@ function StockSheet({ product: p, kind, onClose, onDone }: { product: Product; k
         </View>
       ) : (
         <View style={{ gap: 8 }}>
-          <T v="label">{t("Why?")}</T>
+          <T v="label">{t("Reason")}</T>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {REASONS.map((r) => <Chip key={r} label={r} active={reason === r} onPress={() => setReason(r)} />)}
           </View>

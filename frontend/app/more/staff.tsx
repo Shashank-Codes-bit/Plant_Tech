@@ -59,7 +59,7 @@ function Performance({ p }: { p: Period }) {
               onPress={() => router.push({ pathname: "/more/employee-orders", params: { id: x.id, name: x.name, from: r.start, to: r.end } })} />
           ))}
           {r.people.length <= 1 && (
-            <T v="small" style={{ textAlign: "center" }}>{t("Add employees in Manage to see how each one is doing.")}</T>
+            <T v="small" style={{ textAlign: "center" }}>{t("Add employees in Manage to see their performance.")}</T>
           )}
         </>
       )}
@@ -88,7 +88,7 @@ function PersonCard({ x, day, onPress }: { x: Person; day: boolean; onPress: () 
           <T v="bold">{x.name}</T>
           <View style={{ flexDirection: "row", gap: 6 }}>
             <Badge text={x.role === "owner" ? t("Owner") : t("Employee")} tone={x.role === "owner" ? "green" : "blue"} />
-            {!x.active && x.role !== "owner" && <Badge text={t("switched off")} tone="grey" />}
+            {!x.active && x.role !== "owner" && <Badge text={t("turned off")} tone="grey" />}
           </View>
         </View>
         <View style={{ alignItems: "flex-end" }}>
@@ -132,11 +132,11 @@ function Manage() {
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: 8, gap: 10 }}>
         <T v="body" color={colors.inkSoft}>{t("Employees log in with their phone number and the PIN you set.")}</T>
         {q.isLoading ? <LoadingView /> : q.isError ? <ErrorView message={(q.error as Error).message} onRetry={q.refetch} />
-          : !q.data?.length ? <EmptyState icon="account-multiple-plus" title={t("No employees yet")} subtitle={t("Add an employee so they can make bills on their own phone.")} />
+          : !q.data?.length ? <EmptyState icon="account-multiple-plus" title={t("No employees yet")} subtitle={t("Add an employee so they can create bills on their own phone.")} />
           : q.data.map((w) => (
             <View key={w.id} style={{ gap: 6 }}>
               <Row title={w.name} chevron testID={`staff-${w.name}`}
-                subtitle={`${formatPhone(w.phone)} · ${w.active ? t("active") : t("switched off")}`}
+                subtitle={`${formatPhone(w.phone)} · ${w.active ? t("active") : t("turned off")}`}
                 left={<View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: w.active ? colors.greenTint : colors.page,
                   alignItems: "center", justifyContent: "center" }}><T v="number" color={w.active ? colors.greenDark : colors.muted}>{w.name.charAt(0).toUpperCase()}</T></View>}
                 onPress={() => router.push({ pathname: "/more/staff-edit", params: { id: w.id } })} />

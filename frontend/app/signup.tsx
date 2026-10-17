@@ -45,8 +45,8 @@ export default function Signup() {
         </View>
         <Field label={t("Your name")} value={name} onChangeText={setName} autoCapitalize="words" testID="signup-name" />
         <PhoneField label={t("Phone number")} value={phone} onChangeText={setPhone} testID="signup-phone" />
-        <Field label={t("Make a password")} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none"
-          hint={t("At least 8 letters or numbers")} testID="signup-password" />
+        <Field label={t("Create a password")} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none"
+          hint={t("At least 8 characters")} testID="signup-password" />
         <Button title={t("Create account")} icon="arrow-right" onPress={submit} loading={busy} disabled={!ok} testID="signup-submit" />
         <Pressable onPress={() => router.replace("/login")} style={{ minHeight: 52, alignItems: "center", justifyContent: "center" }}>
           <T v="bold" color={colors.green}>{t("I already have an account")}</T>

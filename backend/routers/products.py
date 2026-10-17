@@ -97,13 +97,13 @@ async def get_owned(db, user: dict, product_id: str) -> dict:
     p = await db.products.find_one({"id": product_id, "business_id": user["business_id"], "deleted_at": None},
                                    {"_id": 0})
     if not p:
-        raise HTTPException(404, "Product not found")
+        raise HTTPException(404, "Product not found.")
     return p
 
 
 async def _check_category(db, user: dict, category_id: str | None):
     if category_id and not await db.categories.find_one({"id": category_id, "business_id": user["business_id"]}):
-        raise HTTPException(400, "Unknown category")
+        raise HTTPException(400, "This category no longer exists.")
 
 
 @router.get("")
@@ -150,7 +150,7 @@ async def create_product(body: ProductIn, user: dict = Depends(auth.require("sto
     if library_id:
         entry = await db.library.find_one({"id": library_id, "removed": False}, {"_id": 0})
         if not entry:
-            raise HTTPException(400, "Unknown library product")
+            raise HTTPException(400, "This catalogue item no longer exists.")
         if not category_id and entry.get("default_category"):
             cat = await db.categories.find_one({"business_id": user["business_id"],
                                                 "name_key": name_key(entry["default_category"])}, {"_id": 0})
@@ -206,7 +206,7 @@ async def update_product(product_id: str, body: ProductPatch, user: dict = Depen
 @router.post("/{product_id}/stock")
 async def adjust_stock(product_id: str, body: StockIn, user: dict = Depends(auth.require("stock"))):
     if body.change == 0:
-        raise HTTPException(400, "Enter how many to add or remove")
+        raise HTTPException(400, "Please enter how many to add or remove.")
     db = get_db()
     await get_owned(db, user, product_id)
     q = {"id": product_id, "business_id": user["business_id"]}
@@ -215,7 +215,7 @@ async def adjust_stock(product_id: str, body: StockIn, user: dict = Depends(auth
     p = await db.products.find_one_and_update(q, {"$inc": {"stock": body.change}},
                                               projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not p:
-        raise HTTPException(400, "Can't remove more than what is in stock")
+        raise HTTPException(400, "You cannot remove more than the stock on hand.")
     await record_stock(db, user, p, body.change, p["stock"], "adjustment", body.reason)
     return (await views(db, user, [p]))[0]
 

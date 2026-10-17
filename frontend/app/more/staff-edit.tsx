@@ -50,7 +50,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
     { p: "sell", label: t("Make bills"), hint: t("New orders and payments") },
     { p: "stock", label: t("Add stock"), hint: t("Add products and stock, supplier bills") },
     { p: "customers", label: t("Customers"), hint: t("See and add customers") },
-    { p: "reports", label: t("Sales reports"), hint: t("All the shop's sales and profit") },
+    { p: "reports", label: t("Sales reports"), hint: t("All shop sales and profit") },
   ];
 
   function shareLogin(phoneE164: string) {
@@ -89,7 +89,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
         ) : (
           <View><T v="label">{t("Phone number (used to log in)")}</T><T v="bodyLarge">{formatPhone(worker!.phone)}</T></View>
         )}
-        <Field label={isNew ? t("PIN or password") : t("New PIN (leave empty to keep the old one)")} value={pin} onChangeText={setPin}
+        <Field label={isNew ? t("PIN or password") : t("New PIN (leave blank to keep the current one)")} value={pin} onChangeText={setPin}
           keyboardType="number-pad" maxLength={12} placeholder={t("At least 4 digits")} testID="staff-pin" inputStyle={{ letterSpacing: 4, fontSize: 24 }} />
 
         <View style={{ gap: 4, padding: 14, borderRadius: radius.lg, backgroundColor: colors.page }}>
@@ -99,15 +99,15 @@ function WorkerForm({ worker }: { worker?: Worker }) {
           ))}
         </View>
         {!isNew && (
-          <Toggle title={t("Can log in")} subtitle={active ? t("Switch off when they leave") : t("Switched off: logged out everywhere")}
+          <Toggle title={t("Can log in")} subtitle={active ? t("Turn off when they leave") : t("Turned off: logged out on all devices")}
             value={active} onChange={setActive} testID="staff-active" />
         )}
       </KeyboardAwareScrollView>
       <BottomBar>
         {(isNew || pin) ? (
           <>
-            <Button title={t("Save and send login on WhatsApp")} icon="whatsapp" variant="whatsapp" onPress={() => save(true)} loading={busy} disabled={!ok} testID="staff-save-share" />
-            <Button title={t("Just save")} variant="outline" size="md" onPress={() => save(false)} disabled={!ok || busy} testID="staff-save" />
+            <Button title={t("Save and share login on WhatsApp")} icon="whatsapp" variant="whatsapp" onPress={() => save(true)} loading={busy} disabled={!ok} testID="staff-save-share" />
+            <Button title={t("Save only")} variant="outline" size="md" onPress={() => save(false)} disabled={!ok || busy} testID="staff-save" />
           </>
         ) : (
           <Button title={t("Save")} icon="content-save" onPress={() => save(false)} loading={busy} disabled={!ok} testID="staff-save" />

@@ -56,7 +56,7 @@ export default function Products() {
   const STOCK: { v: StockFilter; label: string; sub?: string }[] = [
     { v: "", label: t("All stock") },
     { v: "in", label: t("In stock"), sub: t("Above the alert level") },
-    { v: "low", label: t("Low stock · {{n}}", { n: counts.low }), sub: t("At or below \"Warn me below\"") },
+    { v: "low", label: t("Low stock · {{n}}", { n: counts.low }), sub: t("At or below the low-stock alert level") },
     { v: "out", label: t("Out of stock · {{n}}", { n: counts.out }) },
   ];
   const SORTS: { v: Sort; label: string }[] = [
@@ -110,7 +110,7 @@ export default function Products() {
           ) : null}
           ListEmptyComponent={
             <EmptyState icon="sprout" title={all.length ? t("Nothing matches") : t("No products yet")}
-              subtitle={all.length ? t("Try other filters, or Clear all.") : t("Add the plants, pots and other things you sell.")} />
+              subtitle={all.length ? t("Try different filters, or tap Clear all.") : t("Add the plants, pots and other items you sell.")} />
           }
           renderItem={({ item: p }) => (
             <Pressable testID={`product-${p.name}`} onPress={() => router.push({ pathname: "/products/[id]", params: { id: p.id } })}

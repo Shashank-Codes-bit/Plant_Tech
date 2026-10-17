@@ -23,7 +23,7 @@ export default function OrderCart() {
       <Screen bg={colors.surface}>
         <Header title={t("Order")} onBack={back} right={<DiscardOrder />} />
         <EmptyState icon="cart-outline" title={t("Nothing in this order yet")}
-          action={<Button title={t("Scan a plant")} icon="camera" onPress={() => router.replace("/order/scan")} />} />
+          action={<Button title={t("Add items")} icon="camera" onPress={() => router.replace("/order/scan")} />} />
       </Screen>
     );
   }
@@ -35,7 +35,7 @@ export default function OrderCart() {
         <OrderCustomerBar />
         {cart.items.map((it) => <Line key={it.product_id} it={it} />)}
 
-        <Button title={t("Add more plants")} icon="plus" variant="dashed" size="md" onPress={back} testID="cart-add-more" />
+        <Button title={t("Add more items")} icon="plus" variant="dashed" size="md" onPress={back} testID="cart-add-more" />
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 }}>
           <T v="bodyLarge" style={{ flex: 1 }}>{t("Discount ₹")}</T>

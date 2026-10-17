@@ -78,15 +78,15 @@ function ShopForm({ initial }: { initial: Business }) {
         <Field label={t("Shop name (printed on every bill)")} value={b.name} onChangeText={(name) => set({ name })} autoCapitalize="words" testID="shop-name" />
         <Field label={t("Shop address")} value={b.address} onChangeText={(address) => set({ address })} multiline />
         <PhoneField label={t("Shop phone")} value={phone} onChangeText={setPhone} error={phoneBad && phone.length === 10 ? t("Enter a 10-digit mobile number") : undefined} />
-        <Field label={t("UPI ID (shows a pay QR to customers)")} value={b.upi_id} onChangeText={(upi_id) => set({ upi_id })} autoCapitalize="none"
+        <Field label={t("UPI ID (shows a payment QR code to customers)")} value={b.upi_id} onChangeText={(upi_id) => set({ upi_id })} autoCapitalize="none"
           placeholder="shopname@okaxis" testID="shop-upi" />
         <View style={{ gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: colors.page }}>
-          <Toggle title={t("GST registered?")} subtitle={t("No = no tax on your bills")} value={b.gst_registered}
+          <Toggle title={t("GST registered")} subtitle={t("Turn on to show GST on your bills. Leave off if your shop is not registered.")} value={b.gst_registered}
             onChange={(gst_registered) => set({ gst_registered })} testID="shop-gst" />
           {b.gst_registered && (
             <>
               <Field label={t("GST number")} value={b.gstin} onChangeText={(v) => set({ gstin: v.toUpperCase() })} autoCapitalize="characters"
-                maxLength={15} error={b.gstin && gstinBad ? t("This doesn't look like a GST number") : undefined} />
+                maxLength={15} error={b.gstin && gstinBad ? t("This does not look like a valid GST number") : undefined} />
               <T v="small">{t("Set the GST % for each category in Categories.")}</T>
             </>
           )}

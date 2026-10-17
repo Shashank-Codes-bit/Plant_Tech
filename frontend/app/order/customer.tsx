@@ -44,7 +44,7 @@ export default function OrderCustomerStep() {
     try {
       if (change) {
         const extra = await cart.moveTo(c);
-        if (extra) toast.show(t("{{name}}'s saved items were added too", { name: c.name }), "success");
+        if (extra) toast.show(t("{{name}}'s saved items have also been added", { name: c.name }), "success");
         router.back();
         return;
       }

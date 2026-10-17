@@ -1,11 +1,12 @@
 """Supplier bills: add the items to stock (new items become new products)."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
 import auth
 from common import new_id, now_iso
 from db import get_db
+from errors import AppError
 from routers import library
 from routers.products import record_stock
 
@@ -44,7 +45,7 @@ async def create_purchase(body: PurchaseIn, user: dict = Depends(auth.require("s
                                                       update, projection={"_id": 0},
                                                       return_document=ReturnDocument.AFTER)
             if not p:
-                raise HTTPException(400, f"{it.name} is no longer in your products")
+                raise AppError(400, "{{name}} is no longer in your products.", "product_missing", name=it.name)
             await record_stock(db, user, p, it.quantity, p["stock"], "purchase", f"Supplier bill {body.invoice_number}")
         else:
             count = await db.products.count_documents({"business_id": bid})

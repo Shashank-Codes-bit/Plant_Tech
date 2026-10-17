@@ -27,7 +27,7 @@ export default function ChangePassword() {
     setBusy(true);
     try {
       await setSession(await apiPost("/auth/password", { current_password: current, new_password: next }));
-      toast.show(t("Changed. Your other phones are logged out."), "success");
+      toast.show(t("Updated. You have been logged out on your other phones."), "success");
       router.back();
     } catch (e: any) {
       toast.show(e.message, "error");
@@ -47,7 +47,7 @@ export default function ChangePassword() {
         <Field label={t("New {{word}}", { word })} value={next} onChangeText={setNext} secureTextEntry {...pinProps} testID="pw-new"
           hint={t("At least {{n}} characters", { n: min })} />
         <Field label={t("New {{word}} again", { word })} value={again} onChangeText={setAgain} secureTextEntry {...pinProps} testID="pw-again"
-          error={again && again !== next ? t("These don't match") : undefined} />
+          error={again && again !== next ? t("These do not match") : undefined} />
         <T v="small">{t("You stay logged in on this phone. Other phones using your login are logged out.")}</T>
       </KeyboardAwareScrollView>
       <BottomBar>

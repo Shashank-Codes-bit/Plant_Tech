@@ -43,7 +43,7 @@ export default function Customers() {
           contentContainerStyle={{ padding: spacing.lg, gap: 8 }}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={q.refetch} tintColor={colors.green} />}
           ListEmptyComponent={<EmptyState icon="account-group" title={q.data?.length ? t("Nothing matches") : t("No customers yet")}
-            subtitle={q.data?.length ? undefined : t("Type the customer's phone number when you take payment, and they are saved here.")} />}
+            subtitle={q.data?.length ? undefined : t("Customers are saved when you start a new order and will appear here.")} />}
           renderItem={({ item: c }) => (
             <Pressable testID={`customer-${c.name}`} onPress={() => router.push({ pathname: "/customers/[id]", params: { id: c.id } })}
               style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, minHeight: 72, borderRadius: radius.lg,

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 import auth
 from common import name_key, new_id, now_iso
 from db import get_db
+from errors import AppError
 
 router = APIRouter(prefix="/api", tags=["business"])
 
@@ -50,7 +51,7 @@ class CategoriesBulk(BaseModel):
 
 def _check_gst(value: float | None):
     if value is not None and value not in GST_SLABS:
-        raise HTTPException(400, "GST must be one of " + ", ".join(f"{s:g}%" for s in GST_SLABS))
+        raise AppError(400, "GST must be one of {{rates}}.", "bad_gst", rates=", ".join(f"{s:g}%" for s in GST_SLABS))
 
 
 @router.get("/business")
@@ -65,7 +66,7 @@ async def update_business(body: BusinessIn, owner: dict = Depends(auth.require("
     if "gstin" in update:
         update["gstin"] = update["gstin"].upper()
     if update.get("onboarding_done") and not (update.get("name") or (await get_business(owner)).get("name")):
-        raise HTTPException(400, "Enter the shop name first")
+        raise HTTPException(400, "Please enter the shop name first.")
     update["updated_at"] = now_iso()
     await db.businesses.update_one({"id": owner["business_id"]}, {"$set": update})
     return await db.businesses.find_one({"id": owner["business_id"]}, {"_id": 0})
@@ -119,13 +120,13 @@ async def update_category(cat_id: str, body: CategoryPatch, owner: dict = Depend
     db = get_db()
     cat = await db.categories.find_one({"id": cat_id, "business_id": owner["business_id"]}, {"_id": 0})
     if not cat:
-        raise HTTPException(404, "Category not found")
+        raise HTTPException(404, "Category not found.")
     update: dict = {}
     if body.name is not None:
         clash = await db.categories.find_one({"business_id": owner["business_id"], "name_key": name_key(body.name),
                                              "id": {"$ne": cat_id}})
         if clash:
-            raise HTTPException(409, "You already have a category with this name")
+            raise HTTPException(409, "A category with this name already exists.")
         update.update({"name": body.name.strip(), "name_key": name_key(body.name)})
     if body.gst_percent is not None:
         update["gst_percent"] = body.gst_percent
@@ -140,6 +141,8 @@ async def delete_category(cat_id: str, owner: dict = Depends(auth.require("owner
     used = await db.products.count_documents({"business_id": owner["business_id"], "category_id": cat_id,
                                               "deleted_at": None})
     if used:
-        raise HTTPException(400, f"{used} products use this category. Move them first.")
+        if used == 1:
+            raise AppError(400, "1 product uses this category. Move it to another category first.", "category_in_use")
+        raise AppError(400, "{{n}} products use this category. Move them to another category first.", "category_in_use", n=used)
     await db.categories.delete_one({"id": cat_id, "business_id": owner["business_id"]})
     return {"ok": True}

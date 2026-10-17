@@ -65,7 +65,7 @@ export default function Bill() {
 
   const who = inv.customer_phone
     ? t("To {{name}} · {{phone}}", { name: inv.customer_name.split(" ")[0], phone: formatPhone(inv.customer_phone) })
-    : t("Pick the customer in WhatsApp");
+    : t("Choose the customer in WhatsApp");
 
   return (
     <Screen bg={colors.surface}>
@@ -87,7 +87,7 @@ export default function Bill() {
             backgroundColor: pressed ? "#0E7A3F" : colors.whatsapp, opacity: busy && busy !== "wa" ? 0.6 : 1 })}>
           <Icon name="whatsapp" size={40} color={colors.white} />
           <View style={{ flex: 1 }}>
-            <T v="bodyLarge" color={colors.white}>{busy === "wa" ? t("Opening WhatsApp…") : t("Send bill on WhatsApp")}</T>
+            <T v="bodyLarge" color={colors.white}>{busy === "wa" ? t("Opening WhatsApp") : t("Send bill on WhatsApp")}</T>
             <T v="small" color="#DDF5E6">{who}</T>
           </View>
         </Pressable>

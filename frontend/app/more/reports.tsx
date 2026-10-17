@@ -35,7 +35,7 @@ export default function Reports() {
               <T v="label" color={colors.greenDark}>{t("Sales")}</T>
               <T v="amount" testID="report-total">{formatCurrency(r.sales)}</T>
               <T v="small" color={colors.greenDark}>
-                {[plural(r.orders, "1 order", "{{n}} orders"), r.profit > 0 ? t("profit about {{p}}", { p: formatCurrency(Math.round(r.profit)) }) : ""]
+                {[plural(r.orders, "1 order", "{{n}} orders"), r.profit > 0 ? t("estimated profit {{p}}", { p: formatCurrency(Math.round(r.profit)) }) : ""]
                   .filter(Boolean).join(" · ")}
               </T>
             </View>

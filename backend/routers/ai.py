@@ -25,7 +25,7 @@ async def use_quota(db, business_id: str):
                                                 {"$inc": {"count": 1}}, upsert=True,
                                                 return_document=ReturnDocument.AFTER)
     if doc["count"] > limit:
-        raise HTTPException(429, "Today's AI scan limit is reached. Search by name, or try again tomorrow.")
+        raise HTTPException(429, "The daily photo scan limit has been reached. Please search by name, or try again tomorrow.")
 
 
 async def _run(coro):

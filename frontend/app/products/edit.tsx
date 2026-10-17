@@ -39,7 +39,7 @@ export default function EditProduct() {
   }
 
   async function remove() {
-    if (!p || !(await confirm(t("Delete {{name}}?", { name: p.name }), t("It disappears from your products. Old bills keep it."), t("Delete"), true))) return;
+    if (!p || !(await confirm(t("Delete {{name}}?", { name: p.name }), t("It will be removed from your products. Existing bills are not affected."), t("Delete"), true))) return;
     try {
       await apiDelete(`/products/${id}`);
       qc.invalidateQueries({ queryKey: ["products"] });

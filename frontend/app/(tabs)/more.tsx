@@ -60,19 +60,19 @@ export default function More() {
 
         {isOwner ? (
           <>
-            <Row title={t("Sales reports")} subtitle={t("Today, week, month")} left={<MenuIcon name="chart-bar" />} chevron
+            <Row title={t("Sales reports")} subtitle={t("Daily, weekly and monthly sales")} left={<MenuIcon name="chart-bar" />} chevron
               onPress={() => router.push("/more/reports")} testID="more-reports" />
             <Row title={t("Employees")} left={<MenuIcon name="account-multiple" />} chevron testID="more-staff"
-              subtitle={staff.data ? [plural(staff.data.length, "1 employee", "{{n}} employees"), t("who sold what")].join(" · ") : t("Who sold what, and their logins")}
+              subtitle={staff.data ? [plural(staff.data.length, "1 employee", "{{n}} employees"), t("Sales by employee")].join(" · ") : t("Sales by employee and login access")}
               onPress={() => router.push("/more/staff")} />
             <Row title={t("Shop details")} subtitle={t("Name, address, UPI, GST")} left={<MenuIcon name="store" />} chevron
               onPress={() => router.push("/more/shop")} testID="more-shop" />
-            <Row title={t("Categories")} subtitle={t("Names and GST %")} left={<MenuIcon name="shape" />} chevron
+            <Row title={t("Categories")} subtitle={t("Names and GST rates")} left={<MenuIcon name="shape" />} chevron
               onPress={() => router.push("/more/categories")} testID="more-categories" />
-            <Row title={t("Supplier bill")} subtitle={t("Photo of a bill adds the stock")} chevron testID="more-supplier"
+            <Row title={t("Supplier bill")} subtitle={t("Add stock from a supplier bill")} chevron testID="more-supplier"
               left={<MenuIcon name="file-document-outline" tint={colors.blueTint} color={colors.blue} />} onPress={() => router.push("/more/supplier-bill")} />
             {user?.is_admin && (
-              <Row title={t("Shared pictures")} subtitle={t("App admin only (you)")} chevron testID="more-library"
+              <Row title={t("Shared pictures")} subtitle={t("Visible to app administrators only")} chevron testID="more-library"
                 left={<MenuIcon name="image-multiple" tint={colors.amberTint} color={colors.amber} />} onPress={() => router.push("/more/library")} />
             )}
           </>
@@ -85,7 +85,7 @@ export default function More() {
                 <T v="bold" color={can(p) ? colors.ink : colors.muted}>{label}</T>
               </View>
             ))}
-            <T v="small" style={{ marginTop: 4 }}>{t("Forgot your PIN? Ask the shop owner to give you a new one.")}</T>
+            <T v="small" style={{ marginTop: 4 }}>{t("Forgot your PIN? Please ask the shop owner to set a new one.")}</T>
           </View>
         )}
         {!isOwner && can("reports") && (

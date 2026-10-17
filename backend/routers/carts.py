@@ -38,7 +38,7 @@ async def clear(db, business_id: str, customer_id: str | None):
 
 async def _own_customer(db, business_id: str, customer_id: str):
     if not await db.customers.find_one({"id": customer_id, "business_id": business_id}, {"_id": 1}):
-        raise HTTPException(400, "Customer not found")
+        raise HTTPException(400, "Customer not found.")
 
 
 @router.get("")

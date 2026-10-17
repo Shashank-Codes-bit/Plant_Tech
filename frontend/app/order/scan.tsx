@@ -40,7 +40,7 @@ export default function OrderScan() {
   async function capture(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
     if (out.status === "denied") {
-      toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
+      toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
       return;
     }
     if (out.status !== "ok") return;
@@ -70,7 +70,7 @@ export default function OrderScan() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     restart();
     if (next === "cart") router.push("/order/cart");
-    else toast.show(t("Added. Scan the next one."), "success");
+    else toast.show(t("Added to the order. Scan the next item."), "success");
   };
 
   if (openedWithout) return <Redirect href="/order/customer" />;
@@ -113,7 +113,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
                   <Image source={{ uri: photoUri }} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" />
                   <View style={{ position: "absolute", inset: 0, backgroundColor: "rgba(16,32,26,0.55)" } as any} />
                   <ActivityIndicator size="large" color={colors.white} />
-                  <T v="bodyLarge" color={colors.white} style={{ marginTop: 12 }}>{t("Finding the plant…")}</T>
+                  <T v="bodyLarge" color={colors.white} style={{ marginTop: 12 }}>{t("Identifying the item")}</T>
                 </>
               ) : (
                 <>
@@ -121,7 +121,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
                     alignItems: "center", justifyContent: "center" }}>
                     <Icon name="leaf" size={64} color={colors.white} />
                   </View>
-                  <T v="bodyLarge" color={colors.white} style={{ marginTop: 16 }}>{t("Take a photo of the plant")}</T>
+                  <T v="bodyLarge" color={colors.white} style={{ marginTop: 16 }}>{t("Take a photo of the item")}</T>
                 </>
               )}
             </Pressable>
@@ -144,7 +144,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 60, paddingHorizontal: 14, borderWidth: 2,
             borderColor: query ? colors.green : colors.lineStrong, borderRadius: 16 }}>
             <Icon name="magnify" size={26} color={colors.muted} />
-            <TextInput testID="scan-search" value={q} onChangeText={setQ} placeholder={t("Or type the product name")}
+            <TextInput testID="scan-search" value={q} onChangeText={setQ} placeholder={t("Or search by product name")}
               placeholderTextColor={colors.muted} style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 19, color: colors.ink, minHeight: 56 }} />
             {!!q && (
               <Pressable accessibilityLabel={t("Clear")} onPress={() => setQ("")} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
@@ -173,7 +173,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew }: {
                 borderStyle: "dashed", borderColor: colors.green }}>
               <Icon name="plus-circle" size={30} color={colors.green} />
               <T v="bold" color={colors.greenDark} style={{ flex: 1 }}>
-                {results.data.length ? t("Not in the list? Sell “{{q}}”", { q: query }) : t("“{{q}}” isn't in your products. Sell it anyway", { q: query })}
+                {results.data.length ? t("Sell “{{q}}” as a new item", { q: query }) : t("“{{q}}” is not in your products", { q: query })}
               </T>
             </Pressable>
           )}
@@ -214,9 +214,9 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
   const inCart = cart.items.find((i) => i.product_id === p.id)?.quantity ?? 0;
   const left = Math.max(0, p.stock - inCart);
   const [qty, setQty] = useState(1);
-  const conf = confidence === "High" ? { text: t("Sure match"), tone: "green" as const }
-    : confidence === "Medium" ? { text: t("Probably"), tone: "amber" as const }
-    : confidence ? { text: t("Not sure, check it"), tone: "red" as const } : null;
+  const conf = confidence === "High" ? { text: t("Strong match"), tone: "green" as const }
+    : confidence === "Medium" ? { text: t("Likely match"), tone: "amber" as const }
+    : confidence ? { text: t("Please verify"), tone: "red" as const } : null;
 
   function add(next: "scan" | "cart", loose = false) {
     cart.addItem(loose
@@ -227,7 +227,7 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={conf ? t("Plant found") : p.name} onBack={onBack} />
+      <Header title={conf ? t("Match found") : p.name} onBack={onBack} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }}>
         <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
           {photoUri ? <Image source={{ uri: photoUri }} style={{ width: 110, height: 110, borderRadius: 24 }} contentFit="cover" />
@@ -257,8 +257,8 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
           </View>
         ) : (
           <View style={{ gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
-            <T v="bold" color={colors.amberInk}>{t("Out of stock in the app")}</T>
-            <T v="small" color={colors.amberInk}>{t("If you have it in hand, sell it anyway. Then fix the stock count.")}</T>
+            <T v="bold" color={colors.amberInk}>{t("Out of stock")}</T>
+            <T v="small" color={colors.amberInk}>{t("You can still sell it if you have it on hand. Update the stock count afterwards.")}</T>
             {can("stock") && (
               <Button title={t("Add stock")} icon="package-variant-plus" variant="outline" size="md"
                 onPress={() => router.push({ pathname: "/products/[id]", params: { id: p.id } })} />
@@ -267,7 +267,7 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
         )}
 
         <Pressable onPress={onBack} style={{ minHeight: 48, justifyContent: "center", alignItems: "center" }}>
-          <T v="bold" color={colors.green}>{t("Wrong plant? Search instead")}</T>
+          <T v="bold" color={colors.green}>{t("Not the right item? Search by name")}</T>
         </Pressable>
       </ScrollView>
       <BottomBar>
@@ -278,7 +278,7 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
               onPress={() => add("cart")} testID="found-add" />
           </>
         ) : (
-          <Button title={t("Sell anyway · {{total}}", { total: formatCurrency(p.selling_price * qty) })} icon="cart-plus"
+          <Button title={t("Sell without stock · {{total}}", { total: formatCurrency(p.selling_price * qty) })} icon="cart-plus"
             onPress={() => add("cart", true)} testID="found-sell-anyway" />
         )}
       </BottomBar>
@@ -334,23 +334,23 @@ function NotInStock({ initial, photo, onBack, onAdded }: {
 
   return (
     <Screen bg={colors.surface}>
-      <Header title={name || t("Not in stock")} onBack={onBack} />
+      <Header title={name || t("New item")} onBack={onBack} />
       <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", gap: 14, alignItems: "center", padding: 14, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
           {photo ? <Image source={{ uri: photo.uri }} style={{ width: 72, height: 72, borderRadius: 18 }} contentFit="cover" />
             : <Icon name="help-circle" size={44} color={colors.amber} />}
           <View style={{ flex: 1 }}>
-            <T v="bodyLarge" color={colors.amberInk}>{t("Not in your stock yet")}</T>
-            <T v="small" color={colors.amberInk}>{t("You can still sell it now.")}</T>
+            <T v="bodyLarge" color={colors.amberInk}>{t("This item is not in your products")}</T>
+            <T v="small" color={colors.amberInk}>{t("Add it to your products, or sell it on this bill only.")}</T>
           </View>
         </View>
 
         {canSave && (
           <Segmented value={mode} onChange={setMode}
-            options={[{ value: "save", label: t("Add to products") }, { value: "once", label: t("Just sell it") }]} />
+            options={[{ value: "save", label: t("Add to products") }, { value: "once", label: t("This bill only") }]} />
         )}
         <T v="small">
-          {mode === "save" ? t("Adds it to your products, then to this order.") : t("For something you don't keep in stock. Only this bill.")}
+          {mode === "save" ? t("Saves the item to your products and adds it to this order.") : t("Adds the item to this bill without creating a product.")}
         </T>
 
         <Field label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" testID="new-name" />
@@ -358,8 +358,8 @@ function NotInStock({ initial, photo, onBack, onAdded }: {
           placeholder="0" testID="new-price" inputStyle={{ fontSize: 24 }} />
         {mode === "save" && (
           <>
-            <Field label={t("Stock (with this one)")} value={stock} onChangeText={(v) => setStock(v.replace(/[^0-9.]/g, ""))}
-              keyboardType="decimal-pad" testID="new-stock" error={!stockOk ? t("At least {{n}}, for this order", { n: qty }) : undefined} />
+            <Field label={t("Opening stock (including this sale)")} value={stock} onChangeText={(v) => setStock(v.replace(/[^0-9.]/g, ""))}
+              keyboardType="decimal-pad" testID="new-stock" error={!stockOk ? t("Must be at least {{n}} for this order", { n: qty }) : undefined} />
             <CategoryPicker value={categoryId} onChange={setCategoryId} />
           </>
         )}

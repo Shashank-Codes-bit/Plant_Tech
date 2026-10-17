@@ -37,7 +37,7 @@ def check_password(password: str, hashed: str | None) -> bool:
 def _secret() -> str:
     secret = os.environ.get("JWT_SECRET", "")
     if len(secret) < 32:
-        raise HTTPException(500, "Server login is not configured")
+        raise HTTPException(500, "Sign-in is not configured on the server.")
     return secret
 
 
@@ -55,13 +55,13 @@ def verify_google_id_token(token: str) -> dict:
 
     client_ids = [c.strip() for c in os.environ.get("GOOGLE_CLIENT_IDS", "").split(",") if c.strip()]
     if not client_ids:
-        raise HTTPException(503, "Google sign-in is not set up yet")
+        raise HTTPException(503, "Google sign-in is not available yet.")
     try:
         info = id_token.verify_oauth2_token(token, google_requests.Request(), audience=client_ids)
     except ValueError as e:
-        raise HTTPException(401, "Google sign-in failed, please try again") from e
+        raise HTTPException(401, "Google sign-in failed. Please try again.") from e
     if info.get("iss") not in ("accounts.google.com", "https://accounts.google.com"):
-        raise HTTPException(401, "Google sign-in failed, please try again")
+        raise HTTPException(401, "Google sign-in failed. Please try again.")
     return info
 
 
@@ -82,18 +82,18 @@ def can(user: dict, perm: str) -> bool:
 
 async def current_user(authorization: str | None = Header(None)) -> dict:
     if not authorization or not authorization.lower().startswith("bearer "):
-        raise HTTPException(401, "Please log in")
+        raise HTTPException(401, "Please log in.")
     try:
         claims = jwt.decode(authorization[7:].strip(), _secret(), algorithms=["HS256"])
     except jwt.ExpiredSignatureError as e:
-        raise HTTPException(401, "Your login has expired, please log in again") from e
+        raise HTTPException(401, "Your session has expired. Please log in again.") from e
     except jwt.InvalidTokenError as e:
-        raise HTTPException(401, "Please log in") from e
+        raise HTTPException(401, "Please log in.") from e
     user = await get_db().users.find_one({"id": claims.get("sub")}, {"_id": 0})
     if not user or user.get("token_version", 0) != claims.get("tv"):
-        raise HTTPException(401, "Please log in again")
+        raise HTTPException(401, "Please log in again.")
     if not user.get("active", True):
-        raise HTTPException(403, "This login is turned off. Ask your owner.")
+        raise HTTPException(403, "This login has been turned off. Please contact the shop owner.")
     return user
 
 
@@ -101,7 +101,7 @@ def require(*perms: str):
     """Dependency: the logged-in user must have at least one of `perms`."""
     async def dep(user: dict = Depends(current_user)) -> dict:
         if not any(can(user, p) for p in perms):
-            raise HTTPException(403, "Your login can't do this. Ask your owner.")
+            raise HTTPException(403, "You do not have permission for this. Please ask the shop owner.")
         return user
     return dep
 

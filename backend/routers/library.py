@@ -130,7 +130,7 @@ async def admin_update(entry_id: str, body: LibraryPatch, admin: dict = Depends(
     update["updated_at"] = now_iso()
     res = await get_db().library.update_one({"id": entry_id}, {"$set": update})
     if not res.matched_count:
-        raise HTTPException(404, "Not found")
+        raise HTTPException(404, "Not found.")
     return view(await get_db().library.find_one({"id": entry_id}, {"_id": 0}))
 
 
@@ -138,7 +138,7 @@ async def admin_update(entry_id: str, body: LibraryPatch, admin: dict = Depends(
 async def admin_set_photo(entry_id: str, body: PhotoIn, admin: dict = Depends(auth.require("admin"))):
     db = get_db()
     if not await db.library.find_one({"id": entry_id}):
-        raise HTTPException(404, "Not found")
+        raise HTTPException(404, "Not found.")
     try:
         jpeg = await run_in_threadpool(ai_client.normalize_photo_b64, body.image_base64)
         square = await run_in_threadpool(ai_client.square_thumbnail, jpeg)

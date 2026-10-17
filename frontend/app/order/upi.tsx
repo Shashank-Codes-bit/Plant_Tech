@@ -31,7 +31,7 @@ export default function OrderUpi() {
       <Header title={t("Pay by UPI")} />
       {!b ? <LoadingView /> : (
         <View style={{ flex: 1, alignItems: "center", padding: spacing.lg, gap: 14 }}>
-          <T v="body" color={colors.inkSoft} style={{ textAlign: "center" }}>{t("Show this to the customer. They scan it with any UPI app.")}</T>
+          <T v="body" color={colors.inkSoft} style={{ textAlign: "center" }}>{t("Show this code to the customer to scan with any UPI app.")}</T>
           <View style={{ padding: 18, borderRadius: radius.xl, borderWidth: 2, borderColor: colors.line, backgroundColor: colors.white }} testID="upi-qr">
             <QRCode value={upiLink(b.upi_id, b.name, cart.total)} size={240} color={colors.ink} backgroundColor={colors.white} />
           </View>
@@ -40,7 +40,7 @@ export default function OrderUpi() {
         </View>
       )}
       <BottomBar>
-        <Button title={t("Money received")} icon="check-bold" onPress={() => bill.create("UPI")} loading={bill.busy}
+        <Button title={t("Payment received")} icon="check-bold" onPress={() => bill.create("UPI")} loading={bill.busy}
           disabled={!b || !cart.count} testID="upi-received" />
         <Button title={t("Change payment method")} variant="outline" size="md" onPress={() => router.back()} />
       </BottomBar>

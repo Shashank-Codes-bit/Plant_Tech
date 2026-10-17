@@ -1,4 +1,8 @@
 // API client. Every request carries the login token; a 401 logs the user out.
+// Server messages are shown in the app's language: `key` + `params` when the server sends them
+// (messages with numbers or names), else the English `detail` is itself the translation key.
+import i18n from "i18next";
+
 const BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 export const API = `${BASE}/api`;
 
@@ -14,10 +18,12 @@ export function setOnUnauthorized(fn: (() => void) | null) {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number) {
+  constructor(message: string, public status: number, public code = "", public params: Record<string, unknown> = {}) {
     super(message);
   }
 }
+
+const failed = (status: number) => i18n.t("Something went wrong. Please try again. (Error {{status}})", { status });
 
 async function request(method: string, path: string, body?: unknown) {
   const headers: Record<string, string> = {};
@@ -28,17 +34,24 @@ async function request(method: string, path: string, body?: unknown) {
   try {
     res = await fetch(`${API}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch {
-    throw new ApiError("No internet. Check the connection and try again.", 0);
+    throw new ApiError(i18n.t("No internet connection. Please check your connection and try again."), 0);
   }
   if (!res.ok) {
-    let msg = `Something went wrong (${res.status})`;
+    let msg = failed(res.status);
+    let code = "";
+    let params: Record<string, unknown> = {};
     try {
       const data = await res.json();
-      if (typeof data?.detail === "string") msg = data.detail;
-      else if (Array.isArray(data?.detail)) msg = data.detail[0]?.msg ?? msg;
+      if (typeof data?.detail === "string") {
+        code = data.code ?? "";
+        params = data.params ?? {};
+        msg = i18n.t(data.key ?? data.detail, params);
+      } else if (Array.isArray(data?.detail)) {
+        msg = i18n.t("Please check the details and try again.");
+      }
     } catch {}
     if (res.status === 401 && sent && sent === token && onUnauthorized) onUnauthorized();
-    throw new ApiError(msg, res.status);
+    throw new ApiError(msg, res.status, code, params);
   }
   return res.json();
 }
@@ -62,6 +75,6 @@ export function fileUrl(path?: string | null): string | undefined {
 
 export async function fetchText(path: string): Promise<string> {
   const res = await fetch(`${API}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-  if (!res.ok) throw new ApiError(`Something went wrong (${res.status})`, res.status);
+  if (!res.ok) throw new ApiError(failed(res.status), res.status);
   return res.text();
 }

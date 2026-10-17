@@ -44,13 +44,13 @@ export default function NewProduct() {
 
   async function scan() {
     const out = await takePhoto();
-    if (out.status === "denied") toast.show(t("Allow camera and photos for Hara Hisaab in your phone settings"), "error");
+    if (out.status === "denied") toast.show(t("Please allow camera and photo access for Hara Hisaab in your phone settings."), "error");
     if (out.status !== "ok") return;
     setScanning(true);
     try {
       const [path, r] = await Promise.all([uploadImage(out.result.base64), apiPost("/ai/identify-plant", { image_base64: out.result.base64 })]);
       if (r.matched_product) {
-        toast.show(t("You already have {{name}}. Add stock here.", { name: r.matched_product.name }), "info");
+        toast.show(t("{{name}} is already in your products. You can add stock here.", { name: r.matched_product.name }), "info");
         router.replace({ pathname: "/products/[id]", params: { id: r.matched_product.id } });
         return;
       }
@@ -100,7 +100,7 @@ export default function NewProduct() {
 
         {own.length > 0 && (
           <View style={{ gap: 8 }}>
-            <T v="label">{t("Already yours")}</T>
+            <T v="label">{t("Already in your products")}</T>
             {own.map((p) => (
               <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: radius.lg, backgroundColor: colors.page }}>
                 <Thumb path={p.image_path} size={52} />
@@ -119,7 +119,7 @@ export default function NewProduct() {
 
         {lib.length > 0 && (
           <View style={{ gap: 8 }}>
-            <T v="label">{t("From the shared picture library")}</T>
+            <T v="label">{t("From the shared catalogue")}</T>
             {lib.map((e) => (
               <Pressable key={e.id} onPress={() => fromLibrary(e)} testID={`add-lib-${e.name}`}
                 style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 72, borderRadius: radius.lg,
@@ -142,13 +142,13 @@ export default function NewProduct() {
             <Icon name="plus-circle" size={32} color={colors.green} />
             <View style={{ flex: 1 }}>
               <T v="bold" color={colors.greenDark}>{t("Create new “{{q}}”", { q: query })}</T>
-              <T v="small">{t("Any product: plant, pot, soil, tool")}</T>
+              <T v="small">{t("Any item: plant, pot, soil or tool")}</T>
             </View>
           </Pressable>
         )}
 
         <View style={{ height: 8 }} />
-        <Button title={scanning ? t("Finding the plant…") : t("Or take a photo, AI fills it in")} icon="camera" variant="scan"
+        <Button title={scanning ? t("Identifying the item") : t("Identify from a photo")} icon="camera" variant="scan"
           onPress={scan} loading={scanning} testID="add-scan" />
       </ScrollView>
     </Screen>

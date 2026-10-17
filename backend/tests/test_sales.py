@@ -46,6 +46,19 @@ def test_not_enough_stock_changes_nothing(client):
     assert shop.get(f"/api/products/{a['id']}").json()["stock"] == 5  # rolled back
 
 
+def test_app_error_payload(client):
+    """Messages with numbers or names come with a translation key; old apps still read plain `detail`."""
+    shop = Shop(client)
+    b = shop.product("Snake Plant", 450, 1)
+    r = _order(shop, [{"product_id": b["id"], "name": "Snake Plant", "quantity": 3, "price": 450}])
+    assert r.status_code == 400
+    assert r.json() == {"detail": "Only 1 Snake Plant left in stock.", "code": "out_of_stock",
+                        "key": "Only {{n}} {{name}} left in stock.", "params": {"n": "1", "name": "Snake Plant"}}
+    r = shop.c.delete(f"/api/categories/{shop.cat['Indoor Plants']}", headers=shop.h)
+    assert r.json()["detail"] == "1 product uses this category. Move it to another category first."
+    assert r.json()["code"] == "category_in_use" and r.json()["params"] == {}
+
+
 def test_loose_item_and_customer_by_phone(client):
     shop = Shop(client)
     inv = _order(shop, [{"product_id": None, "name": "Hibiscus", "quantity": 1, "price": 280}],

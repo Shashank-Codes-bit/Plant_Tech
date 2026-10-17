@@ -153,7 +153,7 @@ function EntrySheet({ entry: e, onClose }: { entry: LibraryEntry; onClose: () =>
       {!!e.image_path && (sure === "remove" ? (
         <View style={{ gap: 8, padding: 12, borderRadius: radius.md, backgroundColor: "#FDECEC" }}>
           <T v="bold" color={colors.red}>{t("Remove this picture for every shop?")}</T>
-          <T v="small">{t("Shops that took their own photo keep it. The next clear shop photo can fill it again.")}</T>
+          <T v="small">{t("Shops that use their own photo keep it. The next suitable shop photo may replace it.")}</T>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Button title={t("Cancel")} variant="outline" size="md" style={{ flex: 1 }} onPress={() => setSure(null)} />
             <Button title={t("Remove")} icon="image-remove" variant="danger" size="md" style={{ flex: 1 }} testID="lib-remove-yes"
@@ -177,7 +177,7 @@ function EntrySheet({ entry: e, onClose }: { entry: LibraryEntry; onClose: () =>
         {sure === "delete" ? (
           <View style={{ gap: 8, padding: 12, borderRadius: radius.md, backgroundColor: "#FDECEC" }}>
             <T v="bold" color={colors.red}>{t("Delete \"{{name}}\" from the library?", { name: e.name })}</T>
-            <T v="small">{t("It stops showing in suggestions. Shops keep their own products.")}</T>
+            <T v="small">{t("It will no longer appear in suggestions. Shops keep their own products.")}</T>
             <View style={{ flexDirection: "row", gap: 10 }}>
               <Button title={t("Cancel")} variant="outline" size="md" style={{ flex: 1 }} onPress={() => setSure(null)} />
               <Button title={t("Delete")} icon="trash-can-outline" variant="danger" size="md" style={{ flex: 1 }} testID="lib-delete-yes"

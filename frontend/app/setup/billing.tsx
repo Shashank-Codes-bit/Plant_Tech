@@ -45,16 +45,16 @@ function BillingStep({ biz }: { biz: Business }) {
   }
 
   return (
-    <SetupFrame step={3} title={t("Bills and payments")} subtitle={t("Both optional. You can change them later.")}
+    <SetupFrame step={3} title={t("Bills and payments")} subtitle={t("Both are optional and can be changed later in Shop details.")}
       onNext={next} busy={busy} nextDisabled={gstinBad || (gst && !gstin)}>
-      <Field label={t("UPI ID (shows a pay QR to customers)")} value={upi} onChangeText={setUpi} autoCapitalize="none"
+      <Field label={t("UPI ID (shows a payment QR code to customers)")} value={upi} onChangeText={setUpi} autoCapitalize="none"
         placeholder="shopname@okaxis" testID="setup-upi" />
       <View style={{ gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: colors.page }}>
-        <Toggle title={t("GST registered?")} subtitle={t("No = no tax on your bills")} value={gst} onChange={setGst} testID="setup-gst" />
+        <Toggle title={t("GST registered")} subtitle={t("Turn on to show GST on your bills. Leave off if your shop is not registered.")} value={gst} onChange={setGst} testID="setup-gst" />
         {gst && (
           <>
             <Field label={t("GST number")} value={gstin} onChangeText={(v) => setGstin(v.toUpperCase())} autoCapitalize="characters"
-              maxLength={15} placeholder="06ABCDE1234F1Z5" error={gstinBad ? t("This doesn't look like a GST number") : undefined} />
+              maxLength={15} placeholder="06ABCDE1234F1Z5" error={gstinBad ? t("This does not look like a valid GST number") : undefined} />
             <T v="small" style={{ color: colors.inkSoft }}>
               {t("The GST % is set per category in the next step. Prices you type include GST.")}
             </T>

@@ -18,6 +18,7 @@ from starlette.middleware.cors import CORSMiddleware  # noqa: E402
 
 import storage_client  # noqa: E402
 from db import get_db  # noqa: E402
+from errors import AppError, app_error_handler  # noqa: E402
 from routers import ai, auth, business, carts, customers, files, library, products, purchases, sales, staff  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -67,6 +68,7 @@ app = FastAPI(title="NurseryPOS API", lifespan=lifespan)
 for module in (auth, staff, business, library, products, customers, carts, sales, purchases, ai, files):
     app.include_router(module.router)
 app.include_router(sales.public_router)
+app.add_exception_handler(AppError, app_error_handler)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 

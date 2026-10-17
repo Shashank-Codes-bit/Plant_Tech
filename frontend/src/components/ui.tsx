@@ -15,6 +15,7 @@ import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import MaterialDesignIcons from "@react-native-vector-icons/material-design-icons";
 
 import { fileUrl } from "@/src/api";
@@ -53,12 +54,13 @@ export function Screen({ children, bg = colors.page, edgeTop = true, edgeBottom 
 export function Header({ title, onBack, right, close, testID }: {
   title?: string; onBack?: () => void; right?: React.ReactNode; close?: boolean; testID?: string;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.sm, minHeight: 68, backgroundColor: colors.surface }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={close ? "Close" : "Back"}
+        accessibilityLabel={close ? t("Close") : t("Back")}
         testID={testID ?? "header-back"}
         onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace("/")))}
         style={{ width: touch.min, height: touch.min, alignItems: "center", justifyContent: "center" }}
@@ -228,15 +230,16 @@ export function Segmented<V extends string>({ options, value, onChange }: {
 export function Stepper({ value, onChange, min = 1, max = 9999, testID }: {
   value: number; onChange: (v: number) => void; min?: number; max?: number; testID?: string;
 }) {
+  const { t } = useTranslation();
   const btn = { width: touch.min, height: 52, borderRadius: 14, alignItems: "center" as const, justifyContent: "center" as const };
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <Pressable testID={testID ? `${testID}-minus` : undefined} accessibilityLabel="One less" onPress={() => onChange(Math.max(min, value - 1))}
+      <Pressable testID={testID ? `${testID}-minus` : undefined} accessibilityLabel={t("Decrease quantity")} onPress={() => onChange(Math.max(min, value - 1))}
         style={[btn, { borderWidth: 2, borderColor: colors.lineStrong, backgroundColor: colors.surface }]}>
         <Icon name="minus" size={24} color={colors.ink} />
       </Pressable>
       <T v="number" style={{ minWidth: 40, textAlign: "center", fontSize: 26 }} testID={testID ? `${testID}-value` : undefined}>{value}</T>
-      <Pressable testID={testID ? `${testID}-plus` : undefined} accessibilityLabel="One more" onPress={() => onChange(Math.min(max, value + 1))}
+      <Pressable testID={testID ? `${testID}-plus` : undefined} accessibilityLabel={t("Increase quantity")} onPress={() => onChange(Math.min(max, value + 1))}
         style={[btn, { backgroundColor: colors.green }]}>
         <Icon name="plus" size={24} color={colors.white} />
       </Pressable>
@@ -259,9 +262,10 @@ export function Card({ children, onPress, style, testID }: {
 export function Thumb({ path, size = 56, tint = colors.greenTint, icon = "sprout", contain }: {
   path?: string | null; size?: number; tint?: string; icon?: IconName; contain?: boolean; // contain: show all of it (logos)
 }) {
+  const { t } = useTranslation();
   return (
     <View style={{ width: size, height: size, borderRadius: size * 0.24, overflow: "hidden", backgroundColor: tint, alignItems: "center", justifyContent: "center" }}>
-      {path ? <Image source={{ uri: fileUrl(path) }} style={{ width: "100%", height: "100%" }} contentFit={contain ? "contain" : "cover"} accessibilityLabel={contain ? "Shop logo" : "Product picture"} />
+      {path ? <Image source={{ uri: fileUrl(path) }} style={{ width: "100%", height: "100%" }} contentFit={contain ? "contain" : "cover"} accessibilityLabel={contain ? t("Shop logo") : t("Product picture")} />
         : <Icon name={icon} size={size * 0.5} color={colors.greenMid} />}
     </View>
   );
@@ -334,11 +338,12 @@ export function LoadingView({ label }: { label?: string }) {
 }
 
 export function ErrorView({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const { t } = useTranslation();
   return (
     <View style={{ alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
       <Icon name="wifi-off" size={40} color={colors.red} />
       <T v="body" style={{ textAlign: "center" }}>{message}</T>
-      {onRetry && <Button title="Try again" icon="refresh" variant="outline" size="md" onPress={onRetry} />}
+      {onRetry && <Button title={t("Try again")} icon="refresh" variant="outline" size="md" onPress={onRetry} />}
     </View>
   );
 }

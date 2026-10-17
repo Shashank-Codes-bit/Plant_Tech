@@ -66,7 +66,7 @@ export default function Login() {
         )}
         <View style={{ padding: 16, borderRadius: 14, backgroundColor: colors.page, gap: 6 }}>
           <T v="small" style={{ color: colors.inkSoft }}>
-            {t("Forgot your password? Employees: ask your owner to set a new PIN. Owners: sign in with Google if you used it, or contact support.")}
+            {t("Forgot your password? Employees can ask the shop owner to set a new PIN. Owners can sign in with Google if they used it, or contact support.")}
           </T>
         </View>
         <Pressable onPress={() => router.replace("/signup")} style={{ minHeight: 52, alignItems: "center", justifyContent: "center" }}>

@@ -64,7 +64,7 @@ def normalize_photo(data: bytes) -> bytes:
         img = Image.open(io.BytesIO(data))
         img.load()
     except Exception as e:
-        raise BadImage("Could not read the photo, please retake it") from e
+        raise BadImage("This photo could not be read. Please take it again.") from e
     img = ImageOps.exif_transpose(img)
     if img.mode != "RGB":
         img = img.convert("RGB")
@@ -82,7 +82,7 @@ def normalize_photo_b64(image_base64: str) -> bytes:
     try:
         data = base64.b64decode(raw)
     except Exception as e:
-        raise BadImage("Could not read the photo, please retake it") from e
+        raise BadImage("This photo could not be read. Please take it again.") from e
     return normalize_photo(data)
 
 
@@ -131,15 +131,15 @@ async def _ask(system: str, prompt: str, image_base64: str, schema, effort: str,
         )
     except anthropic.RateLimitError as e:
         logger.warning("Claude rate limited: %s", e)
-        raise AIUnavailable("AI is busy, please try again in a moment") from e
+        raise AIUnavailable("Photo recognition is busy. Please try again in a moment.") from e
     except anthropic.APIStatusError as e:
         logger.error("Claude API error %s: %s", e.status_code, e)
         if e.status_code >= 500:
-            raise AIUnavailable("AI service error, please try again") from e
+            raise AIUnavailable("Photo recognition is unavailable right now. Please try again.") from e
         raise
     except anthropic.APIConnectionError as e:
         logger.error("Claude connection error: %s", e)
-        raise AIUnavailable("Could not reach AI service, check internet") from e
+        raise AIUnavailable("Could not reach the photo recognition service. Please check your internet connection.") from e
     except ValueError as e:
         # Output did not validate against the schema (e.g. refusal text or truncation).
         logger.warning("Claude output not parseable: %s", e)

@@ -68,7 +68,7 @@ function ShopStep({ biz }: { biz: Business }) {
           )}
           <View style={{ flex: 1 }}>
             <T v="bodyLarge">{logo ? t("Change photo") : t("Add photo")}</T>
-            <T v="small">{uploading ? t("Uploading…") : t("Pick from gallery, or take one below")}</T>
+            <T v="small">{uploading ? t("Uploading") : t("Choose from your gallery, or take a photo below")}</T>
           </View>
         </Pressable>
         <Button title={t("Take photo")} icon="camera" variant="outline" size="md" onPress={() => addPhoto("camera")} />

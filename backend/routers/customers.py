@@ -59,9 +59,9 @@ async def create_customer(body: CustomerIn, user: dict = Depends(auth.require("s
     db = get_db()
     phone = normalize_in_phone(body.phone)
     if not phone:
-        raise HTTPException(400, "Enter a 10-digit Indian mobile number")
+        raise HTTPException(400, "Please enter a valid 10-digit mobile number.")
     if await db.customers.find_one({"business_id": user["business_id"], "phone": phone}):
-        raise HTTPException(409, "A customer with this phone number already exists")
+        raise HTTPException(409, "A customer with this phone number already exists.")
     doc = {"id": new_id(), "business_id": user["business_id"], "name": body.name.strip(), "phone": phone,
            "email": body.email.strip(), "address": body.address.strip(), "notes": body.notes.strip(),
            "total_purchases": 0.0, "purchase_count": 0, "created_at": now_iso()}
@@ -75,7 +75,7 @@ async def get_customer(customer_id: str, user: dict = Depends(auth.require("cust
     db = get_db()
     c = await db.customers.find_one({"id": customer_id, "business_id": user["business_id"]}, {"_id": 0})
     if not c:
-        raise HTTPException(404, "Customer not found")
+        raise HTTPException(404, "Customer not found.")
     bills = await db.invoices.find({"business_id": user["business_id"], "customer_id": customer_id},
                                    {"_id": 0, "id": 1, "invoice_number": 1, "grand_total": 1, "created_at": 1,
                                     "payment_method": 1, "items.name": 1, "items.quantity": 1}
