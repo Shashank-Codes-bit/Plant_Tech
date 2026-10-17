@@ -123,7 +123,8 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | E.14 | Edit name, category, price, warn level | Saved; old bills keep the old name and price | 1 | | |
 | E.15 | Edit → add own photo for a product that shows the shared picture | Own photo now shows; note changes to "Your own photo" | 2 | | |
 | E.16 | Owner deletes a product | Gone from list and search; old bills still show it | 1 | | |
-| E.17 | Search products in Hindi (`तुलसी`) and with odd spacing (`money   plant`) | Finds them | 3 | | |
+| E.17 | Search Products, Add items and Add product for Rose as `rose`, `gulab`, `gulaab` and `गुलाब`; Tulsi as `तुलसी` and `tulasi`; `money   plant` | Each finds the product; best match first | 1 | | |
+| E.17a | Add a new product with a plain Hindi or Hinglish name (e.g. `Gendaa`), wait a minute, then search it in English (`marigold`) | Found: its other names were looked up | 2 | | |
 | E.18 | 300+ products (use the demo shop) | List scrolls smoothly; search answers instantly | 2 | | |
 | E.19 | Add product → Identify from a photo of a laptop | Alert "Not a nursery item"; no form opens and the photo is not uploaded | 1 | | |
 

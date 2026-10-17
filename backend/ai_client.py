@@ -45,6 +45,10 @@ SYSTEM_INVOICE = (
     "purchase invoice details from photos of bills. Bills may be printed or handwritten and may mix "
     "English and Hindi. You say so plainly when a photo is not a bill."
 )
+SYSTEM_NAMES = (
+    "You are an expert on plants and garden products sold in Indian nurseries. You give the names people use "
+    "for an item in English and in Hindi (Devanagari and Hinglish)."
+)
 NURSERY_GOODS = (
     "pots, planters, grow bags, hanging baskets, trays, soil, potting mix, compost, cocopeat, manure, "
     "fertiliser, pesticide, seeds, bulbs, pebbles, garden decor, plant stands, garden tools, watering cans "
@@ -61,6 +65,14 @@ class PlantId(BaseModel):
     alternatives: List[str]
     matched_catalog_name: str
     suggested_category: str
+
+
+class NameTerms(BaseModel):
+    is_nursery_item: bool
+    english_name: str
+    hindi_name: str
+    hinglish: List[str]
+    aliases: List[str]
 
 
 class InvoiceItem(BaseModel):
@@ -297,3 +309,16 @@ async def scan_invoice(images: list[bytes], shop_name: str = "") -> dict:
             for it in data.items if it.name.strip()
         ],
     }
+
+
+async def name_terms(name: str) -> NameTerms | None:
+    """The other names of a product a shop typed (for search in any language); None if Claude gave no usable answer."""
+    prompt = (
+        f"An Indian plant nursery added a product called {name!r}.\n"
+        f"- is_nursery_item: true if it is a plant or something a plant nursery sells ({NURSERY_GOODS}); false otherwise\n"
+        "- english_name: its common English name\n"
+        "- hindi_name: its common Hindi name in Devanagari, or empty string if it has none\n"
+        "- hinglish: up to 3 ways people write the Hindi name in Latin letters\n"
+        "- aliases: up to 3 other common names (English or regional)"
+    )
+    return await _ask(SYSTEM_NAMES, prompt, [], NameTerms, "low", 600)

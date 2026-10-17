@@ -6,6 +6,10 @@ A product without a shared picture gets the first clear photo a shop takes of it
 Other shops only see a picture once an admin has checked it ("live"), and never see a shop-made
 entry that is marked hidden (not a nursery item).
 """
+import asyncio
+import logging
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
@@ -15,8 +19,11 @@ import auth
 import storage_client
 from common import name_key, new_id, now_iso
 from db import get_db
+from search import EXACT, library_terms, match_level, search_score
 
 router = APIRouter(prefix="/api", tags=["library"])
+logger = logging.getLogger(__name__)
+_tasks: set = set()  # name look-ups running in the background
 
 STARTER = [
     ("Money Plant", "मनी प्लांट", "Epipremnum aureum", "Indoor Plants", ["pothos", "devil's ivy"]),
@@ -65,18 +72,15 @@ def visible_to(entry: dict, business_id: str) -> bool:
 
 
 async def search(db, q: str, business_id: str, limit: int = 5) -> list[dict]:
-    key = name_key(q)
-    if len(key) < 2:
+    """Shared entries matching what was typed (English, Hindi or Hinglish name, or another common name)."""
+    if len(name_key(q)) < 2:
         return []
     found = []
     async for e in db.library.find({"removed": False}, {"_id": 0}):
-        if not visible_to(e, business_id):
-            continue
-        names = [e["name_key"], name_key(e.get("name_hi", "")), *[name_key(a) for a in e.get("aliases", [])]]
-        if any(key in n for n in names if n):
-            found.append(e)
-    found.sort(key=lambda e: (not e["name_key"].startswith(key), e["name"]))
-    return [view(e, business_id) for e in found[:limit]]
+        if visible_to(e, business_id) and (score := search_score(q, library_terms(e))):
+            found.append((score, e))
+    found.sort(key=lambda se: (-se[0], se[1]["name"]))
+    return [view(e, business_id) for _, e in found[:limit]]
 
 
 async def entry_for_new_product(db, name: str, category: str | None, business_id: str) -> str | None:
@@ -84,7 +88,12 @@ async def entry_for_new_product(db, name: str, category: str | None, business_id
     key = name_key(name)
     if len(key) < 3:
         return None
-    existing = await db.library.find_one({"name_key": key}, {"_id": 0})
+    existing = await db.library.find_one({"name_key": key, "removed": False}, {"_id": 0})
+    if not existing:  # the same plant under its Hindi or another common name ("गुलाब" is Rose)
+        async for e in db.library.find({"removed": False}, {"_id": 0}):
+            if any(match_level(name, t) == EXACT for t in library_terms(e)):
+                existing = e
+                break
     if existing:
         return existing["id"]
     entry = {"id": new_id(), "name": name.strip(), "name_key": key, "name_hi": "", "botanical": "",
@@ -92,7 +101,32 @@ async def entry_for_new_product(db, name: str, category: str | None, business_id
              "image_source_business_id": None, "source": "shop", "source_business_id": business_id,
              "removed": False, "created_at": now_iso(), "updated_at": now_iso()}
     await db.library.insert_one(entry)
+    if os.environ.get("AI_ENRICH_NAMES", "1") != "0":
+        task = asyncio.create_task(enrich(db, entry["id"]))
+        _tasks.add(task)
+        task.add_done_callback(_tasks.discard)
     return entry["id"]
+
+
+async def enrich(db, entry_id: str):
+    """Add the Hindi name, Hinglish spellings and other common names of a shop-made entry, so search finds it
+    in any language; hide it from other shops when it is not a nursery item. Not counted as a shop's scan."""
+    entry = await db.library.find_one({"id": entry_id}, {"_id": 0})
+    if not entry or entry.get("enriched_at"):
+        return
+    try:
+        terms = await ai_client.name_terms(entry["name"])
+    except Exception as e:  # no names today; the backfill script can try again
+        logger.warning("name look-up failed for %s: %s", entry["name"], e)
+        return
+    if terms is None:
+        return
+    extra = [a.strip() for a in [terms.english_name, *terms.hinglish, *terms.aliases] if a.strip()]
+    aliases = list(dict.fromkeys(a for a in [*entry.get("aliases", []), *extra] if name_key(a) != entry["name_key"]))[:10]
+    update = {"aliases": aliases, "hidden": not terms.is_nursery_item, "enriched_at": now_iso()}
+    if not entry.get("name_hi") and terms.hindi_name.strip():
+        update["name_hi"] = terms.hindi_name.strip()
+    await db.library.update_one({"id": entry_id}, {"$set": update})
 
 
 async def _store_library_picture(db, entry_id: str, jpeg: bytes) -> str:

@@ -1,9 +1,10 @@
 // Products: search plus Category, Stock and Sort filters. A product stays here at 0 stock
-// (marked Out of stock) until the owner deletes it.
-import { useMemo, useState } from "react";
+// (marked Out of stock) until the owner deletes it. Search runs on the server, so Hindi, Hinglish and
+// English names all find a product ("गुलाब", "gulab", "rose").
+import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { apiGet } from "@/src/api";
@@ -31,6 +32,16 @@ export default function Products() {
   const q = useQuery<Product[]>({ queryKey: ["products"], queryFn: () => apiGet("/products") });
   const cats = useCategories();
   useRefreshOnFocus(q.refetch);
+  const [typed, setTyped] = useState(""); // what was typed, a moment after typing stops
+  useEffect(() => {
+    const id = setTimeout(() => setTyped(search.trim()), 250);
+    return () => clearTimeout(id);
+  }, [search]);
+  const term = search.trim() ? typed : "";
+  const found = useQuery<Product[]>({
+    queryKey: ["products", "search", term], queryFn: () => apiGet(`/products?search=${encodeURIComponent(term)}`),
+    enabled: !!term, placeholderData: keepPreviousData,
+  });
 
   const all = useMemo(() => q.data ?? [], [q.data]);
   const counts = {
@@ -38,10 +49,8 @@ export default function Products() {
     out: all.filter((p) => p.out_of_stock).length,
   };
   const shown = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    const list = all.filter((p) =>
-      (!s || p.name.toLowerCase().includes(s) || p.botanical_name.toLowerCase().includes(s) || p.sku.toLowerCase().includes(s))
-      && (!category || p.category_id === category)
+    const list = (term ? found.data ?? [] : all).filter((p) =>
+      (!category || p.category_id === category)
       && (stock === "" || (stock === "in" && !p.low_stock) || (stock === "low" && p.low_stock && !p.out_of_stock) || (stock === "out" && p.out_of_stock)));
     const by: Record<Sort, (a: Product, b: Product) => number> = {
       name: (a, b) => a.name.localeCompare(b.name),
@@ -50,8 +59,8 @@ export default function Products() {
       "stock-up": (a, b) => a.stock - b.stock,
       new: (a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""),
     };
-    return [...list].sort(by[sort]);
-  }, [all, search, category, stock, sort]);
+    return term && sort === "name" ? list : [...list].sort(by[sort]); // a search lists the best matches first
+  }, [all, found.data, term, category, stock, sort]);
 
   const STOCK: { v: StockFilter; label: string; sub?: string }[] = [
     { v: "", label: t("All stock") },
@@ -71,7 +80,7 @@ export default function Products() {
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md, backgroundColor: colors.surface,
         borderBottomWidth: 1, borderBottomColor: colors.line }}>
         <T v="title">{t("Products")}</T>
-        <SearchBox value={search} onChangeText={setSearch} placeholder={t("Search name or code")} testID="products-search" />
+        <SearchBox value={search} onChangeText={setSearch} placeholder={t("Search name or code")} loading={found.isFetching} testID="products-search" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
           <FilterChip label={t("Category")} value={catName} onPress={() => setSheet("category")} testID="products-filter-category" />
           <FilterChip label={t("Stock")} value={stock ? STOCK.find((x) => x.v === stock)!.label : ""}

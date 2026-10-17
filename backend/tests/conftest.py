@@ -13,7 +13,7 @@ from pathlib import Path
 os.environ.update(
     MONGO_URL="mongodb://localhost:27017", DB_NAME="test", STORAGE_BACKEND="local",
     LOCAL_STORAGE_DIR=tempfile.mkdtemp(), JWT_SECRET="test-secret-0123456789-abcdefghijklmnop",
-    ADMIN_PHONES="9000000001", AI_DAILY_LIMIT="5", PUBLIC_BASE_URL="https://pos.test",
+    ADMIN_PHONES="9000000001", AI_DAILY_LIMIT="5", PUBLIC_BASE_URL="https://pos.test", AI_ENRICH_NAMES="0",
 )
 os.environ.pop("GOOGLE_CLIENT_IDS", None)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -36,6 +36,8 @@ INVOICE = {"is_bill": True, "reason": "a printed invoice", "same_supplier": True
            "supplier": "Green Farms", "supplier_phone": "98111 00000", "supplier_address": "Sohna Road, Gurugram",
            "supplier_gstin": "", "invoice_number": "GF-12", "date": "12/10/2026", "total": 1250,
            "items": [{"name": "Snake Plant", "quantity": 5, "purchase_price": 200}]}
+
+NAMES = {"is_nursery_item": True, "english_name": "Holy Basil", "hindi_name": "तुलसी", "hinglish": ["tulsi"], "aliases": ["Krishna Tulsi"]}
 
 
 @pytest.fixture
@@ -63,7 +65,7 @@ class FakeClaude(list):
 
     def __init__(self):
         super().__init__()
-        self.plant, self.invoice = dict(PLANT), dict(INVOICE)
+        self.plant, self.invoice, self.names = dict(PLANT), dict(INVOICE), dict(NAMES)
 
 
 @pytest.fixture
@@ -74,7 +76,7 @@ def claude():
     def handler(req):
         body = json.loads(req.content)
         calls.append((dict(req.headers), body))
-        reply = calls.invoice if body["system"] == ai_client.SYSTEM_INVOICE else calls.plant
+        reply = {ai_client.SYSTEM_INVOICE: calls.invoice, ai_client.SYSTEM_NAMES: calls.names}.get(body["system"], calls.plant)
         return httpx2.Response(200, json=claude_message(json.dumps(reply)))
 
     ai_client._client = fake_claude_client(handler)

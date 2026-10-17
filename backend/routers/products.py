@@ -11,6 +11,7 @@ import auth
 from common import name_key, new_id, now_iso
 from db import get_db
 from routers import library
+from search import product_terms, search_score
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -114,25 +115,29 @@ async def list_products(search: str = "", category_id: str = "", low: bool = Fal
     if category_id:
         q["category_id"] = category_id
     products = await db.products.find(q, {"_id": 0}).sort("name", 1).to_list(5000)
-    if search:
-        key = name_key(search)
-        products = [p for p in products if key in name_key(p["name"]) or key in name_key(p.get("botanical_name", ""))
-                    or key in name_key(p.get("sku", ""))]
+    if search.strip():
+        products = await _search(db, products, search)
     if low:
         products = [p for p in products if p.get("stock", 0) <= p.get("min_stock", 0)]
     return await views(db, user, products)
+
+
+async def _search(db, products: list[dict], query: str) -> list[dict]:
+    """Products matching what was typed, in English, Hindi or Hinglish; best matches first."""
+    lib = await library_images(db, products)
+    scored = [(s, p) for p in products if (s := search_score(query, product_terms(p, lib.get(p.get("library_id")))))]
+    scored.sort(key=lambda sp: (-sp[0], sp[1]["name"].lower()))
+    return [p for _, p in scored]
 
 
 @router.get("/suggest")
 async def suggest(q: str, user: dict = Depends(auth.require("sell", "stock"))):
     """Typing a product name: the shop's own matches first, then the shared library."""
     db = get_db()
-    key = name_key(q)
-    if len(key) < 2:
+    if len(name_key(q)) < 2:
         return {"own": [], "library": []}
-    own = [p for p in await db.products.find({"business_id": user["business_id"], "deleted_at": None},
-                                             {"_id": 0}).to_list(5000) if key in name_key(p["name"])]
-    own.sort(key=lambda p: (not name_key(p["name"]).startswith(key), p["name"]))
+    own = await _search(db, await db.products.find({"business_id": user["business_id"], "deleted_at": None},
+                                                   {"_id": 0}).to_list(5000), q)
     own = own[:5]
     taken_ids = {p.get("library_id") for p in own}
     taken_names = {name_key(p["name"]) for p in own}
