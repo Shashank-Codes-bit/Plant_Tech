@@ -43,6 +43,7 @@ class InvoiceIn(BaseModel):
     customer_phone: str = Field("", max_length=20)
     discount: float = Field(0, ge=0)
     payment_method: Literal["Cash", "UPI", "Card"] = "Cash"
+    gst_removed: bool = False  # owner only: same total, no GST on this bill
 
 
 def price_lines(lines: list[dict], discount: float) -> dict:
@@ -96,6 +97,7 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
     db = get_db()
     bid = user["business_id"]
     cats, gst_registered = await context(db, bid)
+    gst_removed = body.gst_removed and gst_registered and auth.can(user, "owner")
     ids = list({l.product_id for l in body.items if l.product_id})
     products = {p["id"]: p for p in await db.products.find(
         {"business_id": bid, "id": {"$in": ids}, "deleted_at": None}, {"_id": 0}).to_list(len(ids) or 1)}
@@ -146,7 +148,7 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
         p = products.get(l.product_id) if l.product_id else None
         cat = cats.get(p.get("category_id")) if p else None
         line = {"product_id": l.product_id, "name": l.name.strip(), "quantity": l.quantity, "price": l.price,
-                "gst_percent": (cat or {}).get("gst_percent", 0) if gst_registered else 0,
+                "gst_percent": (cat or {}).get("gst_percent", 0) if gst_registered and not gst_removed else 0,
                 "cost_price": (p or {}).get("cost_price", 0)}
         if p and money(l.price) != money(p.get("selling_price", 0)):
             line["list_price"] = p.get("selling_price", 0)  # sold at a different price than the shop price
@@ -161,7 +163,7 @@ async def create_invoice(body: InvoiceIn, user: dict = Depends(auth.require("sel
 
     invoice = {
         "id": new_id(), "business_id": bid, "invoice_number": await _next_number(db, bid), "items": lines,
-        **totals, "payment_method": body.payment_method, "status": "Paid",
+        **totals, "payment_method": body.payment_method, "status": "Paid", "gst_removed": gst_removed,
         "customer_id": customer_id, "customer_name": customer_name, "customer_phone": phone or "",
         "created_by": {"id": user["id"], "name": user.get("name", "")},
         "public_token": secrets.token_urlsafe(16), "date_key": date_key(), "created_at": now_iso(),

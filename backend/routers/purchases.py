@@ -1,4 +1,4 @@
-"""Supplier bills: add the items to stock (new items become new products)."""
+"""Supplier bills: add the items to stock (new items become new products, priced at cost plus the shop's profit %)."""
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
@@ -8,6 +8,7 @@ from common import new_id, now_iso
 from db import get_db
 from errors import AppError
 from routers import library
+from routers.business import DEFAULT_PROFIT_PERCENT
 from routers.products import record_stock
 
 router = APIRouter(prefix="/api/purchases", tags=["purchases"])
@@ -36,6 +37,8 @@ async def create_purchase(body: PurchaseIn, user: dict = Depends(auth.require("s
     db = get_db()
     bid = user["business_id"]
     owner = auth.can(user, "owner")
+    shop = await db.businesses.find_one({"id": bid}, {"_id": 0, "profit_percent": 1}) or {}
+    markup = 1 + shop.get("profit_percent", DEFAULT_PROFIT_PERCENT) / 100
     for it in body.items:
         if it.product_id:
             update: dict = {"$inc": {"stock": it.quantity}}
@@ -52,7 +55,7 @@ async def create_purchase(body: PurchaseIn, user: dict = Depends(auth.require("s
             p = {"id": new_id(), "business_id": bid, "sku": f"NP-{count + 1:04d}", "name": it.name.strip(),
                  "botanical_name": "", "category_id": it.category_id,
                  "library_id": await library.entry_for_new_product(db, it.name, None, bid), "photo_path": None,
-                 "selling_price": it.selling_price if it.selling_price is not None else round(it.purchase_price * 1.6),
+                 "selling_price": it.selling_price if it.selling_price is not None else round(it.purchase_price * markup),
                  "cost_price": it.purchase_price if owner else 0, "stock": it.quantity, "min_stock": 5,
                  "supplier": body.supplier, "notes": "", "deleted_at": None, "created_at": now_iso(),
                  "created_by": user["id"]}

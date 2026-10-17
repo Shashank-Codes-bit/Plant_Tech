@@ -32,11 +32,13 @@ function ShopForm({ initial }: { initial: Business }) {
   const { refresh } = useAuth();
   const [b, setB] = useState<Business>(initial);
   const [phone, setPhone] = useState(normalizePhone(initial.phone || "") ?? "");
+  const [profit, setProfit] = useState(String(initial.profit_percent ?? 60));
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const set = (patch: Partial<Business>) => setB((o) => ({ ...o, ...patch }));
   const gstinBad = b.gst_registered && !GSTIN.test(b.gstin || "");
   const phoneBad = !!phone && !normalizePhone(phone);
+  const profitBad = profit === "" || Number(profit) > 1000;
 
   async function logo() {
     const out = await pickFromGallery();
@@ -55,7 +57,8 @@ function ShopForm({ initial }: { initial: Business }) {
     setBusy(true);
     try {
       await apiPut("/business", { name: b.name.trim(), address: b.address, phone: phone ? `+91${phone}` : "", upi_id: b.upi_id.trim(),
-        gst_registered: b.gst_registered, gstin: b.gst_registered ? b.gstin : "", logo_path: b.logo_path, footer_note: b.footer_note });
+        gst_registered: b.gst_registered, gstin: b.gst_registered ? b.gstin : "", logo_path: b.logo_path, footer_note: b.footer_note,
+        profit_percent: Number(profit) });
       await Promise.all([refresh(), qc.invalidateQueries()]);
       toast.show(t("Saved"), "success");
       router.back();
@@ -91,11 +94,14 @@ function ShopForm({ initial }: { initial: Business }) {
             </>
           )}
         </View>
+        <Field label={t("Profit margin on cost (%)")} hint={t("Used to price new products from supplier bills. For example, 60% turns a cost of ₹100 into ₹160.")} value={profit}
+          onChangeText={(v) => setProfit(v.replace(/[^0-9.]/g, ""))} keyboardType="decimal-pad" maxLength={6} testID="shop-profit"
+          error={profitBad ? t("Enter a percentage from 0 to 1000") : undefined} />
         <Field label={t("Note at the bottom of the bill")} value={b.footer_note} onChangeText={(footer_note) => set({ footer_note })}
           placeholder={t("Thank you, visit again!")} maxLength={200} />
       </KeyboardAwareScrollView>
       <BottomBar>
-        <Button title={t("Save")} icon="content-save" onPress={save} loading={busy} disabled={!b.name.trim() || gstinBad || phoneBad || uploading} testID="shop-save" />
+        <Button title={t("Save")} icon="content-save" onPress={save} loading={busy} disabled={!b.name.trim() || gstinBad || phoneBad || profitBad || uploading} testID="shop-save" />
       </BottomBar>
     </Screen>
   );

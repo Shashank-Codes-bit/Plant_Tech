@@ -21,6 +21,8 @@ SUGGESTED_CATEGORIES = [
 ]
 # Rates since GST 2.0 (22 Sep 2025) plus the older 12% / 28% for anything still billed at them.
 GST_SLABS = (0, 0.25, 3, 5, 12, 18, 28, 40)
+# New products from a supplier bill are priced at cost plus this, unless the owner set their own %.
+DEFAULT_PROFIT_PERCENT = 60
 
 
 class BusinessIn(BaseModel):
@@ -33,6 +35,7 @@ class BusinessIn(BaseModel):
     logo_path: str | None = None
     footer_note: str | None = Field(None, max_length=200)
     onboarding_done: bool | None = None
+    profit_percent: float | None = Field(None, ge=0, le=1000)  # markup on cost for new products
 
 
 class CategoryIn(BaseModel):

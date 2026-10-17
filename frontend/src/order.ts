@@ -27,6 +27,7 @@ export function useCreateBill() {
         customer_id: cart.customer.id,
         discount: cart.discount,
         payment_method: method,
+        gst_removed: cart.gstRemoved,
       });
       cart.billed();
       qc.invalidateQueries();

@@ -11,6 +11,7 @@ import { useAuth } from "@/src/auth";
 import { CategoryPicker } from "@/src/components/category-picker";
 import { useToast } from "@/src/components/toast";
 import { BottomBar, Button, Field, Icon, T } from "@/src/components/ui";
+import { formatCurrency } from "@/src/format";
 import { pickFromGallery, takePhoto } from "@/src/hooks/useImageCapture";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -38,6 +39,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
   const [uploading, setUploading] = useState(false);
   const set = (patch: Partial<ProductValues>) => setV((o) => ({ ...o, ...patch }));
   const gst = !!user?.business?.gst_registered;
+  const profit = user?.business?.profit_percent ?? 60;
 
   async function photo(source: "camera" | "gallery") {
     const out = source === "camera" ? await takePhoto() : await pickFromGallery();
@@ -54,6 +56,9 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
   }
 
   const picture = v.photo_path || v.library_image;
+  // Owner typed a cost but no price yet: offer cost plus the shop's profit % (never filled in silently).
+  const cost = Number(v.cost_price);
+  const suggested = isOwner && v.selling_price === "" && cost > 0 ? Math.round(cost * (1 + profit / 100)) : null;
   const ok = !!v.name.trim() && v.selling_price !== "" && !uploading;
 
   function save() {
@@ -111,6 +116,16 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
           {isOwner && (
             <Field label={t("Cost price ₹")} hint={t("Used for profit in reports. Visible only to you.")} value={v.cost_price} keyboardType="decimal-pad"
               onChangeText={(x) => set({ cost_price: num(x) })} placeholder="0" testID="product-cost" />
+          )}
+          {suggested !== null && (
+            <Pressable onPress={() => set({ selling_price: String(suggested) })} testID="product-suggested-price" accessibilityRole="button"
+              style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: radius.md, backgroundColor: colors.greenTint }}>
+              <Icon name="tag-outline" size={22} color={colors.green} />
+              <T v="small" color={colors.greenDark} style={{ flex: 1 }}>
+                {t("Suggested selling price {{price}} (cost plus {{p}}%)", { price: formatCurrency(suggested), p: profit })}
+              </T>
+              <T v="bold" color={colors.green}>{t("Use")}</T>
+            </Pressable>
           )}
         </Section>
         {extra}

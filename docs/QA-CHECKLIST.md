@@ -80,6 +80,7 @@ Known limits, so a ❌ here is "expected for now". Decide if any must change bef
 | C.11 | Back from step 4 to 1 and forward again | Typed values still there | 2 | | |
 | C.12 | Done → "Add my products" / "Add a employee" / "Start selling" | Each opens the right screen; back button then goes to Home, never back into setup | 1 | | |
 | C.12a | On a slow connection, tap "Add my products" the moment Done appears | Options stay dimmed with "Saving your shop" until saved; then Add product opens, and closing it shows Products (never setup step 1) | 1 | | |
+| C.13 | Step 3: "Profit margin on cost (%)" shows 60; change it to 45 and finish setup | Shop details shows 45; the first supplier bill prices a ₹100 item at ₹145 | 1 | | |
 
 ## D. Roles: what a employee can and can't do
 Owner A adds employee W (Employees → Manage → Add employee). Test with W logged in on a second phone or the browser.
@@ -207,6 +208,10 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | H.26 | Bill with 40 lines | PDF has page 2 with no cut rows | 2 | | |
 | H.27 | Bill of ₹1,23,456.50 | "₹1,23,456.50"; words "One Lakh Twenty Three Thousand…and Fifty Paise" | 2 | | |
 | H.28 | Bill screen → "Next order" / "Back to home"; then phone back | Next order opens a fresh scan screen; back from Home never shows the old Payment screen | 1 | | |
+| H.29 | Owner, GST shop: order with a Pot (18%) | "Bill without GST" toggle under Discount; it does not show when nothing in the order has GST, or for a shop not registered for GST | 1 | | |
+| H.30 | Turn it on, then reload / open the same customer on another phone | Toggle still on (saved with the order); total unchanged; "No GST on this bill" under the total and on Payment | 1 | | |
+| H.31 | Make that bill; open the bill, the bill link and the PDF | Same total; no "Includes GST" lines anywhere | 1 | | |
+| H.32 | Employee login, same order | No toggle; the bill keeps its GST | 1 | | |
 
 ## I. Home, Orders, Reports
 | # | Steps | Expected | P | ✅/❌ | Notes |
@@ -262,6 +267,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | L.5 | Rename a category to an existing name | "already have a category with this name" | 2 | | |
 | L.6 | Change a category's GST (5%, 18%, 40%) | Products in it show the new % immediately | 1 | | |
 | L.7 | Delete a category that has products | Refused with how many products use it | 1 | | |
+| L.8 | Shop details → Profit margin 40 → Save; then a supplier bill with a new ₹100 item | New product priced ₹140; Add product with cost ₹100 and no price suggests ₹140 (tap to use) | 1 | | |
 
 ## M. Supplier bill
 | # | Steps | Expected | P | ✅/❌ | Notes |
@@ -269,7 +275,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | M.1 | Photo of a clear printed bill | Items listed; matched ones say "Adds to X", others "New product" | 1 | | |
 | M.2 | Photo of a plant or a laptop on Supplier bill | Alert "Not a supplier bill"; Enter items manually opens an empty item list; the photo is not kept | 1 | | |
 | M.3 | Edit a quantity and cost, remove a line, add a line | Saved values used; removed line not added | 1 | | |
-| M.4 | Save | Stock goes up; History shows "Supplier bill"; new products created at cost + 60% | 1 | | |
+| M.4 | Save | Stock goes up; History shows "Supplier bill"; new products created at cost + the shop's profit margin (60% unless changed) | 1 | | |
 | M.5 | Employee saves a supplier bill | Stock added; cost prices NOT changed | 2 | | |
 
 ## N. Tough conditions (phone)

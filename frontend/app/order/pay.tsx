@@ -49,7 +49,8 @@ export default function OrderPay() {
           <T v="amount" style={{ fontSize: 52, lineHeight: 58 }} testID="pay-total">{formatCurrency(cart.total)}</T>
           <T v="small" color={colors.greenDark}>
             {[plural(cart.count, "1 item", "{{n}} items"),
-              cart.gstIncluded > 0.004 ? t("includes GST {{gst}}", { gst: formatCurrency(cart.gstIncluded) }) : ""].filter(Boolean).join(" · ")}
+              cart.gstIncluded > 0.004 ? t("includes GST {{gst}}", { gst: formatCurrency(cart.gstIncluded) })
+                : cart.gstRemoved ? t("no GST on this bill") : ""].filter(Boolean).join(" · ")}
           </T>
         </View>
 

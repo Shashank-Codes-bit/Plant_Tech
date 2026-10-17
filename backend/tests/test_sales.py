@@ -272,3 +272,36 @@ def test_employee_report_shows_who_billed_what(client):
     o = next(p for p in rep["people"] if p["role"] == "owner")
     assert o["orders"] == 1 and o["sales"] == 200 and abs(r["share"] + o["share"] - 1) < 0.001
     assert client.get("/api/reports/employees", headers=rh).status_code == 403  # owner only
+
+
+def test_gst_removed_same_total_no_tax(client):
+    """Owner's "Bill without GST": the customer pays the same, the bill shows no tax lines."""
+    shop = Shop(client, gst=True)
+    pot = shop.product("Pot", 118, 5, category="Pots")
+    inv = _order(shop, [{"product_id": pot["id"], "name": "Pot", "quantity": 1, "price": 118}], gst_removed=True).json()
+    assert inv["grand_total"] == 118 and inv["gst_breakup"] == [] and inv["gst_total"] == 0
+    assert inv["gst_removed"] is True and inv["items"][0]["gst_percent"] == 0
+    link = shop.get(f"/api/invoices/{inv['id']}/share").json()
+    assert "Includes GST" not in client.get(f"/i/{link['token']}").text
+
+
+def test_employee_cannot_remove_gst(client):
+    shop = Shop(client, gst=True)
+    pot = shop.product("Pot", 118, 5, category="Pots")
+    _, worker = shop.worker()
+    r = client.post("/api/invoices", headers=worker, json={
+        "items": [{"product_id": pot["id"], "name": "Pot", "quantity": 1, "price": 118}],
+        "customer_phone": "9811100099", "customer_name": "Test Customer", "gst_removed": True})
+    inv = r.json()
+    assert r.status_code == 200 and inv["gst_removed"] is False and inv["gst_total"] == 18 and inv["grand_total"] == 118
+
+
+def test_saved_cart_keeps_gst_removed(client):
+    shop = Shop(client, gst=True)
+    cust = shop.post("/api/customers", {"name": "Kavita", "phone": "9811100777"}).json()
+    line = {"product_id": "loose-1", "name": "Pot", "quantity": 1, "price": 118}
+    saved = client.put("/api/orders/cart", headers=shop.h,
+                       json={"customer_id": cust["id"], "items": [line], "gst_removed": True}).json()
+    assert saved["gst_removed"] is True
+    got = client.get("/api/orders/cart", headers=shop.h, params={"customer_id": cust["id"]}).json()
+    assert got["gst_removed"] is True

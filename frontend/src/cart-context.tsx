@@ -3,6 +3,7 @@
 // when anyone in the shop picks her again. Saved orders are never listed; billing or discarding removes them.
 // product_id "loose-…" = a line billed without stock; the server gets product_id null for it.
 // price = the price for this order; list_price = the shop's price when the item was added.
+// gstRemoved = the owner's "Bill without GST": same total, no GST shown (saved with the order).
 import React, { createContext, useContext, useRef, useState } from "react";
 
 import { apiDelete, apiGet, apiPut } from "@/src/api";
@@ -21,8 +22,8 @@ export type CartItem = {
 
 export type OrderCustomer = { id: string; name: string; phone: string; purchase_count?: number };
 
-type Order = { uid: string | null; customer: OrderCustomer | null; items: CartItem[]; discount: number };
-type Saved = { items: CartItem[]; discount: number } | null;
+type Order = { uid: string | null; customer: OrderCustomer | null; items: CartItem[]; discount: number; gstRemoved: boolean };
+type Saved = { items: CartItem[]; discount: number; gstRemoved: boolean } | null;
 
 type CartContextType = {
   customer: OrderCustomer | null;
@@ -35,7 +36,10 @@ type CartContextType = {
   setDiscount: (d: number) => void;
   count: number;
   total: number;
-  gstIncluded: number;
+  gstIncluded: number; // 0 when GST is removed from this bill
+  gstAvailable: number; // the GST in these prices, removed or not (decides whether the toggle shows)
+  gstRemoved: boolean;
+  setGstRemoved: (v: boolean) => void;
   openFor: (c: OrderCustomer) => Promise<number>; // this customer's order; returns how many items (quantity) were saved
   moveTo: (c: OrderCustomer) => Promise<number>; // the same items, for another customer (wrong one picked)
   startNew: () => void; // leave this order (it stays saved) and start fresh
@@ -51,14 +55,14 @@ export const isLoose = (id: string) => id.startsWith("loose-");
 const howMany = (items: CartItem[]) => items.reduce((s, i) => s + i.quantity, 0);
 
 const body = (o: Order) => ({
-  customer_id: o.customer!.id, discount: o.discount,
+  customer_id: o.customer!.id, discount: o.discount, gst_removed: o.gstRemoved,
   items: o.items.map((i) => ({ ...i, list_price: i.list_price ?? null, gst_percent: i.gst_percent ?? 0, image_path: i.image_path ?? null, stock: i.stock ?? null })),
 });
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const uid = user?.id ?? null;
-  const blank: Order = { uid, customer: null, items: [], discount: 0 };
+  const blank: Order = { uid, customer: null, items: [], discount: 0, gstRemoved: false };
   const [state, setState] = useState<Order>(blank);
   const order = state.uid === uid ? state : blank; // a new log in starts with no order
   const latest = useRef(order);
@@ -100,7 +104,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   async function load(c: OrderCustomer): Promise<Saved> {
     try {
       const s = await apiGet(`/orders/cart?customer_id=${encodeURIComponent(c.id)}`);
-      return s ? { items: s.items ?? [], discount: s.discount ?? 0 } : null;
+      return s ? { items: s.items ?? [], discount: s.discount ?? 0, gstRemoved: !!s.gst_removed } : null;
     } catch {
       return null; // offline: start empty; it is saved when it next changes
     }
@@ -110,7 +114,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     await flush();
     if (latest.current.customer?.id === c.id && latest.current.uid === uid) return howMany(latest.current.items);
     const saved = await load(c);
-    put({ uid, customer: c, items: saved?.items ?? [], discount: saved?.discount ?? 0 });
+    put({ uid, customer: c, items: saved?.items ?? [], discount: saved?.discount ?? 0, gstRemoved: saved?.gstRemoved ?? false });
     return howMany(saved?.items ?? []);
   }
 
@@ -122,7 +126,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const saved = await load(c);
     if (from.customer) apiDelete(`/orders/cart?customer_id=${encodeURIComponent(from.customer.id)}`).catch(() => {});
     const extra = (saved?.items ?? []).filter((s) => !from.items.some((i) => i.product_id === s.product_id));
-    change(() => ({ uid, customer: c, items: [...from.items, ...extra], discount: from.discount || saved?.discount || 0 }));
+    change(() => ({ uid, customer: c, items: [...from.items, ...extra], discount: from.discount || saved?.discount || 0,
+      gstRemoved: from.gstRemoved }));
     return extra.length;
   }
 
@@ -161,16 +166,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const d = Math.min(order.discount, subtotal);
   const factor = subtotal ? (subtotal - d) / subtotal : 1;
   // prices include GST: the tax inside a line is amount * rate / (100 + rate)
-  const gstIncluded = items.reduce((s, i) => {
+  const gstAvailable = items.reduce((s, i) => {
     const r = i.gst_percent || 0;
     return s + (r ? (i.price * i.quantity * factor * r) / (100 + r) : 0);
   }, 0);
+  const gstRemoved = order.gstRemoved && gstAvailable > 0.004;
 
   return (
     <CartContext.Provider value={{
       customer, items, addItem, setQuantity, setPrice, removeItem,
       discount: d, setDiscount: (v) => change((x) => ({ ...x, discount: v })),
-      count: howMany(items), total: subtotal - d, gstIncluded,
+      count: howMany(items), total: subtotal - d, gstIncluded: gstRemoved ? 0 : gstAvailable, gstAvailable, gstRemoved,
+      setGstRemoved: (v) => change((x) => ({ ...x, gstRemoved: v })),
       openFor, moveTo, startNew, discard, beforeBill, billed: () => put(blank),
     }}>
       {children}

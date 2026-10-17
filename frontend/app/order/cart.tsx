@@ -6,9 +6,10 @@ import { useRouter } from "expo-router";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
+import { useAuth } from "@/src/auth";
 import { CartItem, isLoose, useCart } from "@/src/cart-context";
 import { DiscardOrder, OrderCustomerBar } from "@/src/components/order-customer";
-import { BottomBar, Button, EmptyState, Field, Header, Icon, MAX_FONT_SCALE, Screen, Stepper, T, Thumb } from "@/src/components/ui";
+import { BottomBar, Button, EmptyState, Field, Header, Icon, MAX_FONT_SCALE, Screen, Stepper, T, Thumb, Toggle } from "@/src/components/ui";
 import { formatCurrency, plural } from "@/src/format";
 import { colors, fonts, radius, spacing } from "@/src/theme";
 
@@ -16,6 +17,7 @@ export default function OrderCart() {
   const { t } = useTranslation();
   const router = useRouter();
   const cart = useCart();
+  const { isOwner } = useAuth();
   const back = () => (router.canGoBack() ? router.back() : router.replace("/order/scan"));
 
   if (!cart.items.length) {
@@ -43,6 +45,12 @@ export default function OrderCart() {
             accessibilityLabel={t("Discount")} testID="cart-discount" inputStyle={{ textAlign: "right" }}
             onChangeText={(v) => cart.setDiscount(Number(v.replace(/[^0-9.]/g, "")) || 0)} />
         </View>
+        {isOwner && cart.gstAvailable > 0.004 && (
+          <View style={{ paddingHorizontal: 14, paddingVertical: 4, borderRadius: radius.lg, backgroundColor: colors.page }}>
+            <Toggle title={t("Bill without GST")} subtitle={t("The total stays the same. No GST is shown on this bill.")}
+              value={cart.gstRemoved} onChange={cart.setGstRemoved} testID="cart-no-gst" />
+          </View>
+        )}
       </KeyboardAwareScrollView>
 
       <BottomBar>
@@ -50,6 +58,7 @@ export default function OrderCart() {
           <View>
             <T v="label">{t("Total")}</T>
             {cart.gstIncluded > 0.004 && <T v="small">{t("Includes GST {{gst}}", { gst: formatCurrency(cart.gstIncluded) })}</T>}
+            {cart.gstRemoved && <T v="small">{t("No GST on this bill")}</T>}
           </View>
           <T v="amount" testID="cart-total">{formatCurrency(cart.total)}</T>
         </View>

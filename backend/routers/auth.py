@@ -36,7 +36,7 @@ async def _new_owner(db, *, name: str, phone: str | None = None, password: str |
     """A new owner gets a new, empty shop; the setup wizard fills it in."""
     business = {"id": new_id(), "name": "", "address": "", "phone": phone or "", "gst_registered": False,
                 "gstin": "", "upi_id": "", "logo_path": None, "footer_note": "", "currency": "₹",
-                "onboarding_done": False, "created_at": now_iso()}
+                "onboarding_done": False, "profit_percent": 60, "created_at": now_iso()}
     user = {"id": new_id(), "business_id": business["id"], "role": "owner", "name": name.strip(),
             "phone": phone, "email": email, "google_sub": google_sub,
             "password_hash": auth.hash_password(password) if password else None,

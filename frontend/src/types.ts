@@ -44,6 +44,7 @@ export type Customer = {
 export type Business = {
   id: string; name: string; address: string; phone: string; gst_registered: boolean; gstin: string;
   upi_id: string; logo_path: string | null; footer_note: string; onboarding_done: boolean;
+  profit_percent?: number; // markup on cost for new products (60 when never set)
 };
 
 export type Worker = {

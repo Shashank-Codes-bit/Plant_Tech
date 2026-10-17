@@ -27,14 +27,17 @@ function BillingStep({ biz }: { biz: Business }) {
   const [upi, setUpi] = useState(biz.upi_id || "");
   const [gst, setGst] = useState(!!biz.gst_registered);
   const [gstin, setGstin] = useState(biz.gstin || "");
+  const [profit, setProfit] = useState(String(biz.profit_percent ?? 60));
   const [busy, setBusy] = useState(false);
 
   const gstinBad = gst && gstin.length > 0 && !GSTIN.test(gstin.toUpperCase());
+  const profitBad = profit === "" || Number(profit) > 1000;
 
   async function next() {
     setBusy(true);
     try {
-      await apiPut("/business", { upi_id: upi.trim(), gst_registered: gst, gstin: gst ? gstin.toUpperCase() : "" });
+      await apiPut("/business", { upi_id: upi.trim(), gst_registered: gst, gstin: gst ? gstin.toUpperCase() : "",
+        profit_percent: Number(profit) });
       await qc.invalidateQueries({ queryKey: ["business"] });
       router.push("/setup/categories");
     } catch (e: any) {
@@ -45,8 +48,8 @@ function BillingStep({ biz }: { biz: Business }) {
   }
 
   return (
-    <SetupFrame step={3} title={t("Bills and payments")} subtitle={t("Both are optional and can be changed later in Shop details.")}
-      onNext={next} busy={busy} nextDisabled={gstinBad || (gst && !gstin)}>
+    <SetupFrame step={3} title={t("Bills and payments")} subtitle={t("You can change these later in Shop details.")}
+      onNext={next} busy={busy} nextDisabled={gstinBad || (gst && !gstin) || profitBad}>
       <Field label={t("UPI ID (shows a payment QR code to customers)")} value={upi} onChangeText={setUpi} autoCapitalize="none"
         placeholder="shopname@okaxis" testID="setup-upi" />
       <View style={{ gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: colors.page }}>
@@ -61,6 +64,9 @@ function BillingStep({ biz }: { biz: Business }) {
           </>
         )}
       </View>
+      <Field label={t("Profit margin on cost (%)")} hint={t("Used to price new products from supplier bills. For example, 60% turns a cost of ₹100 into ₹160.")} value={profit}
+        onChangeText={(v) => setProfit(v.replace(/[^0-9.]/g, ""))} keyboardType="decimal-pad" maxLength={6} testID="setup-profit"
+        error={profitBad ? t("Enter a percentage from 0 to 1000") : undefined} />
     </SetupFrame>
   );
 }

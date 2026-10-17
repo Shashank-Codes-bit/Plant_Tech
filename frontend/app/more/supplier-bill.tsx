@@ -8,6 +8,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
 import { ApiError, apiPost, uploadImage } from "@/src/api";
+import { useAuth } from "@/src/auth";
 import { choose } from "@/src/confirm";
 import { useToast } from "@/src/components/toast";
 import { Badge, BottomBar, Button, Field, Header, Icon, Screen, T } from "@/src/components/ui";
@@ -24,6 +25,7 @@ export default function SupplierBill() {
   const router = useRouter();
   const toast = useToast();
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [reading, setReading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [image, setImage] = useState<string | null>(null);
@@ -129,7 +131,7 @@ export default function SupplierBill() {
         ))}
         <Button title={t("Add an item")} icon="plus" variant="dashed" size="md"
           onPress={() => setItems((l) => [...l!, blank(`m${Date.now()}`)])} />
-        <T v="small">{t("New products are priced at cost plus 60%. You can change any price later in Products.")}</T>
+        <T v="small">{t("New products are priced at cost plus {{p}}%. You can change any price later in Products.", { p: user?.business?.profit_percent ?? 60 })}</T>
       </KeyboardAwareScrollView>
       <BottomBar>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

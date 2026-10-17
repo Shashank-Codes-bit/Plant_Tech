@@ -29,6 +29,7 @@ class CartIn(BaseModel):
     customer_id: str = Field(min_length=1)
     items: list[CartLine] = Field(default_factory=list, max_length=200)
     discount: float = Field(0, ge=0)
+    gst_removed: bool = False
 
 
 async def clear(db, business_id: str, customer_id: str | None):
@@ -50,7 +51,8 @@ async def get_cart(customer_id: str = Query(min_length=1), user: dict = Depends(
     if datetime.fromisoformat(c["updated_at"]) < datetime.now(timezone.utc) - timedelta(days=KEEP_DAYS):
         await clear(db, user["business_id"], customer_id)
         return None
-    return {"items": c.get("items", []), "discount": c.get("discount", 0), "updated_at": c["updated_at"]}
+    return {"items": c.get("items", []), "discount": c.get("discount", 0), "gst_removed": c.get("gst_removed", False),
+            "updated_at": c["updated_at"]}
 
 
 @router.put("")
@@ -61,10 +63,11 @@ async def save_cart(body: CartIn, user: dict = Depends(auth.require("sell"))):
         await clear(db, user["business_id"], body.customer_id)
         return None
     doc = {"business_id": user["business_id"], "customer_id": body.customer_id,
-           "items": [i.model_dump() for i in body.items], "discount": body.discount, "updated_at": now_iso(),
+           "items": [i.model_dump() for i in body.items], "discount": body.discount, "gst_removed": body.gst_removed,
+           "updated_at": now_iso(),
            "updated_by": {"id": user["id"], "name": user.get("name", "")}}
     await db.carts.replace_one({"business_id": user["business_id"], "customer_id": body.customer_id}, doc, upsert=True)
-    return {"items": doc["items"], "discount": body.discount, "updated_at": doc["updated_at"]}
+    return {"items": doc["items"], "discount": body.discount, "gst_removed": body.gst_removed, "updated_at": doc["updated_at"]}
 
 
 @router.delete("")
