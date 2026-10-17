@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Linking, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import i18n from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { apiGet } from "@/src/api";
@@ -41,7 +42,8 @@ export default function Bill() {
   const whatsapp = () => run("wa", async () => {
     const { url } = await apiGet(`/invoices/${id}/share`);
     const greet = inv!.customer_phone && inv!.customer_name !== "Walk-in customer" ? ` ${inv!.customer_name}` : "";
-    const text = t("Namaste{{name}}! Your bill from {{shop}}: {{amount}} ({{no}}).\nSee the bill: {{url}}", {
+    const en = i18n.getFixedT("en"); // customers get the message in English, like the bill
+    const text = en("Namaste{{name}}! Your bill from {{shop}}: {{amount}} ({{no}}).\nSee the bill: {{url}}", {
       name: greet, shop: user?.business?.name ?? "", amount: formatCurrency(inv!.grand_total), no: inv!.invoice_number, url });
     const digits = inv!.customer_phone.replace(/\D/g, "");
     await Linking.openURL(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`);

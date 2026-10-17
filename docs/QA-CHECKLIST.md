@@ -300,6 +300,18 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | S.8 | Delete a supplier with bills / without bills | With bills: not offered; without: deleted after confirming | 2 | | |
 | S.9 | Bills saved before this update | Their suppliers appear in Suppliers with the old bills linked | 1 | | |
 
+## T. Language: Hindi
+| # | Steps | Expected | P | ✅/❌ | Notes |
+|---|---|---|---|---|---|
+| T.1 | More → Language → हिन्दी | Every screen switches to Hindi at once (menus, buttons, messages, empty states); English words from the glossary (ऑर्डर, बिल, स्टॉक…) as agreed | 1 | | |
+| T.2 | Close and reopen the app | Still Hindi; switching back to English works the same way | 1 | | |
+| T.3 | Welcome screen (logged out): English / हिन्दी toggle | Welcome, Sign up and Log in follow the choice | 1 | | |
+| T.4 | In Hindi: wrong password; sell more than in stock; delete a category that has products | Server messages appear in Hindi, with the right numbers and names | 1 | | |
+| T.5 | In Hindi: make a bill, open it, share the PDF, send on WhatsApp | The customer's bill, bill link, PDF and WhatsApp message stay in English | 1 | | |
+| T.6 | Suggested categories (Indoor Plants, Pots…) and a category you typed yourself | Suggested ones show in Hindi; your own name shows exactly as typed | 2 | | |
+| T.7 | 360 px phone, then largest font size | No vowel marks (ि ी ु ू े) cut at the top or bottom; no overlapping or cut text | 1 | | |
+| T.8 | Owner's phone in Hindi, employee's phone in English | Each phone keeps its own choice | 2 | | |
+
 ## N. Tough conditions (phone)
 | # | Steps | Expected | P | ✅/❌ | Notes |
 |---|---|---|---|---|---|

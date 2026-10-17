@@ -49,7 +49,7 @@ export default function ProductDetail() {
               </View>
               <View style={{ flex: 1, gap: spacing.xs, justifyContent: "center" }}>
                 <T v="title" style={{ fontSize: 24, lineHeight: 30 }} testID="product-title">{p.name}</T>
-                <T v="small">{[p.category || t("No category"), p.gst_percent ? t("{{n}}% GST", { n: p.gst_percent }) : ""].filter(Boolean).join(" · ")}</T>
+                <T v="small">{[p.category ? t(p.category) : t("No category"), p.gst_percent ? t("{{n}}% GST", { n: p.gst_percent }) : ""].filter(Boolean).join(" · ")}</T>
                 {p.image_source === "library" && <T v="caption">{t("Shared picture")}</T>}
               </View>
             </View>

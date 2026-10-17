@@ -1,5 +1,6 @@
 // Owner: More (reports, staff, shop, categories, supplier bill, shared pictures).
 // Worker: Me (what the owner lets them do, change PIN, log out).
+import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
@@ -10,7 +11,8 @@ import { apiGet } from "@/src/api";
 import { Permission, useAuth } from "@/src/auth";
 import { BrandMark } from "@/src/components/brand";
 import { confirm } from "@/src/confirm";
-import { Badge, Icon, IconName, Row, Screen, T } from "@/src/components/ui";
+import { LanguageSheet, useLanguage } from "@/src/components/language";
+import { Icon, IconName, Row, Screen, T } from "@/src/components/ui";
 import { formatPhone, plural } from "@/src/format";
 import { colors, radius, spacing } from "@/src/theme";
 import { resetTo } from "@/src/nav";
@@ -27,6 +29,8 @@ export default function More() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user, isOwner, can, logout } = useAuth();
+  const language = useLanguage();
+  const [choosing, setChoosing] = useState(false);
   const staff = useQuery<any[]>({ queryKey: ["staff"], queryFn: () => apiGet("/staff"), enabled: isOwner });
   const shop = user?.business?.name ?? "";
 
@@ -96,8 +100,8 @@ export default function More() {
 
         <Row title={user?.has_password ? (isOwner ? t("Change password") : t("Change PIN")) : t("Set a password")}
           left={<MenuIcon name="lock-reset" tint={colors.page} color={colors.inkSoft} />} chevron onPress={() => router.push("/more/password")} />
-        <Row title={t("Language")} subtitle={t("English · हिन्दी coming soon")} left={<MenuIcon name="translate" tint={colors.page} color={colors.inkSoft} />}
-          right={<Badge text={t("Soon")} tone="grey" />} />
+        <Row title={t("Language")} subtitle={language.label} left={<MenuIcon name="translate" tint={colors.page} color={colors.inkSoft} />}
+          chevron onPress={() => setChoosing(true)} testID="more-language" />
         <Row title={t("Log out")} left={<MenuIcon name="logout" tint="#FDECEC" color={colors.red} />} onPress={out} testID="more-logout" />
 
         <View style={{ alignItems: "center", gap: 2, marginTop: spacing.lg }}>
@@ -106,6 +110,7 @@ export default function More() {
           <T v="caption">{t("Version {{v}}", { v: Constants.expoConfig?.version ?? "" })}</T>
         </View>
       </ScrollView>
+      <LanguageSheet visible={choosing} onClose={() => setChoosing(false)} />
     </Screen>
   );
 }

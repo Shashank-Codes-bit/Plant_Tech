@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Pressable,
   StyleProp,
+  StyleSheet,
   Text,
   TextInput,
   TextInputProps,
@@ -19,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import MaterialDesignIcons from "@react-native-vector-icons/material-design-icons";
 
 import { fileUrl } from "@/src/api";
-import { colors, fonts, radius, spacing, touch, type, TextVariant } from "@/src/theme";
+import { colors, fonts, hindiRoom, radius, spacing, touch, type, TextVariant } from "@/src/theme";
 
 export type IconName = React.ComponentProps<typeof MaterialDesignIcons>["name"];
 
@@ -31,7 +32,9 @@ export function Icon(props: React.ComponentProps<typeof MaterialDesignIcons>) {
 export const MAX_FONT_SCALE = 1.25;
 
 export function T({ v = "body", color, style, ...rest }: TextProps & { v?: TextVariant; color?: string }) {
-  return <Text maxFontSizeMultiplier={MAX_FONT_SCALE} {...rest} style={[type[v], color ? { color } : null, style]} />;
+  const flat = StyleSheet.flatten([type[v], style]);
+  return <Text maxFontSizeMultiplier={MAX_FONT_SCALE} {...rest}
+    style={[type[v], color ? { color } : null, style, hindiRoom(rest.children, flat.fontSize ?? 16, flat.lineHeight)]} />;
 }
 
 // ------------------------------ layout ------------------------------
@@ -124,7 +127,8 @@ export function Button({ title, onPress, variant = "primary", icon, size = "lg",
     >
       {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={size === "lg" ? 28 : 24} color={fg} /> : null}
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: fonts.bold, fontSize: size === "lg" ? 20 : 18, lineHeight: size === "lg" ? 26 : 23, color: fg, textAlign: "center", flexShrink: 1 }}>{title}</Text>
+        style={[{ fontFamily: fonts.bold, fontSize: size === "lg" ? 20 : 18, lineHeight: size === "lg" ? 26 : 23, color: fg, textAlign: "center", flexShrink: 1 },
+          hindiRoom(title, size === "lg" ? 20 : 18)]}>{title}</Text>
     </Pressable>
   );
 }
@@ -243,7 +247,8 @@ export function Segmented<V extends string>({ options, value, onChange }: {
           style={{ flex: 1, minHeight: 50, paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: 12, alignItems: "center", justifyContent: "center",
             backgroundColor: o.value === value ? colors.green : "transparent" }}>
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE}
-            style={{ fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, textAlign: "center", color: o.value === value ? colors.white : colors.ink }}>{o.label}</Text>
+            style={[{ fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, textAlign: "center", color: o.value === value ? colors.white : colors.ink },
+              hindiRoom(o.label, 16)]}>{o.label}</Text>
         </Pressable>
       ))}
     </View>

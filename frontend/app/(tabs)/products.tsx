@@ -72,7 +72,7 @@ export default function Products() {
     { v: "name", label: t("Name A–Z") }, { v: "price-up", label: t("Price: low to high") }, { v: "price-down", label: t("Price: high to low") },
     { v: "stock-up", label: t("Stock: lowest first") }, { v: "new", label: t("Newest first") },
   ];
-  const catName = cats.data?.find((c) => c.id === category)?.name ?? "";
+  const catName = t(cats.data?.find((c) => c.id === category)?.name ?? "");
   const filtered = !!(search || category || stock);
 
   return (
@@ -120,7 +120,7 @@ export default function Products() {
               <Thumb path={p.image_path} size={56} />
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                 <T v="bold">{p.name}</T>
-                <T v="small">{[formatCurrency(p.selling_price), p.category].filter(Boolean).join(" · ")}</T>
+                <T v="small">{[formatCurrency(p.selling_price), p.category && t(p.category)].filter(Boolean).join(" · ")}</T>
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 {p.out_of_stock ? <Badge text={t("Out of stock")} tone="red" />
@@ -143,7 +143,7 @@ export default function Products() {
       <Sheet visible={sheet === "category"} onClose={() => setSheet("")} title={t("Category")}>
         <OptionRow label={t("All categories")} selected={!category} onPress={() => { setCategory(""); setSheet(""); }} />
         {(cats.data ?? []).map((c) => (
-          <OptionRow key={c.id} label={c.name} sub={c.product_count === 1 ? t("1 product") : t("{{n}} products", { n: c.product_count ?? 0 })}
+          <OptionRow key={c.id} label={t(c.name)} sub={c.product_count === 1 ? t("1 product") : t("{{n}} products", { n: c.product_count ?? 0 })}
             selected={category === c.id} onPress={() => { setCategory(c.id); setSheet(""); }} testID={`products-cat-${c.name}`} />
         ))}
       </Sheet>

@@ -7,6 +7,7 @@ import { useAuth } from "@/src/auth";
 import { useToast } from "@/src/components/toast";
 import { Button, Icon, Screen, T } from "@/src/components/ui";
 import { BrandIcon, BrandName } from "@/src/components/brand";
+import { LanguageToggle } from "@/src/components/language";
 import { googleAvailable, signInWithGoogle } from "@/src/google";
 import { colors, radius, spacing } from "@/src/theme";
 import { resetTo } from "@/src/nav";
@@ -33,6 +34,7 @@ export default function Welcome() {
     <Screen bg={colors.surface} edgeTop={false}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.lg, paddingHorizontal: spacing["2xl"], paddingTop: insets.top + spacing.xl,
         backgroundColor: colors.greenTint, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}>
+        <LanguageToggle />
         <BrandIcon size={112} />
         <BrandName big />
         <T v="bodyLarge" style={{ textAlign: "center", color: colors.green }}>हर पौधे का हिसाब</T>

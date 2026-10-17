@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "i18n:check": "node scripts/check-i18n.js"
   },
   "dependencies": {
     "@expo-google-fonts/baloo-2": "0.4.2",

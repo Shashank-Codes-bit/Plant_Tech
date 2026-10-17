@@ -32,7 +32,7 @@ passwords live only in the VM's `deploy/.env` and in EAS, and the owner enters t
   - **Stale route types:** after adding route files, restart the dev server if `tsc` complains about typed routes.
 - **Phone:** the QA APK, "Hara Hisaab QA" (`com.planteck.nurserypos.qa`, EAS profile `staging`, channel staging). **The owner's phone still runs an APK older than 86c0b9e; it needs the new 1.1.0 build** (expo-image-manipulator is a new native module, so an OTA update can't deliver this round).
 - **Backend tests:** pytest with mongomock (67 passing).
-- **App checks:** `npx tsc --noEmit` and `npx eslint app src` (warnings only, no errors). The package manager is yarn 1 (`npx yarn@1.22.22 add …`; `npx expo install` fails without yarn on PATH).
+- **App checks:** `npx tsc --noEmit`, `npx eslint app src` (warnings only, no errors) and `npm run i18n:check`. The package manager is yarn 1 (`npx yarn@1.22.22 add …`; `npx expo install` fails without yarn on PATH).
 
 ## Done this session (owner's 12-point feedback + supplier master; one commit per phase on `staging`)
 1. **Setup "Add my products" / "Add an employee"** waited for nothing: tapping before the shop was saved bounced back into setup. Now dimmed until saved; `resetTo(router, href, then)` + `takePendingOpen()` in the tabs layout. (64025c2)
@@ -43,12 +43,14 @@ passwords live only in the VM's `deploy/.env` and in EAS, and the owner enters t
 6. **Suppliers + multi-page bills:** `suppliers` collection (match by GSTIN → phone → name without "M/s"/"Pvt Ltd"; fill missing details only; never duplicated), More → Suppliers list and detail; bills of up to 5 pages read in one call; different suppliers / bills / non-bill pages refused. Old purchases are linked on server start. (63c3f7f)
 7. **Spacing and overlap:** every padding/gap on the theme scale, one `SearchBox`, compact `FilterChip`, Sheet `navigationBarTranslucent`, keyboard-aware new-customer form, Welcome top inset. (512ea9e)
 8. **Search in any language:** `गुलाब`, `gulab`, `rose` all find Rose (translit + sound-alike matching, library Hindi names and aliases); Products tab searches on the server; new shop-made catalogue entries get Hindi/Hinglish names looked up in the background (`AI_ENRICH_NAMES`, not counted as scans); `backend/enrich_library.py` for existing ones. (2ccaf50)
-9. Point 8 (saved orders per customer) was already done in 86c0b9e; nothing to build.
+9. **Hindi:** the owner approved the glossary (everyday shop Hindi with ऑर्डर, बिल, स्टॉक, प्रोडक्ट…). All 626 texts are in `frontend/src/locales/hi.json`, including the server's messages. More → Language and a toggle on Welcome; the choice is kept per phone; English is the default. Customer bills and the WhatsApp message stay English (`i18n.getFixedT("en")`). Text containing Devanagari gets 1.5x line height (`hindiRoom` in `theme.ts`). Suggested category names are translated; names a shop typed pass through.
+   - **Keep it complete:** `npm run i18n:check` (frontend) fails on any text without a Hindi translation or with different `{{placeholders}}`; `--missing` prints the gaps as JSON. Run it before every commit that adds text.
+10. Point 8 (saved orders per customer) was already done in 86c0b9e; nothing to build.
 
 **Checked in the local browser:** onboarding race (slow network), laptop / bill / not-a-bill alerts, similar products on a new item, Bill without GST through to the printed bill, profit field and suggestion, crop screen (square and free, drag, Use photo), two-page bill → new supplier → Suppliers detail, chips fitting at 360 px, Hindi/Hinglish search.
 
 ## Open items for next session
-1. **Hindi UI (point 5, second half) is waiting on the owner's glossary approval.** Plan: `frontend/src/locales/hi.json`, `scripts/check-i18n.js` (`npm run i18n:check`, fails on missing keys / placeholder mismatches, also covers backend message keys), language switch in More (and Welcome), Hindi line heights, category names through `t()`, customer WhatsApp message stays English (`getFixedT("en")`).
+1. **Hindi on a real phone:** check QA section T (especially T.7, clipped vowel marks at large font) once the 1.1.0 APK is installed.
 2. **Owner's browser test** of everything above at http://localhost:8083, then the go for the **1.1.0 QA APK** (needed for the crop module) and the phone checks: QA sections O (crop), I.11–I.13 (safe area, sheets, keyboard), M.6–M.11 (camera pages), S.
 3. **Staging backfill of catalogue names:** `docker compose exec web python enrich_library.py --limit 50` in `~/Plant_Tech-staging` (one small AI call per shop-made entry). Not run yet.
 4. **Login-wait fix (still waiting for the owner's OK).** After a page reload, a screen opened by direct link (e.g. `/more/shop`) can query before the saved login is read and spin or show "Please log in". Proposed fix: render the root `<Stack/>` only once `useAuth().ready` is true (`app/_layout.tsx`).

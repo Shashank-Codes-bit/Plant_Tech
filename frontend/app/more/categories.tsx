@@ -74,7 +74,7 @@ function CategoryRow({ c, gst, open, onToggle, onPatch, onDelete }: {
       <Pressable onPress={onToggle} testID={`cat-row-${c.name}`}
         style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, minHeight: 68 }}>
         <View style={{ flex: 1 }}>
-          <T v="bold">{c.name}</T>
+          <T v="bold">{t(c.name)}</T>
           <T v="small">{c.product_count === 1 ? t("1 product") : t("{{n}} products", { n: c.product_count ?? 0 })}</T>
         </View>
         {gst && (

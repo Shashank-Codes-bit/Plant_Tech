@@ -46,12 +46,12 @@ export function CategoryPicker({ value, onChange, label }: { value: string | nul
 
   return (
     <>
-      <SelectField label={label ?? t("Category")} value={chosen?.name} placeholder={t("Choose a category")} onPress={() => setOpen(true)}
+      <SelectField label={label ?? t("Category")} value={chosen ? t(chosen.name) : undefined} placeholder={t("Choose a category")} onPress={() => setOpen(true)}
         testID="category-select"
         right={chosen && gst ? <T v="bold" color={colors.inkSoft}>{t("{{n}}% GST", { n: chosen.gst_percent })}</T> : undefined} />
       <Sheet visible={open} onClose={() => setOpen(false)} title={t("Category")}>
         {(cats.data ?? []).map((c) => (
-          <OptionRow key={c.id} label={c.name} sub={gst ? t("{{n}}% GST", { n: c.gst_percent }) : undefined} selected={value === c.id}
+          <OptionRow key={c.id} label={t(c.name)} sub={gst ? t("{{n}}% GST", { n: c.gst_percent }) : undefined} selected={value === c.id}
             onPress={() => { onChange(c.id); setOpen(false); }} testID={`cat-${c.name}`} />
         ))}
         <View style={{ gap: spacing.sm, marginTop: 6, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line }}>

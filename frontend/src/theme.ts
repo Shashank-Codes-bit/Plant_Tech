@@ -66,6 +66,15 @@ export const type = {
 
 export type TextVariant = keyof typeof type;
 
+const DEVANAGARI = /[ऀ-ॿ]/;
+
+// Hindi letters carry marks above and below the line, so a line height that suits English clips them.
+// Text that contains Hindi gets 1.5x its font size (never less than it had); English and numbers keep theirs.
+export function hindiRoom(text: unknown, fontSize: number, lineHeight?: number): TextStyle | null {
+  const s = typeof text === "string" ? text : Array.isArray(text) ? text.filter((x) => typeof x === "string").join("") : "";
+  return DEVANAGARI.test(s) ? { lineHeight: Math.max(lineHeight ?? 0, Math.round(fontSize * 1.5)) } : null;
+}
+
 export function useTheme() {
   return { colors };
 }
