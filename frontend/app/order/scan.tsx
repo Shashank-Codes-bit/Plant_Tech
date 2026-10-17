@@ -17,10 +17,10 @@ import { DiscardOrder, OrderCustomerBar } from "@/src/components/order-customer"
 import { CategoryPicker } from "@/src/components/category-picker";
 import { choose, confirm, notice } from "@/src/confirm";
 import { useToast } from "@/src/components/toast";
-import { Badge, BottomBar, Button, Field, Header, Icon, Screen, Segmented, Stepper, T, Thumb } from "@/src/components/ui";
+import { Badge, BottomBar, Button, Field, Header, Icon, Screen, SearchBox, Segmented, Stepper, T, Thumb } from "@/src/components/ui";
 import { formatCurrency, formatQty } from "@/src/format";
 import { CaptureResult, pickFromGallery, takePhoto } from "@/src/hooks/useImageCapture";
-import { colors, fonts, radius, spacing, touch } from "@/src/theme";
+import { colors, radius, spacing, touch } from "@/src/theme";
 import type { Product } from "@/src/types";
 
 type Stage =
@@ -131,7 +131,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew, focusSearch }: {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Add items")} close onBack={() => router.back()} testID="scan-close" right={<DiscardOrder />} />
-      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: 12 }}><OrderCustomerBar /></View>
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}><OrderCustomerBar /></View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: spacing.lg }}>
         {!query && (
           <>
@@ -143,7 +143,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew, focusSearch }: {
                   <Image source={{ uri: photoUri }} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" />
                   <View style={{ position: "absolute", inset: 0, backgroundColor: "rgba(16,32,26,0.55)" } as any} />
                   <ActivityIndicator size="large" color={colors.white} />
-                  <T v="bodyLarge" color={colors.white} style={{ marginTop: 12 }}>{t("Identifying the item")}</T>
+                  <T v="bodyLarge" color={colors.white} style={{ marginTop: spacing.md }}>{t("Identifying the item")}</T>
                 </>
               ) : (
                 <>
@@ -151,11 +151,11 @@ function Start({ checking, photoUri, onCapture, onPick, onNew, focusSearch }: {
                     alignItems: "center", justifyContent: "center" }}>
                     <Icon name="leaf" size={64} color={colors.white} />
                   </View>
-                  <T v="bodyLarge" color={colors.white} style={{ marginTop: 16 }}>{t("Take a photo of the item")}</T>
+                  <T v="bodyLarge" color={colors.white} style={{ marginTop: spacing.lg }}>{t("Take a photo of the item")}</T>
                 </>
               )}
             </Pressable>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 28, paddingTop: 18, paddingHorizontal: 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 28, paddingTop: spacing.lg, paddingHorizontal: spacing.lg }}>
               <Pressable testID="scan-gallery" accessibilityLabel={t("Pick from gallery")} disabled={checking} onPress={() => onCapture("gallery")}
                 style={{ width: 60, height: 60, borderRadius: 18, borderWidth: 2, borderColor: colors.lineStrong, alignItems: "center", justifyContent: "center" }}>
                 <Icon name="image-outline" size={28} color={colors.ink} />
@@ -170,23 +170,13 @@ function Start({ checking, photoUri, onCapture, onPick, onNew, focusSearch }: {
           </>
         )}
 
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: query ? 0 : 14, gap: 10 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 60, paddingHorizontal: 14, borderWidth: 2,
-            borderColor: query ? colors.green : colors.lineStrong, borderRadius: 16 }}>
-            <Icon name="magnify" size={26} color={colors.muted} />
-            <TextInput ref={searchRef} testID="scan-search" value={q} onChangeText={setQ} placeholder={t("Or search by product name")}
-              placeholderTextColor={colors.muted} style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 19, color: colors.ink, minHeight: 56 }} />
-            {!!q && (
-              <Pressable accessibilityLabel={t("Clear")} onPress={() => setQ("")} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-                <Icon name="close-circle" size={24} color={colors.muted} />
-              </Pressable>
-            )}
-          </View>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: query ? 0 : 14, gap: spacing.md }}>
+          <SearchBox ref={searchRef} value={q} onChangeText={setQ} placeholder={t("Or search by product name")} testID="scan-search" />
 
-          {query.length >= 2 && results.isLoading && <ActivityIndicator color={colors.green} style={{ marginTop: 12 }} />}
+          {query.length >= 2 && results.isLoading && <ActivityIndicator color={colors.green} style={{ marginTop: spacing.md }} />}
           {(results.data ?? []).map((p) => (
             <Pressable key={p.id} testID={`scan-result-${p.name}`} onPress={() => onPick(p)}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 72, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 72, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
               <Thumb path={p.image_path} size={52} />
               <View style={{ flex: 1 }}>
                 <T v="bold">{p.name}</T>
@@ -199,7 +189,7 @@ function Start({ checking, photoUri, onCapture, onPick, onNew, focusSearch }: {
           ))}
           {query.length >= 2 && results.data && (
             <Pressable testID="scan-not-listed" onPress={() => onNew(query)}
-              style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, minHeight: 64, borderRadius: radius.lg, borderWidth: 2,
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 64, borderRadius: radius.lg, borderWidth: 2,
                 borderStyle: "dashed", borderColor: colors.green }}>
               <Icon name="plus-circle" size={30} color={colors.green} />
               <T v="bold" color={colors.greenDark} style={{ flex: 1 }}>
@@ -223,8 +213,8 @@ function CartBar() {
   return (
     <BottomBar style={{ borderTopWidth: 0 }}>
       <Pressable testID="scan-view-order" onPress={() => router.push("/order/cart")}
-        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, minHeight: touch.primary, borderRadius: radius.lg, backgroundColor: colors.green }}>
-        <View style={{ minWidth: 34, height: 34, paddingHorizontal: 8, borderRadius: 17, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+        style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, minHeight: touch.primary, borderRadius: radius.lg, backgroundColor: colors.green }}>
+        <View style={{ minWidth: 34, height: 34, paddingHorizontal: spacing.sm, borderRadius: 17, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
           <T v="number" color={colors.greenDark} style={{ fontSize: 19 }}>{formatQty(cart.count)}</T>
         </View>
         <T v="bodyLarge" color={colors.white} style={{ flex: 1 }}>{t("View order")}</T>
@@ -258,22 +248,22 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
   return (
     <Screen bg={colors.surface}>
       <Header title={conf ? t("Match found") : p.name} onBack={onBack} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }}>
-        <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
+        <View style={{ flexDirection: "row", gap: spacing.lg, alignItems: "center" }}>
           {photoUri ? <Image source={{ uri: photoUri }} style={{ width: 110, height: 110, borderRadius: 24 }} contentFit="cover" />
             : <Thumb path={p.image_path} size={110} />}
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1, gap: spacing.xs }}>
             <T v="title" testID="found-name">{p.name}</T>
             {!!p.botanical_name && <T v="small" style={{ fontStyle: "italic" }}>{p.botanical_name}</T>}
             {conf && <Badge text={conf.text} tone={conf.tone} />}
           </View>
         </View>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, backgroundColor: colors.page }}>
+        <View style={{ flexDirection: "row", gap: spacing.md }}>
+          <View style={{ flex: 1, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.page }}>
             <T v="label">{t("Price")}</T>
             <T v="title">{formatCurrency(p.selling_price)}</T>
           </View>
-          <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, backgroundColor: left ? colors.page : "#FDECEC" }}>
+          <View style={{ flex: 1, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: left ? colors.page : "#FDECEC" }}>
             <T v="label">{t("In stock")}</T>
             <T v="title" color={left ? colors.ink : colors.red}>{formatQty(p.stock)}</T>
             {inCart > 0 && <T v="caption">{t("{{n}} already in this order", { n: formatQty(inCart) })}</T>}
@@ -286,7 +276,7 @@ function Found({ product: p, confidence, photoUri, onBack, onAdded }: {
             <Stepper value={qty} onChange={setQty} max={left} testID="found-qty" />
           </View>
         ) : (
-          <View style={{ gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
+          <View style={{ gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
             <T v="bold" color={colors.amberInk}>{t("Out of stock")}</T>
             <T v="small" color={colors.amberInk}>{t("You can still sell it if you have it on hand. Update the stock count afterwards.")}</T>
             {can("stock") && (
@@ -334,7 +324,6 @@ function NotInStock({ initial, photo, onBack, onAdded, onPick }: {
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
 
-
   const priceN = Number(price);
   const stockN = Number(stock);
   const priceOk = price !== "" && priceN >= 0 && Number.isFinite(priceN);
@@ -365,8 +354,8 @@ function NotInStock({ initial, photo, onBack, onAdded, onPick }: {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("New item")} onBack={onBack} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
-        <View style={{ flexDirection: "row", gap: 14, alignItems: "center", padding: 14, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }} bottomOffset={24} keyboardShouldPersistTaps="handled">
+        <View style={{ flexDirection: "row", gap: spacing.lg, alignItems: "center", padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.amberTint }}>
           {photo ? <Image source={{ uri: photo.uri }} style={{ width: 72, height: 72, borderRadius: 18 }} contentFit="cover" />
             : <Icon name="help-circle" size={44} color={colors.amber} />}
           <View style={{ flex: 1 }}>
@@ -376,11 +365,11 @@ function NotInStock({ initial, photo, onBack, onAdded, onPick }: {
         </View>
 
         {initial.similar.length > 0 && (
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing.sm }}>
             <T v="label">{t("Already in your products?")}</T>
             {initial.similar.map((p) => (
               <Pressable key={p.id} testID={`new-similar-${p.name}`} onPress={() => onPick(p)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 64, borderRadius: radius.lg,
+                style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 64, borderRadius: radius.lg,
                   borderWidth: 1, borderColor: colors.line }}>
                 <Thumb path={p.image_path} size={44} />
                 <T v="bold" style={{ flex: 1 }}>{p.name}</T>

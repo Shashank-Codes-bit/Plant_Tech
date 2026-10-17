@@ -40,7 +40,7 @@ export default function NewCustomer() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Add customer")} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }} bottomOffset={24}>
         <Field label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" autoFocus testID="customer-name" />
         <PhoneField label={t("Phone (WhatsApp)")} value={phone} onChangeText={setPhone} testID="customer-phone"
           error={phoneBad && phone.length === 10 ? t("Enter a 10-digit mobile number") : undefined} />

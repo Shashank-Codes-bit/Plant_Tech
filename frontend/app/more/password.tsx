@@ -40,7 +40,7 @@ export default function ChangePassword() {
   return (
     <Screen bg={colors.surface}>
       <Header title={user?.has_password ? (isOwner ? t("Change password") : t("Change PIN")) : t("Set a password")} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }} bottomOffset={24}>
         {user?.has_password && (
           <Field label={t("Current {{word}}", { word })} value={current} onChangeText={setCurrent} secureTextEntry {...pinProps} testID="pw-current" />
         )}

@@ -72,8 +72,8 @@ function ShopForm({ initial }: { initial: Business }) {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Shop details")} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }} bottomOffset={24}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg }}>
           <Thumb path={b.logo_path} size={80} icon="store" contain />
           <Button title={b.logo_path ? t("Change logo") : t("Add logo")} icon="image-outline" variant="outline" size="md" style={{ flex: 1 }}
             onPress={logo} loading={uploading} />
@@ -83,7 +83,7 @@ function ShopForm({ initial }: { initial: Business }) {
         <PhoneField label={t("Shop phone")} value={phone} onChangeText={setPhone} error={phoneBad && phone.length === 10 ? t("Enter a 10-digit mobile number") : undefined} />
         <Field label={t("UPI ID (shows a payment QR code to customers)")} value={b.upi_id} onChangeText={(upi_id) => set({ upi_id })} autoCapitalize="none"
           placeholder="shopname@okaxis" testID="shop-upi" />
-        <View style={{ gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: colors.page }}>
+        <View style={{ gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.page }}>
           <Toggle title={t("GST registered")} subtitle={t("Turn on to show GST on your bills. Leave off if your shop is not registered.")} value={b.gst_registered}
             onChange={(gst_registered) => set({ gst_registered })} testID="shop-gst" />
           {b.gst_registered && (

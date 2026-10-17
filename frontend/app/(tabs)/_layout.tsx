@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/src/auth";
 import { Icon, IconName } from "@/src/components/ui";
 import { takePendingOpen } from "@/src/nav";
-import { colors, fonts } from "@/src/theme";
+import { colors, fonts, spacing } from "@/src/theme";
 
 const icon = (name: IconName) => function TabIcon({ color }: { color: ColorValue }) {
   return <Icon name={name} size={28} color={color as string} />;
@@ -38,7 +38,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.green,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { height: 72 + insets.bottom, paddingTop: 8, paddingBottom: insets.bottom + 8, borderTopColor: colors.line, backgroundColor: colors.surface },
+        tabBarStyle: { height: 72 + insets.bottom, paddingTop: spacing.sm, paddingBottom: insets.bottom + 8, borderTopColor: colors.line, backgroundColor: colors.surface },
         tabBarLabelStyle: { fontFamily: fonts.bold, fontSize: 13 },
         tabBarItemStyle: { paddingHorizontal: 0 },
         sceneStyle: { backgroundColor: colors.page },

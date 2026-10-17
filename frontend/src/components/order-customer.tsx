@@ -8,7 +8,7 @@ import { useCart } from "@/src/cart-context";
 import { confirm } from "@/src/confirm";
 import { Icon, T } from "@/src/components/ui";
 import { formatPhone } from "@/src/format";
-import { colors, radius } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
 export function OrderCustomerBar() {
   const { t } = useTranslation();
@@ -18,7 +18,7 @@ export function OrderCustomerBar() {
   return (
     <Pressable testID="order-customer" accessibilityRole="button" accessibilityLabel={t("Change customer")}
       onPress={() => router.push({ pathname: "/order/customer", params: { change: "1" } })}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 8, minHeight: 56,
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, minHeight: 56,
         borderRadius: radius.md, backgroundColor: pressed ? colors.greenTint : colors.page, borderWidth: 1, borderColor: colors.line })}>
       <Icon name="account" size={24} color={colors.green} />
       <View style={{ flex: 1 }}>
@@ -43,7 +43,7 @@ export function DiscardOrder() {
   }
   return (
     <Pressable testID="order-discard" accessibilityRole="button" accessibilityLabel={t("Discard order")} onPress={discard}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, paddingHorizontal: 10, marginRight: 6,
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 44, paddingHorizontal: spacing.md, marginRight: 6,
         borderRadius: radius.md, backgroundColor: pressed ? colors.redTint : "transparent" })}>
       <Icon name="trash-can-outline" size={20} color={colors.red} />
       <T v="bold" color={colors.red} style={{ fontSize: 15 }}>{t("Discard")}</T>

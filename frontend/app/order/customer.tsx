@@ -3,17 +3,18 @@
 // their saved order if they have one (items added earlier, by anyone in the shop).
 // With ?change=1 (the "Change" on an order): the items move to the customer picked.
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 
 import { apiGet, apiPost } from "@/src/api";
 import { OrderCustomer, useCart } from "@/src/cart-context";
 import { useToast } from "@/src/components/toast";
-import { Button, Field, Header, Icon, PhoneField, Screen, T } from "@/src/components/ui";
+import { Button, Field, Header, Icon, PhoneField, Screen, SearchBox, T } from "@/src/components/ui";
 import { formatPhone, normalizePhone, plural } from "@/src/format";
-import { colors, fonts, radius, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
 export default function OrderCustomerStep() {
   const { t } = useTranslation();
@@ -82,43 +83,39 @@ export default function OrderCustomerStep() {
   return (
     <Screen bg={colors.surface}>
       <Header title={change ? t("Change customer") : t("New order")} close={!change} onBack={() => router.back()} testID="customer-close" />
-      <View style={{ paddingHorizontal: spacing.lg, gap: 12, paddingBottom: 12 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing.md }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
           <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.green, alignItems: "center", justifyContent: "center" }}>
             <T v="bold" color={colors.white}>1</T>
           </View>
           <T v="title">{t("Who is buying?")}</T>
         </View>
         {!adding && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 60, paddingHorizontal: 14, borderWidth: 2,
-            borderColor: typed ? colors.green : colors.lineStrong, borderRadius: 16 }}>
-            <Icon name="magnify" size={26} color={colors.muted} />
-            <TextInput value={typed} onChangeText={setTyped} placeholder={t("Name or phone number")} placeholderTextColor={colors.muted}
-              autoFocus testID="customer-search" style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 19, color: colors.ink, minHeight: 56 }} />
-            {found.isFetching && <ActivityIndicator color={colors.green} />}
-          </View>
+          <SearchBox value={typed} onChangeText={setTyped} placeholder={t("Name or phone number")} autoFocus
+            loading={found.isFetching} testID="customer-search" />
         )}
       </View>
 
       {adding ? (
-        <View style={{ padding: spacing.lg, paddingTop: 4, gap: 14 }}>
+        <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg }} bottomOffset={24}
+          keyboardShouldPersistTaps="handled">
           <T v="bodyLarge">{t("New customer")}</T>
           <Field label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" autoFocus={!name} testID="customer-new-name" />
           <PhoneField label={t("Phone number (WhatsApp)")} value={phone} onChangeText={setPhone} testID="customer-new-phone"
             error={phone.length === 10 && !phone10 ? t("Enter a 10-digit mobile number") : undefined} />
           <Button title={t("Save and continue")} icon="arrow-right" onPress={save} loading={busy} disabled={!name.trim() || !phone10} testID="customer-new-save" />
           <Button title={t("Back to search")} variant="outline" size="md" onPress={() => setAdding(false)} />
-        </View>
+        </KeyboardAwareScrollView>
       ) : (
         <FlatList
           data={results}
           keyExtractor={(c) => c.id}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: 8 }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm }}
           ListHeaderComponent={
-            <View style={{ gap: 8, marginBottom: 4 }}>
+            <View style={{ gap: spacing.sm, marginBottom: spacing.xs }}>
               <Pressable onPress={startAdding} testID="customer-add"
-                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, minHeight: 64, borderRadius: radius.lg,
+                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg, minHeight: 64, borderRadius: radius.lg,
                   borderWidth: 2, borderStyle: "dashed", borderColor: colors.green, backgroundColor: pressed ? colors.greenTint : colors.surface })}>
                 <Icon name="account-plus" size={28} color={colors.green} />
                 <View style={{ flex: 1 }}>
@@ -132,7 +129,7 @@ export default function OrderCustomerStep() {
           }
           renderItem={({ item: c }) => (
             <Pressable onPress={() => choose(c)} testID={`customer-pick-${c.name}`}
-              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, minHeight: 68, borderRadius: radius.lg,
+              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 68, borderRadius: radius.lg,
                 borderWidth: 1, borderColor: cart.customer?.id === c.id ? colors.green : colors.line, backgroundColor: pressed ? colors.page : colors.surface })}>
               <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.greenTint, alignItems: "center", justifyContent: "center" }}>
                 <T v="number" color={colors.greenDark}>{c.name.charAt(0).toUpperCase()}</T>

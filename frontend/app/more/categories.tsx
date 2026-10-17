@@ -39,7 +39,7 @@ export default function Categories() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Categories")} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 10 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
         <T v="body" color={colors.inkSoft}>
           {gst ? t("Tap a category to rename it or change its GST rate. Prices include GST, and the bill shows the tax portion.")
             : t("Your shop is not GST registered, so no tax is shown on bills. Tap a category to rename it.")}
@@ -54,7 +54,7 @@ export default function Categories() {
               }
             }} />
         ))}
-        <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end", marginTop: 8 }}>
+        <View style={{ flexDirection: "row", gap: spacing.sm, alignItems: "flex-end", marginTop: spacing.sm }}>
           <Field style={{ flex: 1 }} label={t("Add category")} value={newName} onChangeText={setNewName} placeholder={t("e.g. Seeds")} autoCapitalize="words" testID="cat-add-name" />
           <Button title={t("Add")} icon="plus" size="md" disabled={!newName.trim()} testID="cat-add"
             onPress={() => call(async () => { await apiPost("/categories", { name: newName.trim(), gst_percent: 0 }); setNewName(""); })} />
@@ -72,28 +72,28 @@ function CategoryRow({ c, gst, open, onToggle, onPatch, onDelete }: {
   return (
     <View style={{ borderRadius: radius.lg, borderWidth: open ? 2 : 1, borderColor: open ? colors.green : colors.line, overflow: "hidden" }}>
       <Pressable onPress={onToggle} testID={`cat-row-${c.name}`}
-        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, minHeight: 68 }}>
+        style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, minHeight: 68 }}>
         <View style={{ flex: 1 }}>
           <T v="bold">{c.name}</T>
           <T v="small">{c.product_count === 1 ? t("1 product") : t("{{n}} products", { n: c.product_count ?? 0 })}</T>
         </View>
         {gst && (
-          <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: c.gst_percent ? colors.greenTint : colors.page }}>
+          <View style={{ paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: 14, backgroundColor: c.gst_percent ? colors.greenTint : colors.page }}>
             <T v="bold" color={c.gst_percent ? colors.greenDark : colors.inkSoft}>{t("{{n}}% GST", { n: c.gst_percent })}</T>
           </View>
         )}
         <Icon name={open ? "chevron-up" : "chevron-down"} size={26} color={colors.muted} />
       </Pressable>
       {open && (
-        <View style={{ gap: 12, padding: 14, paddingTop: 0 }}>
+        <View style={{ gap: spacing.md, padding: spacing.lg, paddingTop: 0 }}>
           {gst && (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
               {SLABS.map((s) => (
                 <Chip key={s} label={`${s}%`} active={c.gst_percent === s} onPress={() => onPatch({ gst_percent: s })} testID={`cat-gst-${c.name}-${s}`} />
               ))}
             </View>
           )}
-          <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
+          <View style={{ flexDirection: "row", gap: spacing.sm, alignItems: "flex-end" }}>
             <Field style={{ flex: 1 }} label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" />
             <Button title={t("Rename")} size="md" variant="secondary" disabled={!name.trim() || name.trim() === c.name} onPress={() => onPatch({ name: name.trim() })} />
           </View>

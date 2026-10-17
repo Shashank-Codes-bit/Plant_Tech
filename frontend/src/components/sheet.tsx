@@ -14,25 +14,25 @@ export function Sheet({ visible, onClose, title, children, footer, testID }: {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, justifyContent: "flex-end" }}>
         <Pressable accessibilityLabel={t("Close")} onPress={onClose} style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(16,32,26,0.45)" }]} />
         <View testID={testID} style={{ width: "100%", maxWidth: 480, alignSelf: "center", maxHeight: "90%", backgroundColor: colors.surface,
           borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: insets.bottom + spacing.lg }}>
-          <View style={{ alignItems: "center", paddingTop: 8 }}>
+          <View style={{ alignItems: "center", paddingTop: spacing.sm }}>
             <View style={{ width: 44, height: 5, borderRadius: 3, backgroundColor: colors.lineStrong }} />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", paddingLeft: spacing.lg, paddingRight: 4, minHeight: 56 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", paddingLeft: spacing.lg, paddingRight: spacing.xs, minHeight: 56 }}>
             <T v="title" style={{ flex: 1, fontSize: 22, lineHeight: 28 }}>{title}</T>
             <Pressable accessibilityRole="button" accessibilityLabel={t("Close")} onPress={onClose} testID="sheet-close"
               style={{ width: touch.min, height: touch.min, alignItems: "center", justifyContent: "center" }}>
               <Icon name="close" size={28} color={colors.ink} />
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 8, gap: 10 }} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, gap: spacing.md }} keyboardShouldPersistTaps="handled">
             {children}
           </ScrollView>
-          {!!footer && <View style={{ paddingHorizontal: spacing.lg, paddingTop: 10, gap: 10 }}>{footer}</View>}
+          {!!footer && <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md }}>{footer}</View>}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -45,7 +45,7 @@ export function OptionRow({ label, sub, selected, onPress, icon, testID }: {
 }) {
   return (
     <Pressable testID={testID} accessibilityRole="radio" accessibilityState={{ selected: !!selected }} onPress={onPress}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 60, paddingHorizontal: 14, paddingVertical: 8,
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 60, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
         borderRadius: radius.md, borderWidth: 2, borderColor: selected ? colors.green : colors.line,
         backgroundColor: selected ? colors.greenTint : pressed ? colors.page : colors.surface })}>
       {!!icon && <Icon name={icon} size={24} color={selected ? colors.green : colors.inkSoft} />}
@@ -66,7 +66,7 @@ export function SelectField({ label, value, placeholder, onPress, testID, right 
     <View style={{ gap: 6 }}>
       {!!label && <T v="label">{label}</T>}
       <Pressable testID={testID} accessibilityRole="button" onPress={onPress}
-        style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, minHeight: touch.min + 2, paddingHorizontal: 14,
+        style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: touch.min + 2, paddingHorizontal: spacing.lg,
           borderWidth: 2, borderColor: colors.lineStrong, borderRadius: radius.md, backgroundColor: pressed ? colors.page : colors.surface })}>
         <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 20, color: value ? colors.ink : colors.muted }}>
           {value || placeholder}
@@ -78,21 +78,21 @@ export function SelectField({ label, value, placeholder, onPress, testID, right 
   );
 }
 
-// Filter button in a filter bar: shows the filter name, or what is chosen (highlighted).
-export function FilterChip({ label, value, onPress, testID, icon }: {
-  label: string; value?: string; onPress: () => void; testID?: string; icon?: IconName;
+// Filter button in a filter bar: shows the filter name, or what is chosen (highlighted). Compact, so three
+// fit side by side on a 360 px phone.
+export function FilterChip({ label, value, onPress, testID }: {
+  label: string; value?: string; onPress: () => void; testID?: string;
 }) {
   const on = !!value;
   return (
     <Pressable testID={testID} accessibilityRole="button" onPress={onPress}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, minHeight: 48, paddingLeft: 14, paddingRight: 10,
-        borderRadius: 24, borderWidth: 2, borderColor: on ? colors.green : colors.lineStrong,
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 2, minHeight: 44, paddingLeft: spacing.md, paddingRight: 6,
+        borderRadius: 22, borderWidth: 2, borderColor: on ? colors.green : colors.lineStrong,
         backgroundColor: on ? colors.greenTint : pressed ? colors.page : colors.surface })}>
-      {!!icon && <Icon name={icon} size={20} color={on ? colors.green : colors.inkSoft} />}
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: fonts.bold, fontSize: 16, color: on ? colors.greenDark : colors.ink }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: fonts.bold, fontSize: 15, color: on ? colors.greenDark : colors.ink }}>
         {value || label}
       </Text>
-      <Icon name="chevron-down" size={20} color={on ? colors.green : colors.inkSoft} />
+      <Icon name="chevron-down" size={18} color={on ? colors.green : colors.inkSoft} />
     </Pressable>
   );
 }

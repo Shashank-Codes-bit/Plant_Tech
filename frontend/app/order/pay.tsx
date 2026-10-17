@@ -43,8 +43,8 @@ export default function OrderPay() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Payment")} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 18 }}>
-        <View style={{ alignItems: "center", padding: 18, borderRadius: radius.xl, backgroundColor: colors.greenTint }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
+        <View style={{ alignItems: "center", padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.greenTint }}>
           <T v="label" color={colors.greenDark}>{t("Customer pays")}</T>
           <T v="amount" style={{ fontSize: 52, lineHeight: 58 }} testID="pay-total">{formatCurrency(cart.total)}</T>
           <T v="small" color={colors.greenDark}>
@@ -54,14 +54,14 @@ export default function OrderPay() {
           </T>
         </View>
 
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: spacing.sm }}>
           <T v="label">{t("Customer")}</T>
           <OrderCustomerBar />
         </View>
 
-        <View style={{ gap: 10 }}>
+        <View style={{ gap: spacing.md }}>
           <T v="label">{t("How is the customer paying?")}</T>
-          <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
             {METHODS.map(({ m, icon }) => (
               <Pressable key={m} testID={`pay-${m}`} disabled={bill.busy || !cart.customer} onPress={() => pay(m)}
                 style={({ pressed }) => ({ flex: 1, alignItems: "center", justifyContent: "center", gap: 6, minHeight: 112, borderRadius: radius.lg,

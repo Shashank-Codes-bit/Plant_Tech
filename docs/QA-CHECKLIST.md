@@ -229,6 +229,8 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | I.7 | Items sold | Every item sold in the period (not just 5), most sold first, with how many and ₹ | 1 | | |
 | I.7a | Tap each bar in the chart | That bar turns dark green and shows its total; the highest bar is chosen at first | 1 | | |
 | I.11 | Phone with 3-button navigation: scroll to the end of Reports, Products, a bill | The last row sits above Android's buttons, never under them | 1 | | |
+| I.12 | Open any sheet (filters, Discard order, Log out, supplier picker) with gesture and with 3-button navigation | Its last button sits just above the phone's buttons: not under them, no big empty gap | 1 | | |
+| I.13 | New order → New customer on a small phone with the keyboard open | Name, phone and Save and continue stay visible above the keyboard (the form scrolls) | 1 | | |
 | I.8 | Brand-new shop | Friendly empty states everywhere; nothing shows NaN, undefined or ₹NaN | 1 | | |
 | I.9 | Pull down to refresh on Home, Orders, Products, Customers | Updates without leaving the screen | 2 | | |
 | I.10 | Huge sales day (₹12,34,567) | Amount fits on one line (shrinks); no overlap | 2 | | |
@@ -304,7 +306,7 @@ Owner A adds employee W (Employees → Manage → Add employee). Test with W log
 | N.2 | Slow network (phone hotspot on 2G) | Spinners on buttons, no double saves, no frozen screens | 1 | | |
 | N.3 | Server down (ask Claude to stop staging for 2 minutes) | Errors, then everything works again without reinstalling | 2 | | |
 | N.4 | Phone back button on every screen | Goes to the previous screen; from Home exits the app; never to Welcome/Login when logged in | 1 | | |
-| N.5 | Small phone (5", 360 dp wide) | Nothing cut off or overlapping on any screen; no "…" in names or amounts | 1 | | |
+| N.5 | Small phone (5", 360 dp wide) | Nothing cut off or overlapping on any screen; no "…" in names or amounts; Products and Orders filters fit in one row; bottom buttons on one line | 1 | | |
 | N.6 | Phone Settings → Display: largest font + largest display size | Text bigger but no overlaps; buttons still tappable | 1 | | |
 | N.7 | Dark mode on the phone | App stays light and readable | 2 | | |
 | N.8 | Leave the app on Home for 30 min, come back | Numbers refresh when you return to the tab | 2 | | |

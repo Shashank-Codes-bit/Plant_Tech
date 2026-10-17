@@ -1,5 +1,6 @@
 import { Pressable, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/src/auth";
@@ -14,6 +15,7 @@ export default function Welcome() {
   const { t } = useTranslation();
   const router = useRouter();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
   const { googleLogin, ready, user } = useAuth();
 
   async function google() {
@@ -29,7 +31,7 @@ export default function Welcome() {
 
   return (
     <Screen bg={colors.surface} edgeTop={false}>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 18, paddingHorizontal: 32, paddingTop: 60,
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.lg, paddingHorizontal: spacing["2xl"], paddingTop: insets.top + spacing.xl,
         backgroundColor: colors.greenTint, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 }}>
         <BrandIcon size={112} />
         <BrandName big />
@@ -39,7 +41,7 @@ export default function Welcome() {
         </T>
       </View>
 
-      <View style={{ gap: 14, padding: spacing.xl }}>
+      <View style={{ gap: spacing.lg, padding: spacing.xl }}>
         {googleAvailable && (
           <Button title={t("Continue with Google")} icon="google" variant="outline" onPress={google} testID="welcome-google" />
         )}
@@ -49,7 +51,7 @@ export default function Welcome() {
           <T v="bold" color={colors.green}>{t("Already have an account? Log in")}</T>
         </Pressable>
         <Pressable onPress={() => router.push("/login")}
-          style={{ flexDirection: "row", gap: 12, alignItems: "center", padding: 14, borderRadius: radius.md, backgroundColor: colors.page }}>
+          style={{ flexDirection: "row", gap: spacing.md, alignItems: "center", padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.page }}>
           <Icon name="account-hard-hat" size={26} color={colors.inkSoft} />
           <T v="small" style={{ flex: 1, color: colors.inkSoft }}>
             {t("Employees: log in with the phone number and PIN provided by the shop owner.")}

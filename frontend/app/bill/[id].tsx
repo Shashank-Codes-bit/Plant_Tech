@@ -70,9 +70,9 @@ export default function Bill() {
   return (
     <Screen bg={colors.surface}>
       {justPaid ? <View style={{ height: 8 }} /> : <Header title={t("Bill {{no}}", { no: inv.invoice_number })} onBack={home} />}
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 14 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
         {justPaid && (
-          <View style={{ alignItems: "center", gap: 4, paddingVertical: 8 }} testID="bill-paid">
+          <View style={{ alignItems: "center", gap: spacing.xs, paddingVertical: spacing.sm }} testID="bill-paid">
             <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.green, alignItems: "center", justifyContent: "center", marginBottom: 6 }}>
               <Icon name="check-bold" size={50} color={colors.white} />
             </View>
@@ -83,7 +83,7 @@ export default function Bill() {
         )}
 
         <Pressable testID="bill-whatsapp" disabled={!!busy} onPress={whatsapp}
-          style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, minHeight: 84, borderRadius: radius.lg,
+          style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.lg, padding: spacing.lg, minHeight: 84, borderRadius: radius.lg,
             backgroundColor: pressed ? "#0E7A3F" : colors.whatsapp, opacity: busy && busy !== "wa" ? 0.6 : 1 })}>
           <Icon name="whatsapp" size={40} color={colors.white} />
           <View style={{ flex: 1 }}>
@@ -91,12 +91,12 @@ export default function Bill() {
             <T v="small" color="#DDF5E6">{who}</T>
           </View>
         </Pressable>
-        <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flexDirection: "row", gap: spacing.md }}>
           <Button title={t("Share PDF")} icon="file-pdf-box" variant="outline" size="md" style={{ flex: 1 }} onPress={pdf} loading={busy === "pdf"} testID="bill-pdf" />
           <Button title={t("Download")} icon="download" variant="outline" size="md" style={{ flex: 1 }} onPress={download} loading={busy === "download"} testID="bill-download" />
         </View>
 
-        <View style={{ gap: 8, padding: 16, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, marginTop: 4 }}>
+        <View style={{ gap: spacing.sm, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, marginTop: spacing.xs }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <View style={{ flex: 1 }}>
               <T v="bold">{inv.customer_name}</T>
@@ -107,9 +107,9 @@ export default function Bill() {
               <T v="small">{formatDate(inv.created_at)}</T>
             </View>
           </View>
-          <View style={{ height: 1, backgroundColor: colors.line, marginVertical: 4 }} />
+          <View style={{ height: 1, backgroundColor: colors.line, marginVertical: spacing.xs }} />
           {inv.items.map((it, i) => (
-            <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+            <View key={i} style={{ flexDirection: "row", gap: spacing.sm }}>
               <View style={{ flex: 1 }}>
                 <T v="bold">{it.name}</T>
                 <T v="small">{formatQty(it.quantity)} × {formatCurrency(it.price)}{it.gst_percent ? ` · GST ${it.gst_percent}%` : ""}</T>
@@ -122,7 +122,7 @@ export default function Bill() {
               <T v="bold">{formatCurrency(it.amount)}</T>
             </View>
           ))}
-          <View style={{ height: 1, backgroundColor: colors.line, marginVertical: 4 }} />
+          <View style={{ height: 1, backgroundColor: colors.line, marginVertical: spacing.xs }} />
           {inv.discount > 0 && <Line label={t("Discount")} value={`- ${formatCurrency(inv.discount)}`} />}
           {inv.gst_breakup.map((g) => (
             <Line key={g.rate} label={t("Includes GST {{rate}}%", { rate: g.rate })} value={formatCurrency(g.tax)} />

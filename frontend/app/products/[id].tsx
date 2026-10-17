@@ -34,33 +34,33 @@ export default function ProductDetail() {
     <Screen>
       <Header title={t("Product")} right={p && can("stock") ? (
         <Pressable onPress={() => router.push({ pathname: "/products/edit", params: { id } })} testID="product-edit"
-          style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: touch.min, paddingHorizontal: 14 }}>
+          style={{ flexDirection: "row", alignItems: "center", gap: 6, minHeight: touch.min, paddingHorizontal: spacing.lg }}>
           <Icon name="pencil-outline" size={22} color={colors.green} />
           <T v="bold" color={colors.green}>{t("Edit")}</T>
         </Pressable>
       ) : undefined} />
       {!p ? (q.isError ? <ErrorView message={(q.error as Error).message} onRetry={q.refetch} /> : <LoadingView />) : (
         <>
-          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 14 }}>
-            <View style={{ flexDirection: "row", gap: 14, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
+            <View style={{ flexDirection: "row", gap: spacing.lg, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
               <View style={{ width: 104, height: 104, borderRadius: radius.lg, overflow: "hidden", backgroundColor: colors.greenTint, alignItems: "center", justifyContent: "center" }}>
                 {p.image_path ? <Image source={{ uri: fileUrl(p.image_path) }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
                   : <Icon name="sprout" size={52} color={colors.greenMid} />}
               </View>
-              <View style={{ flex: 1, gap: 4, justifyContent: "center" }}>
+              <View style={{ flex: 1, gap: spacing.xs, justifyContent: "center" }}>
                 <T v="title" style={{ fontSize: 24, lineHeight: 30 }} testID="product-title">{p.name}</T>
                 <T v="small">{[p.category || t("No category"), p.gst_percent ? t("{{n}}% GST", { n: p.gst_percent }) : ""].filter(Boolean).join(" · ")}</T>
                 {p.image_source === "library" && <T v="caption">{t("Shared picture")}</T>}
               </View>
             </View>
 
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 2 }}>
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
+              <View style={{ flex: 1, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 2 }}>
                 <T v="label">{t("Price")}</T>
                 <T v="title">{formatCurrency(p.selling_price)}</T>
                 {isOwner && !!p.cost_price && <T v="caption">{t("Cost {{c}} · visible only to you", { c: formatCurrency(p.cost_price) })}</T>}
               </View>
-              <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, borderWidth: 1, gap: 2,
+              <View style={{ flex: 1, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, gap: 2,
                 borderColor: p.out_of_stock ? colors.redLine : p.low_stock ? colors.amber : colors.line,
                 backgroundColor: p.out_of_stock ? "#FDECEC" : p.low_stock ? colors.amberTint : colors.surface }}>
                 <T v="label">{t("In stock")}</T>
@@ -74,9 +74,9 @@ export default function ProductDetail() {
             <View style={{ gap: 6 }}>
               <T v="label" style={{ fontSize: 14, letterSpacing: 0.6, textTransform: "uppercase", color: colors.muted }}>{t("Stock history")}</T>
               {p.history.length ? (
-                <View style={{ borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14 }}>
+                <View style={{ borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.lg }}>
                   {p.history.map((h, i) => (
-                    <View key={h.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: colors.line }}>
+                    <View key={h.id} style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, borderTopWidth: i ? 1 : 0, borderTopColor: colors.line }}>
                       <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center",
                         backgroundColor: h.change > 0 ? colors.greenTint : "#FDECEC" }}>
                         <Icon name={h.type === "sale" ? "cart-outline" : h.change > 0 ? "arrow-down-bold" : "arrow-up-bold"} size={20}
@@ -99,9 +99,9 @@ export default function ProductDetail() {
 
           {can("stock") && (
             <BottomBar style={{ flexDirection: "row" }}>
-              <Button title={t("Remove")} icon="minus-circle-outline" variant="danger" size="md" style={{ flex: 1, paddingHorizontal: 10 }}
+              <Button title={t("Remove")} icon="minus-circle-outline" variant="danger" size="md" style={{ flex: 1, paddingHorizontal: spacing.md }}
                 onPress={() => setChange("remove")} disabled={p.stock <= 0} testID="stock-remove" />
-              <Button title={t("Add stock")} icon="plus-circle-outline" size="md" style={{ flex: 1.3, paddingHorizontal: 10 }}
+              <Button title={t("Add stock")} icon="plus-circle-outline" size="md" style={{ flex: 1.3, paddingHorizontal: spacing.md }}
                 onPress={() => setChange("add")} testID="stock-add" />
             </BottomBar>
           )}
@@ -152,7 +152,7 @@ function StockSheet({ product: p, kind, onClose, onDone }: { product: Product; k
           variant={adding ? "primary" : "danger"} onPress={save} loading={busy} disabled={!ok} testID="stock-save" />
       }>
       <T v="body" color={colors.inkSoft}>{p.name}</T>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, paddingVertical: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.lg, paddingVertical: 6 }}>
         <Pressable accessibilityLabel={t("Decrease quantity")} onPress={() => set(n - 1)} style={[round, { borderWidth: 2, borderColor: colors.lineStrong }]} testID="stock-minus">
           <Icon name="minus" size={32} color={colors.ink} />
         </Pressable>
@@ -165,18 +165,18 @@ function StockSheet({ product: p, kind, onClose, onDone }: { product: Product; k
         </Pressable>
       </View>
       {adding ? (
-        <View style={{ flexDirection: "row", gap: 8, justifyContent: "center" }}>
+        <View style={{ flexDirection: "row", gap: spacing.sm, justifyContent: "center" }}>
           {[5, 10, 25].map((x) => <Chip key={x} label={`+${x}`} onPress={() => set(n + x)} testID={`stock-quick-${x}`} />)}
         </View>
       ) : (
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: spacing.sm }}>
           <T v="label">{t("Reason")}</T>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
             {REASONS.map((r) => <Chip key={r} label={r} active={reason === r} onPress={() => setReason(r)} />)}
           </View>
         </View>
       )}
-      <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 10, padding: 12, borderRadius: radius.md, backgroundColor: colors.page }}>
+      <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.page }}>
         <T v="bold">{formatQty(p.stock)}</T>
         <Icon name="arrow-right" size={22} color={colors.inkSoft} />
         <T v="number" color={after < 0 ? colors.red : colors.greenDark}>{formatQty(Math.max(after, 0))}</T>

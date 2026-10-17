@@ -8,7 +8,7 @@ import { apiGet, apiPost } from "@/src/api";
 import { SetupFrame } from "@/src/components/setup-frame";
 import { useToast } from "@/src/components/toast";
 import { Chip, LoadingView, Screen, T } from "@/src/components/ui";
-import { colors, fonts } from "@/src/theme";
+import { colors, fonts, spacing } from "@/src/theme";
 import type { Business, Category } from "@/src/types";
 
 type Suggestion = { name: string; gst_percent: number };
@@ -51,12 +51,12 @@ function CategoriesStep({ gst, suggestions, existing }: { gst: boolean; suggesti
           {t("The percentage is the suggested GST rate for each category. Please confirm rates with your accountant; you can change them at any time.")}
         </T>
       )}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md }}>
         {suggestions.map((s) => (
           <Chip key={s.name} label={t(s.name)} active={!!on[s.name]} testID={`setup-cat-${s.name}`}
             onPress={() => setOn((o) => ({ ...o, [s.name]: !o[s.name] }))}
             right={gst ? (
-              <View style={{ paddingHorizontal: 8, paddingVertical: 1, borderRadius: 10, backgroundColor: on[s.name] ? colors.greenMid : colors.page }}>
+              <View style={{ paddingHorizontal: spacing.sm, paddingVertical: 1, borderRadius: 10, backgroundColor: on[s.name] ? colors.greenMid : colors.page }}>
                 <Text style={{ fontFamily: fonts.extrabold, fontSize: 14, color: on[s.name] ? colors.white : colors.inkSoft }}>{s.gst_percent}%</Text>
               </View>
             ) : undefined} />

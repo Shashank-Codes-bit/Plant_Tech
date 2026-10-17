@@ -38,8 +38,8 @@ export default function Signup() {
   return (
     <Screen bg={colors.surface}>
       <Header right={<View style={{ marginRight: 14 }}><BrandMark size={40} /></View>} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 4, gap: 18 }} bottomOffset={24}>
-        <View style={{ gap: 4 }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: spacing.xs, gap: spacing.lg }} bottomOffset={24}>
+        <View style={{ gap: spacing.xs }}>
           <T v="heading">{t("Create your account")}</T>
           <T v="body" color={colors.inkSoft}>{t("You are the owner. You can add employees later.")}</T>
         </View>

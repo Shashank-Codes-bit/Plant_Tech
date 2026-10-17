@@ -44,9 +44,9 @@ export default function More() {
 
   return (
     <Screen edgeBottom={false}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 10, paddingBottom: spacing["2xl"] }}>
-        <T v="title" style={{ marginBottom: 4 }}>{isOwner ? t("More") : t("Me")}</T>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: radius.lg, backgroundColor: colors.surface,
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing["2xl"] }}>
+        <T v="title" style={{ marginBottom: spacing.xs }}>{isOwner ? t("More") : t("Me")}</T>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface,
           borderWidth: 1, borderColor: colors.line }}>
           <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: colors.green, alignItems: "center", justifyContent: "center" }}>
             <T v="title" color={colors.white}>{(user?.name || "?").charAt(0).toUpperCase()}</T>
@@ -79,15 +79,15 @@ export default function More() {
             )}
           </>
         ) : (
-          <View style={{ gap: 10, padding: 16, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+          <View style={{ gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
             <T v="label">{t("You can")}</T>
             {PERMS.map(({ p, label }) => (
-              <View key={p} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View key={p} style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
                 <Icon name={can(p) ? "check-circle" : "close-circle-outline"} size={26} color={can(p) ? colors.green : colors.muted} />
                 <T v="bold" color={can(p) ? colors.ink : colors.muted}>{label}</T>
               </View>
             ))}
-            <T v="small" style={{ marginTop: 4 }}>{t("Forgot your PIN? Please ask the shop owner to set a new one.")}</T>
+            <T v="small" style={{ marginTop: spacing.xs }}>{t("Forgot your PIN? Please ask the shop owner to set a new one.")}</T>
           </View>
         )}
         {!isOwner && can("reports") && (
@@ -100,7 +100,7 @@ export default function More() {
           right={<Badge text={t("Soon")} tone="grey" />} />
         <Row title={t("Log out")} left={<MenuIcon name="logout" tint="#FDECEC" color={colors.red} />} onPress={out} testID="more-logout" />
 
-        <View style={{ alignItems: "center", gap: 2, marginTop: 18 }}>
+        <View style={{ alignItems: "center", gap: 2, marginTop: spacing.lg }}>
           <BrandMark size={36} />
           <T v="bold" color={colors.greenDark}>हरा हिसाब · Hara Hisaab</T>
           <T v="caption">{t("Version {{v}}", { v: Constants.expoConfig?.version ?? "" })}</T>

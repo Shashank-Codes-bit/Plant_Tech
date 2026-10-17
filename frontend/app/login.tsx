@@ -38,8 +38,8 @@ export default function Login() {
   return (
     <Screen bg={colors.surface}>
       <Header right={<View style={{ marginRight: 14 }}><BrandMark size={40} /></View>} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 4, gap: 20 }} bottomOffset={24}>
-        <View style={{ gap: 4 }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: spacing.xs, gap: 20 }} bottomOffset={24}>
+        <View style={{ gap: spacing.xs }}>
           <T v="heading" style={{ fontSize: 36 }}>{t("Log in")}</T>
           <T v="body" color={colors.inkSoft}>{t("Owners and employees log in here.")}</T>
         </View>
@@ -64,7 +64,7 @@ export default function Login() {
               }
             }} />
         )}
-        <View style={{ padding: 16, borderRadius: 14, backgroundColor: colors.page, gap: 6 }}>
+        <View style={{ padding: spacing.lg, borderRadius: 14, backgroundColor: colors.page, gap: 6 }}>
           <T v="small" style={{ color: colors.inkSoft }}>
             {t("Forgot your password? Employees can ask the shop owner to set a new PIN. Owners can sign in with Google if they used it, or contact support.")}
           </T>

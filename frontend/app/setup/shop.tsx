@@ -9,7 +9,7 @@ import { SetupFrame } from "@/src/components/setup-frame";
 import { useToast } from "@/src/components/toast";
 import { Button, Field, Icon, LoadingView, Screen, T, Thumb } from "@/src/components/ui";
 import { pickFromGallery, takePhoto } from "@/src/hooks/useImageCapture";
-import { colors, radius } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 import type { Business } from "@/src/types";
 
 export default function SetupShop() {
@@ -57,10 +57,10 @@ function ShopStep({ biz }: { biz: Business }) {
     <SetupFrame step={1} title={t("What is your shop called?")} onNext={next} nextDisabled={!name.trim() || uploading} busy={busy}>
       <Field label={t("Shop name (printed on every bill)")} value={name} onChangeText={setName} autoCapitalize="words"
         placeholder="Green Leaf Nursery" testID="setup-shop-name" inputStyle={{ fontSize: 23, borderColor: colors.green }} />
-      <View style={{ gap: 10 }}>
+      <View style={{ gap: spacing.md }}>
         <T v="label">{t("Shop logo or photo (optional)")}</T>
         <Pressable onPress={() => addPhoto("gallery")}
-          style={{ flexDirection: "row", alignItems: "center", gap: 16, padding: 16, borderRadius: radius.lg, borderWidth: 2,
+          style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 2,
             borderStyle: "dashed", borderColor: "#9DB5A6", backgroundColor: colors.page }}>
           {logo ? <Thumb path={logo} size={80} /> : (
             <View style={{ width: 80, height: 80, borderRadius: 20, backgroundColor: colors.greenTint, alignItems: "center", justifyContent: "center" }}>

@@ -30,7 +30,7 @@ export default function Employees() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Employees")} />
-      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
         <Segmented value={tab} onChange={setTab}
           options={[{ value: "performance", label: t("Performance") }, { value: "manage", label: t("Manage") }]} />
       </View>
@@ -46,7 +46,7 @@ function Performance({ p }: { p: Period }) {
   useRefreshOnFocus(q.refetch);
   const r = q.data;
   return (
-    <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: 8, gap: 14, paddingBottom: spacing.xl }}>
+    <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.lg, paddingBottom: spacing.xl }}>
       <PeriodBar p={p} />
       {!r ? (q.isError ? <ErrorView message={(q.error as Error).message} onRetry={q.refetch} /> : <LoadingView />) : (
         <>
@@ -78,9 +78,9 @@ function PersonCard({ x, day, onPress }: { x: Person; day: boolean; onPress: () 
   ].filter(Boolean).join(" · ");
   return (
     <Pressable onPress={onPress} disabled={idle} testID={`employee-${x.name}`} accessibilityRole="button"
-      style={({ pressed }) => ({ gap: 8, padding: 14, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line,
+      style={({ pressed }) => ({ gap: spacing.sm, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line,
         backgroundColor: pressed ? colors.page : colors.surface })}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: idle ? colors.page : colors.greenTint, alignItems: "center", justifyContent: "center" }}>
           <T v="number" color={idle ? colors.muted : colors.greenDark}>{(x.name || "?").charAt(0).toUpperCase()}</T>
         </View>
@@ -112,7 +112,7 @@ function PersonCard({ x, day, onPress }: { x: Person; day: boolean; onPress: () 
         </T>
       )}
       {!idle && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-end" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, alignSelf: "flex-end" }}>
           <T v="bold" color={colors.green}>{t("See orders")}</T>
           <Icon name="chevron-right" size={20} color={colors.green} />
         </View>
@@ -129,7 +129,7 @@ function Manage() {
   const labels = { sell: t("Billing"), stock: t("Add stock"), customers: t("Customers"), reports: t("Reports") };
   return (
     <>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: 8, gap: 10 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.md }}>
         <T v="body" color={colors.inkSoft}>{t("Employees log in with their phone number and the PIN you set.")}</T>
         {q.isLoading ? <LoadingView /> : q.isError ? <ErrorView message={(q.error as Error).message} onRetry={q.refetch} />
           : !q.data?.length ? <EmptyState icon="account-multiple-plus" title={t("No employees yet")} subtitle={t("Add an employee so they can create bills on their own phone.")} />
@@ -140,7 +140,7 @@ function Manage() {
                 left={<View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: w.active ? colors.greenTint : colors.page,
                   alignItems: "center", justifyContent: "center" }}><T v="number" color={w.active ? colors.greenDark : colors.muted}>{w.name.charAt(0).toUpperCase()}</T></View>}
                 onPress={() => router.push({ pathname: "/more/staff-edit", params: { id: w.id } })} />
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingLeft: 4 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingLeft: spacing.xs }}>
                 {(Object.keys(labels) as (keyof typeof labels)[]).filter((p) => w.permissions[p]).map((p) => (
                   <Badge key={p} text={labels[p]} tone={w.active ? "green" : "grey"} />
                 ))}

@@ -1,7 +1,7 @@
 // Products: search plus Category, Stock and Sort filters. A product stays here at 0 stock
 // (marked Out of stock) until the owner deletes it.
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, RefreshControl, ScrollView, TextInput, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -10,10 +10,10 @@ import { apiGet } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { useCategories } from "@/src/components/category-picker";
 import { FilterChip, OptionRow, Sheet } from "@/src/components/sheet";
-import { Badge, BottomBar, Button, EmptyState, ErrorView, Icon, LoadingView, Screen, T, Thumb } from "@/src/components/ui";
+import { Badge, BottomBar, Button, EmptyState, ErrorView, LoadingView, Screen, SearchBox, T, Thumb } from "@/src/components/ui";
 import { formatCurrency, formatQty } from "@/src/format";
 import { useRefreshOnFocus } from "@/src/hooks/useRefreshOnFocus";
-import { colors, fonts, radius, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 import type { Product } from "@/src/types";
 
 type StockFilter = "" | "in" | "low" | "out";
@@ -68,31 +68,16 @@ export default function Products() {
 
   return (
     <Screen edgeBottom={false}>
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 10, gap: 10, backgroundColor: colors.surface,
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.md, backgroundColor: colors.surface,
         borderBottomWidth: 1, borderBottomColor: colors.line }}>
         <T v="title">{t("Products")}</T>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 52, paddingHorizontal: 14, borderWidth: 2,
-          borderColor: search ? colors.green : colors.lineStrong, borderRadius: 16 }}>
-          <Icon name="magnify" size={24} color={colors.muted} />
-          <TextInput value={search} onChangeText={setSearch} placeholder={t("Search name or code")} placeholderTextColor={colors.muted}
-            testID="products-search" style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 18, color: colors.ink, minHeight: 48 }} />
-          {!!search && (
-            <Pressable accessibilityLabel={t("Clear")} onPress={() => setSearch("")} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
-              <Icon name="close-circle" size={22} color={colors.muted} />
-            </Pressable>
-          )}
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          <FilterChip label={t("Category")} value={catName} icon="shape-outline" onPress={() => setSheet("category")} testID="products-filter-category" />
-          <FilterChip label={t("Stock")} value={stock ? STOCK.find((x) => x.v === stock)!.label : ""} icon="package-variant"
+        <SearchBox value={search} onChangeText={setSearch} placeholder={t("Search name or code")} testID="products-search" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+          <FilterChip label={t("Category")} value={catName} onPress={() => setSheet("category")} testID="products-filter-category" />
+          <FilterChip label={t("Stock")} value={stock ? STOCK.find((x) => x.v === stock)!.label : ""}
             onPress={() => setSheet("stock")} testID="products-filter-stock" />
-          <FilterChip label={t("Sort")} value={sort !== "name" ? SORTS.find((x) => x.v === sort)!.label : ""} icon="sort"
+          <FilterChip label={t("Sort")} value={sort !== "name" ? SORTS.find((x) => x.v === sort)!.label : ""}
             onPress={() => setSheet("sort")} testID="products-filter-sort" />
-          {filtered && (
-            <Pressable onPress={() => { setSearch(""); setCategory(""); setStock(""); }} style={{ minHeight: 48, justifyContent: "center", paddingHorizontal: 10 }}>
-              <T v="bold" color={colors.red}>{t("Clear all")}</T>
-            </Pressable>
-          )}
         </ScrollView>
       </View>
 
@@ -100,13 +85,20 @@ export default function Products() {
         <FlatList
           data={shown}
           keyExtractor={(p) => p.id}
-          contentContainerStyle={{ padding: spacing.lg, gap: 8 }}
+          contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}
           refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={q.refetch} tintColor={colors.green} />}
           ListHeaderComponent={all.length ? (
-            <T v="label" style={{ paddingBottom: 2 }} testID="products-count">
-              {filtered ? t("{{n}} of {{all}} products", { n: shown.length, all: all.length })
-                : t("{{all}} products · {{low}} low · {{out}} out of stock", { all: all.length, low: counts.low, out: counts.out })}
-            </T>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm, minHeight: 32 }}>
+              <T v="label" style={{ flexShrink: 1 }} testID="products-count">
+                {filtered ? t("{{n}} of {{all}} products", { n: shown.length, all: all.length })
+                  : t("{{all}} products · {{low}} low · {{out}} out of stock", { all: all.length, low: counts.low, out: counts.out })}
+              </T>
+              {filtered && (
+                <Pressable onPress={() => { setSearch(""); setCategory(""); setStock(""); }} hitSlop={8} testID="products-clear">
+                  <T v="bold" color={colors.red}>{t("Clear all")}</T>
+                </Pressable>
+              )}
+            </View>
           ) : null}
           ListEmptyComponent={
             <EmptyState icon="sprout" title={all.length ? t("Nothing matches") : t("No products yet")}
@@ -114,7 +106,7 @@ export default function Products() {
           }
           renderItem={({ item: p }) => (
             <Pressable testID={`product-${p.name}`} onPress={() => router.push({ pathname: "/products/[id]", params: { id: p.id } })}
-              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 76, borderRadius: radius.lg,
+              style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 76, borderRadius: radius.lg,
                 backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
               <Thumb path={p.image_path} size={56} />
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -133,8 +125,8 @@ export default function Products() {
 
       {can("stock") && (
         <BottomBar style={{ flexDirection: "row" }}>
-          <Button title={t("Add product")} icon="plus" size="md" style={{ flex: 1, paddingHorizontal: 10 }} onPress={() => router.push("/products/new")} testID="products-add" />
-          <Button title={t("Supplier bill")} icon="file-document-outline" variant="scan" size="md" style={{ flex: 1, paddingHorizontal: 10 }}
+          <Button title={t("Add product")} icon="plus" size="md" style={{ flex: 1, paddingHorizontal: spacing.sm }} onPress={() => router.push("/products/new")} testID="products-add" />
+          <Button title={t("Supplier bill")} icon="file-document-outline" variant="scan" size="md" style={{ flex: 1, paddingHorizontal: spacing.sm }}
             onPress={() => router.push("/more/supplier-bill")} testID="products-supplier-bill" />
         </BottomBar>
       )}

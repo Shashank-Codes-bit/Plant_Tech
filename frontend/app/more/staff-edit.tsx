@@ -82,7 +82,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
   return (
     <Screen bg={colors.surface}>
       <Header title={isNew ? t("Add employee") : worker!.name} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }} bottomOffset={24}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }} bottomOffset={24}>
         <Field label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" testID="staff-name" />
         {isNew ? (
           <PhoneField label={t("Phone number (used to log in)")} value={phone} onChangeText={setPhone} testID="staff-phone" />
@@ -92,7 +92,7 @@ function WorkerForm({ worker }: { worker?: Worker }) {
         <Field label={isNew ? t("PIN or password") : t("New PIN (leave blank to keep the current one)")} value={pin} onChangeText={setPin}
           keyboardType="number-pad" maxLength={12} placeholder={t("At least 4 digits")} testID="staff-pin" inputStyle={{ letterSpacing: 4, fontSize: 24 }} />
 
-        <View style={{ gap: 4, padding: 14, borderRadius: radius.lg, backgroundColor: colors.page }}>
+        <View style={{ gap: spacing.xs, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.page }}>
           <T v="label">{t("What can {{name}} do?", { name: first })}</T>
           {PERMS.map(({ p, label, hint }) => (
             <Toggle key={p} title={label} subtitle={hint} value={perms[p]} onChange={(v) => setPerms((o) => ({ ...o, [p]: v }))} testID={`staff-perm-${p}`} />

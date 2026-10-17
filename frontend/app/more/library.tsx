@@ -1,7 +1,7 @@
 // App admin: the shared product pictures every shop sees. A shop's first clear photo fills an empty
 // one and shows as "To check" until the admin looks at it here.
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, TextInput, View } from "react-native";
+import { FlatList, Pressable, ScrollView, View } from "react-native";
 import { Image } from "expo-image";
 import { Redirect } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,9 +11,9 @@ import { apiDelete, apiGet, apiPatch, apiPost, fileUrl } from "@/src/api";
 import { useAuth } from "@/src/auth";
 import { Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
-import { Badge, Button, Chip, EmptyState, ErrorView, Field, Header, Icon, LoadingView, Screen, T } from "@/src/components/ui";
+import { Badge, Button, Chip, EmptyState, ErrorView, Field, Header, Icon, LoadingView, Screen, SearchBox, T } from "@/src/components/ui";
 import { pickFromGallery, takePhoto } from "@/src/hooks/useImageCapture";
-import { colors, fonts, radius, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 import type { LibraryEntry } from "@/src/types";
 
 type Filter = "all" | "new" | "none" | "live";
@@ -60,15 +60,10 @@ export default function AdminLibrary() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Shared pictures")} right={<View style={{ marginRight: 12 }}><Badge text={t("Admin")} tone="amber" /></View>} />
-      <View style={{ paddingHorizontal: spacing.lg, gap: 10, paddingBottom: 10 }}>
+      <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing.md }}>
         <T v="small">{t("Every shop sees these pictures. A product without one gets the first clear photo a shop takes; check those under \"To check\".")}</T>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 52, paddingHorizontal: 14, borderWidth: 2,
-          borderColor: colors.lineStrong, borderRadius: 16 }}>
-          <Icon name="magnify" size={24} color={colors.muted} />
-          <TextInput value={search} onChangeText={setSearch} placeholder={t("Search plants")} placeholderTextColor={colors.muted}
-            style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 18, color: colors.ink, minHeight: 48 }} testID="lib-search" />
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        <SearchBox value={search} onChangeText={setSearch} placeholder={t("Search plants")} testID="lib-search" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
           {FILTERS.map(({ f, label }) => (
             <Chip key={f} label={`${label} · ${count(f)}`} active={filter === f} tone={f === "new" ? "amber" : "green"}
               onPress={() => setFilter(f)} testID={`lib-filter-${f}`} />
@@ -80,12 +75,12 @@ export default function AdminLibrary() {
           data={shown}
           keyExtractor={(e) => e.id}
           numColumns={2}
-          columnWrapperStyle={{ gap: 12 }}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: 12 }}
+          columnWrapperStyle={{ gap: spacing.md }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
           ListEmptyComponent={<EmptyState icon="image-multiple" title={t("Nothing here")} />}
           renderItem={({ item: e }) => (
             <Pressable onPress={() => setOpenId(e.id)} testID={`lib-${e.name}`}
-              style={({ pressed }) => ({ flex: 1, maxWidth: "50%", gap: 6, padding: 8, borderRadius: radius.lg, borderWidth: 1,
+              style={({ pressed }) => ({ flex: 1, maxWidth: "50%", gap: 6, padding: spacing.sm, borderRadius: radius.lg, borderWidth: 1,
                 borderColor: e.image_status === "new" ? colors.amber : colors.line, backgroundColor: pressed ? colors.page : colors.surface })}>
               <Picture path={e.image_path} size="100%" />
               <View style={{ gap: 2, paddingHorizontal: 2 }}>
@@ -138,11 +133,11 @@ function EntrySheet({ entry: e, onClose }: { entry: LibraryEntry; onClose: () =>
 
   return (
     <Sheet visible onClose={onClose} title={e.name} testID="lib-sheet">
-      <View style={{ alignItems: "center", gap: 8 }}>
+      <View style={{ alignItems: "center", gap: spacing.sm }}>
         <Picture path={e.image_path} size={220} />
         <StatusBadge e={e} />
       </View>
-      <View style={{ flexDirection: "row", gap: 10 }}>
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
         <Button title={t("Camera")} icon="camera" variant="outline" size="md" style={{ flex: 1 }} onPress={() => photo("camera")} loading={busy === "camera"} />
         <Button title={t("Gallery")} icon="image-outline" variant="outline" size="md" style={{ flex: 1 }} onPress={() => photo("gallery")} loading={busy === "gallery"} />
       </View>
@@ -151,10 +146,10 @@ function EntrySheet({ entry: e, onClose }: { entry: LibraryEntry; onClose: () =>
           loading={busy === "approve"} testID="lib-approve" />
       )}
       {!!e.image_path && (sure === "remove" ? (
-        <View style={{ gap: 8, padding: 12, borderRadius: radius.md, backgroundColor: "#FDECEC" }}>
+        <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: "#FDECEC" }}>
           <T v="bold" color={colors.red}>{t("Remove this picture for every shop?")}</T>
           <T v="small">{t("Shops that use their own photo keep it. The next suitable shop photo may replace it.")}</T>
-          <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
             <Button title={t("Cancel")} variant="outline" size="md" style={{ flex: 1 }} onPress={() => setSure(null)} />
             <Button title={t("Remove")} icon="image-remove" variant="danger" size="md" style={{ flex: 1 }} testID="lib-remove-yes"
               onPress={() => act("remove", () => apiDelete(`/admin/library/${e.id}/photo`), t("Picture removed"))} loading={busy === "remove"} />
@@ -164,7 +159,7 @@ function EntrySheet({ entry: e, onClose }: { entry: LibraryEntry; onClose: () =>
         <Button title={t("Remove picture")} icon="image-remove" variant="danger" size="md" onPress={() => setSure("remove")} testID="lib-remove" />
       ))}
 
-      <View style={{ gap: 12, marginTop: 6, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.line }}>
+      <View style={{ gap: spacing.md, marginTop: 6, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line }}>
         <T v="label" style={{ fontSize: 18 }}>{t("Details")}</T>
         <Field label={t("Name")} value={name} onChangeText={setName} autoCapitalize="words" />
         <Field label={t("Hindi name")} value={nameHi} onChangeText={setNameHi} placeholder="मनी प्लांट" />
@@ -173,12 +168,12 @@ function EntrySheet({ entry: e, onClose }: { entry: LibraryEntry; onClose: () =>
           onPress={() => act("save", () => apiPatch(`/admin/library/${e.id}`, { name: name.trim(), name_hi: nameHi.trim(), default_category: category.trim() }), t("Saved"))} />
       </View>
 
-      <View style={{ marginTop: 6, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.line, gap: 8 }}>
+      <View style={{ marginTop: 6, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line, gap: spacing.sm }}>
         {sure === "delete" ? (
-          <View style={{ gap: 8, padding: 12, borderRadius: radius.md, backgroundColor: "#FDECEC" }}>
+          <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: "#FDECEC" }}>
             <T v="bold" color={colors.red}>{t("Delete \"{{name}}\" from the library?", { name: e.name })}</T>
             <T v="small">{t("It will no longer appear in suggestions. Shops keep their own products.")}</T>
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
               <Button title={t("Cancel")} variant="outline" size="md" style={{ flex: 1 }} onPress={() => setSure(null)} />
               <Button title={t("Delete")} icon="trash-can-outline" variant="danger" size="md" style={{ flex: 1 }} testID="lib-delete-yes"
                 onPress={() => act("delete", () => apiDelete(`/admin/library/${e.id}`), t("Deleted"), true)} loading={busy === "delete"} />

@@ -76,22 +76,22 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
 
   return (
     <>
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 14 }} bottomOffset={24} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }} bottomOffset={24} keyboardShouldPersistTaps="handled">
         <Section title={t("Picture")}>
-          <View style={{ flexDirection: "row", gap: 14 }}>
+          <View style={{ flexDirection: "row", gap: spacing.lg }}>
             <Pressable onPress={() => photo("gallery")} accessibilityLabel={t("Choose a picture")}
               style={{ width: 112, height: 112, borderRadius: radius.lg, overflow: "hidden", backgroundColor: colors.greenTint,
                 alignItems: "center", justifyContent: "center", borderWidth: picture ? 0 : 2, borderStyle: "dashed", borderColor: colors.greenMid }}>
               {picture ? <Image source={{ uri: fileUrl(picture) }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
                 : uploading ? <ActivityIndicator color={colors.green} /> : <Icon name="camera-plus-outline" size={40} color={colors.greenMid} />}
             </Pressable>
-            <View style={{ flex: 1, gap: 8, justifyContent: "center" }}>
+            <View style={{ flex: 1, gap: spacing.sm, justifyContent: "center" }}>
               <View>
                 <T v="bold">{uploading ? t("Uploading") : v.photo_path ? t("Your own photo") : v.library_image ? t("Shared picture") : t("No picture yet")}</T>
                 <T v="caption">{v.photo_path ? t("Shown on bills and in your list") : v.library_image ? t("Add your own photo to use it instead") : t("Helps customers recognise items")}</T>
               </View>
-              <Button title={t("Take photo")} icon="camera" variant="outline" size="md" style={{ paddingHorizontal: 10, minHeight: 50 }} onPress={() => photo("camera")} />
-              <Button title={t("From gallery")} icon="image-outline" variant="outline" size="md" style={{ paddingHorizontal: 10, minHeight: 50 }} onPress={() => photo("gallery")} />
+              <Button title={t("Take photo")} icon="camera" variant="outline" size="md" style={{ paddingHorizontal: spacing.md, minHeight: 50 }} onPress={() => photo("camera")} />
+              <Button title={t("From gallery")} icon="image-outline" variant="outline" size="md" style={{ paddingHorizontal: spacing.md, minHeight: 50 }} onPress={() => photo("gallery")} />
             </View>
           </View>
         </Section>
@@ -105,7 +105,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
         <Section title={t("Price and stock")}>
           <Field label={gst ? t("Selling price ₹ (includes GST)") : t("Selling price ₹")} value={v.selling_price} keyboardType="decimal-pad"
             onChangeText={(x) => set({ selling_price: num(x) })} placeholder="0" testID="product-price" inputStyle={{ fontSize: 26 }} />
-          <View style={{ flexDirection: "row", gap: 12 }}>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
             {isNew && (
               <Field style={{ flex: 1 }} label={t("Stock now")} value={v.stock} keyboardType="decimal-pad"
                 onChangeText={(x) => set({ stock: num(x) })} placeholder="0" testID="product-stock" />
@@ -119,7 +119,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
           )}
           {suggested !== null && (
             <Pressable onPress={() => set({ selling_price: String(suggested) })} testID="product-suggested-price" accessibilityRole="button"
-              style={{ flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: radius.md, backgroundColor: colors.greenTint }}>
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.greenTint }}>
               <Icon name="tag-outline" size={22} color={colors.green} />
               <T v="small" color={colors.greenDark} style={{ flex: 1 }}>
                 {t("Suggested selling price {{price}} (cost plus {{p}}%)", { price: formatCurrency(suggested), p: profit })}
@@ -139,7 +139,7 @@ export function ProductForm({ initial, isNew, onSave, saving, extra }: {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={{ gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
+    <View style={{ gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
       <T v="label" style={{ fontSize: 14, letterSpacing: 0.6, textTransform: "uppercase", color: colors.muted }}>{title}</T>
       {children}
     </View>
@@ -148,5 +148,5 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 // Big tappable row used in Add product suggestions.
 export function SuggestBox({ children }: { children: React.ReactNode }) {
-  return <View style={{ gap: 8, padding: 12, borderRadius: radius.lg, backgroundColor: colors.page }}>{children}</View>;
+  return <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.page }}>{children}</View>;
 }

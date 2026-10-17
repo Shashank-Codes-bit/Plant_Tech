@@ -16,7 +16,7 @@ export function SetupFrame({ step, title, subtitle, children, onNext, nextTitle,
   const router = useRouter();
   return (
     <Screen bg={colors.surface}>
-      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.xl, gap: 10 }}>
+      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.xl, gap: spacing.md }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <T v="label" color={colors.green}>{t("Set up your shop")}</T>
           <T v="label" color={colors.green}>{t("Step {{n}} of 5", { n: step })}</T>
@@ -27,8 +27,8 @@ export function SetupFrame({ step, title, subtitle, children, onNext, nextTitle,
           ))}
         </View>
       </View>
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, gap: 18 }} bottomOffset={24}>
-        <View style={{ gap: 4 }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }} bottomOffset={24}>
+        <View style={{ gap: spacing.xs }}>
           <T v="heading">{title}</T>
           {!!subtitle && <T v="body" color={colors.inkSoft}>{subtitle}</T>}
         </View>

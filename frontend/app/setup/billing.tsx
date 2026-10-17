@@ -8,7 +8,7 @@ import { apiGet, apiPut } from "@/src/api";
 import { SetupFrame } from "@/src/components/setup-frame";
 import { useToast } from "@/src/components/toast";
 import { Field, LoadingView, Screen, T, Toggle } from "@/src/components/ui";
-import { colors, radius } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 import type { Business } from "@/src/types";
 
 const GSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
@@ -52,7 +52,7 @@ function BillingStep({ biz }: { biz: Business }) {
       onNext={next} busy={busy} nextDisabled={gstinBad || (gst && !gstin) || profitBad}>
       <Field label={t("UPI ID (shows a payment QR code to customers)")} value={upi} onChangeText={setUpi} autoCapitalize="none"
         placeholder="shopname@okaxis" testID="setup-upi" />
-      <View style={{ gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: colors.page }}>
+      <View style={{ gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.page }}>
         <Toggle title={t("GST registered")} subtitle={t("Turn on to show GST on your bills. Leave off if your shop is not registered.")} value={gst} onChange={setGst} testID="setup-gst" />
         {gst && (
           <>

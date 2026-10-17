@@ -35,9 +35,9 @@ export default function Home() {
 
   return (
     <Screen edgeBottom={false}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16, paddingBottom: spacing["2xl"] }}
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing["2xl"] }}
         refreshControl={<RefreshControl refreshing={today.isRefetching} onRefresh={today.refetch} tintColor={colors.green} />}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 4 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
           {user?.business?.logo_path ? <Thumb path={user.business.logo_path} size={56} icon="store" tint={colors.surface} contain />
             : <BrandIcon size={56} />}
           <View style={{ flex: 1 }}>
@@ -54,7 +54,7 @@ export default function Home() {
 
         {can("sell") ? (
           <Pressable testID="home-new-order" accessibilityRole="button" onPress={startOrder}
-            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 18, paddingHorizontal: 16, minHeight: 100,
+            style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.lg, paddingVertical: spacing.lg, paddingHorizontal: spacing.lg, minHeight: 100,
               borderRadius: radius.xl, backgroundColor: pressed ? colors.greenDark : colors.green })}>
             <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
               <Icon name="cart-plus" size={30} color={colors.green} />
@@ -74,16 +74,16 @@ export default function Home() {
         {can("sell") && today.isError && <ErrorView message={(today.error as Error).message} onRetry={today.refetch} />}
 
         {d && d.scope === "shop" && (
-          <Card style={{ gap: 12 }} testID="home-today">
+          <Card style={{ gap: spacing.md }} testID="home-today">
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <T v="label">{t("Today's sales")}</T>
               <T v="bold" color={colors.inkSoft}>{d.orders === 1 ? t("1 order") : t("{{n}} orders", { n: d.orders })}</T>
             </View>
             <T v="amount" testID="home-sales">{formatCurrency(d.sales)}</T>
             {/* One row per payment type: full amounts at any screen width, nothing cut off. */}
-            <View style={{ borderRadius: radius.md, backgroundColor: colors.page, paddingHorizontal: 14 }}>
+            <View style={{ borderRadius: radius.md, backgroundColor: colors.page, paddingHorizontal: spacing.lg }}>
               {(["Cash", "UPI", "Card"] as const).map((m, i) => (
-                <View key={m} style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48,
+                <View key={m} style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 48,
                   borderTopWidth: i ? 1 : 0, borderTopColor: colors.line }}>
                   <Icon name={m === "Cash" ? "cash" : m === "UPI" ? "qrcode" : "credit-card-outline"} size={22} color={colors.inkSoft} />
                   <T v="bold" style={{ flex: 1 }}>{t(m)}</T>
@@ -95,12 +95,12 @@ export default function Home() {
         )}
 
         {d && d.scope === "mine" && (
-          <Card style={{ flexDirection: "row", alignItems: "center", gap: 12 }} testID="home-today">
+          <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }} testID="home-today">
             <View style={{ flex: 1 }}>
               <T v="label">{t("Your sales today")}</T>
               <T v="amount" testID="home-sales">{formatCurrency(d.sales)}</T>
             </View>
-            <View style={{ alignItems: "center", padding: 12, minWidth: 84, borderRadius: radius.md, backgroundColor: colors.page }}>
+            <View style={{ alignItems: "center", padding: spacing.md, minWidth: 84, borderRadius: radius.md, backgroundColor: colors.page }}>
               <T v="title">{d.orders}</T>
               <T v="label">{d.orders === 1 ? t("order") : t("orders")}</T>
             </View>
@@ -108,9 +108,9 @@ export default function Home() {
         )}
 
         {d && (
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing.sm }}>
             <SectionTitle right={d.recent.length ? (
-              <Pressable onPress={() => router.push("/(tabs)/orders")} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 8 }}>
+              <Pressable onPress={() => router.push("/(tabs)/orders")} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: spacing.sm }}>
                 <T v="bold" color={colors.green}>{t("See all")}</T>
               </Pressable>
             ) : undefined}>

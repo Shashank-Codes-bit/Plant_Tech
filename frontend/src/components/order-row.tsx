@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { T } from "@/src/components/ui";
 import { formatCurrency, formatQty, formatTime } from "@/src/format";
-import { colors, radius } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
 export type OrderSummary = {
   id: string; invoice_number: string; customer_name: string; customer_phone: string; grand_total: number;
@@ -24,7 +24,7 @@ export function OrderRow({ o, showBy }: { o: OrderSummary; showBy?: boolean }) {
   ].filter(Boolean).join(" · ");
   return (
     <Pressable testID={`order-${o.invoice_number}`} onPress={() => router.push({ pathname: "/bill/[id]", params: { id: o.id } })}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 10, minHeight: 68,
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, minHeight: 68,
         borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <T v="bold">{o.customer_name || t("Walk-in customer")}</T>

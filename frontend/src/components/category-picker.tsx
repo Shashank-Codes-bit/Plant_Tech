@@ -10,7 +10,7 @@ import { useAuth } from "@/src/auth";
 import { OptionRow, SelectField, Sheet } from "@/src/components/sheet";
 import { useToast } from "@/src/components/toast";
 import { Button, Field, T } from "@/src/components/ui";
-import { colors } from "@/src/theme";
+import { colors, spacing } from "@/src/theme";
 import type { Category } from "@/src/types";
 
 export function useCategories() {
@@ -54,9 +54,9 @@ export function CategoryPicker({ value, onChange, label }: { value: string | nul
           <OptionRow key={c.id} label={c.name} sub={gst ? t("{{n}}% GST", { n: c.gst_percent }) : undefined} selected={value === c.id}
             onPress={() => { onChange(c.id); setOpen(false); }} testID={`cat-${c.name}`} />
         ))}
-        <View style={{ gap: 8, marginTop: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line }}>
+        <View style={{ gap: spacing.sm, marginTop: 6, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.line }}>
           <T v="label">{t("New category")}</T>
-          <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
+          <View style={{ flexDirection: "row", gap: spacing.sm, alignItems: "flex-end" }}>
             <Field style={{ flex: 1 }} value={name} onChangeText={setName} placeholder={t("e.g. Seeds")} autoCapitalize="words" testID="cat-new-name" />
             <Button title={t("Add")} icon="plus" size="md" onPress={add} loading={busy} disabled={!name.trim()} testID="cat-new-add" />
           </View>

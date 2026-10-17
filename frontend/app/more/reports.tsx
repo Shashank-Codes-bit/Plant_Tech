@@ -26,12 +26,12 @@ export default function Reports() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Sales reports")} />
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: 4, gap: 16, paddingBottom: spacing.xl }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.xs, gap: spacing.lg, paddingBottom: spacing.xl }}>
         <PeriodBar p={p} />
 
         {!r ? (q.isError ? <ErrorView message={(q.error as Error).message} onRetry={q.refetch} /> : <LoadingView />) : (
           <>
-            <View style={{ padding: 16, borderRadius: radius.lg, backgroundColor: colors.greenTint, gap: 2 }}>
+            <View style={{ padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.greenTint, gap: 2 }}>
               <T v="label" color={colors.greenDark}>{t("Sales")}</T>
               <T v="amount" testID="report-total">{formatCurrency(r.sales)}</T>
               <T v="small" color={colors.greenDark}>
@@ -42,12 +42,12 @@ export default function Reports() {
 
             <SalesChart key={`${p.key}:${r.start}`} buckets={r.buckets} />
 
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: spacing.sm }}>
               <T v="label" style={{ fontSize: 18 }}>{t("How customers paid")}</T>
               {(["Cash", "UPI", "Card"] as const).map((m) => {
                 const share = r.sales ? Math.round((r.by_method[m] / r.sales) * 100) : 0;
                 return (
-                  <View key={m} style={{ gap: 4 }}>
+                  <View key={m} style={{ gap: spacing.xs }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                       <T v="bold">{t(m)}</T>
                       <T v="bold">{formatCurrency(r.by_method[m])} <T v="small">· {share}%</T></T>
@@ -61,12 +61,12 @@ export default function Reports() {
             </View>
 
             <View style={{ gap: 2 }} testID="report-items">
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: spacing.xs }}>
                 <T v="label" style={{ fontSize: 18 }}>{t("Items sold")}</T>
                 {r.items.length > 0 && <T v="small">{plural(r.items.length, "1 kind", "{{n}} kinds")}</T>}
               </View>
               {r.items.length ? r.items.map((x, i) => (
-                <View key={x.name} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+                <View key={x.name} style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line }}>
                   <T v="bold" color={colors.muted} style={{ width: 28 }}>{i + 1}</T>
                   <View style={{ flex: 1 }}>
                     <T v="bold">{x.name}</T>

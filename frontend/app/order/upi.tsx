@@ -30,9 +30,9 @@ export default function OrderUpi() {
     <Screen bg={colors.surface}>
       <Header title={t("Pay by UPI")} />
       {!b ? <LoadingView /> : (
-        <View style={{ flex: 1, alignItems: "center", padding: spacing.lg, gap: 14 }}>
+        <View style={{ flex: 1, alignItems: "center", padding: spacing.lg, gap: spacing.lg }}>
           <T v="body" color={colors.inkSoft} style={{ textAlign: "center" }}>{t("Show this code to the customer to scan with any UPI app.")}</T>
-          <View style={{ padding: 18, borderRadius: radius.xl, borderWidth: 2, borderColor: colors.line, backgroundColor: colors.white }} testID="upi-qr">
+          <View style={{ padding: spacing.lg, borderRadius: radius.xl, borderWidth: 2, borderColor: colors.line, backgroundColor: colors.white }} testID="upi-qr">
             <QRCode value={upiLink(b.upi_id, b.name, cart.total)} size={240} color={colors.ink} backgroundColor={colors.white} />
           </View>
           <T v="amount">{formatCurrency(cart.total)}</T>

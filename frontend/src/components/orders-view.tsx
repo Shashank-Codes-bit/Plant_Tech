@@ -3,7 +3,7 @@
 // Employees only ever get the bills they made (the server enforces it).
 // The Orders tab shows it as is; Employees → a person opens it with that person and period already chosen.
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, SectionList, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, SectionList, View } from "react-native";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -12,11 +12,11 @@ import { useAuth } from "@/src/auth";
 import { CalendarSheet, Range } from "@/src/components/calendar";
 import { OrderRow, OrderSummary } from "@/src/components/order-row";
 import { FilterChip, OptionRow, Sheet } from "@/src/components/sheet";
-import { EmptyState, ErrorView, Header, Icon, LoadingView, Screen, T } from "@/src/components/ui";
+import { EmptyState, ErrorView, Header, LoadingView, Screen, SearchBox, T } from "@/src/components/ui";
 import { dayLabelLong, mondayOf, monthStart, rangeLabel } from "@/src/dates";
 import { formatCurrency, plural, todayKey } from "@/src/format";
 import { useRefreshOnFocus } from "@/src/hooks/useRefreshOnFocus";
-import { colors, fonts, radius, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 import type { Worker } from "@/src/types";
 
 type DateKind = "all" | "today" | "yesterday" | "week" | "month" | "pick";
@@ -96,27 +96,17 @@ export function OrdersView({ start, title, onBack }: { start?: OrdersStart; titl
   return (
     <Screen edgeBottom={!!onBack}>
       {onBack && <Header title={title} onBack={onBack} />}
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: onBack ? 0 : spacing.md, paddingBottom: 10, gap: 10, backgroundColor: colors.surface,
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: onBack ? 0 : spacing.md, paddingBottom: spacing.md, gap: spacing.md, backgroundColor: colors.surface,
         borderBottomWidth: 1, borderBottomColor: colors.line }}>
         {!onBack && <T v="title">{seesAll ? t("Orders") : t("My orders")}</T>}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 52, paddingHorizontal: 14, borderWidth: 2,
-          borderColor: typed ? colors.green : colors.lineStrong, borderRadius: 16 }}>
-          <Icon name="magnify" size={24} color={colors.muted} />
-          <TextInput value={typed} onChangeText={setTyped} placeholder={t("Customer, phone or bill no.")} placeholderTextColor={colors.muted}
-            testID="orders-search" style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 18, color: colors.ink, minHeight: 48 }} />
-          {!!typed && (
-            <Pressable accessibilityLabel={t("Clear")} onPress={() => setTyped("")} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
-              <Icon name="close-circle" size={22} color={colors.muted} />
-            </Pressable>
-          )}
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          <FilterChip label={t("All dates")} value={dateValue} icon="calendar" onPress={() => setSheet("date")} testID="orders-filter-date" />
-          <FilterChip label={t("Payment")} value={method ? t(method) : ""} icon="cash-multiple" onPress={() => setSheet("method")} testID="orders-filter-method" />
-          {isOwner && <FilterChip label={t("Made by")} value={whoValue} icon="account" onPress={() => setSheet("who")} testID="orders-filter-who" />}
+        <SearchBox value={typed} onChangeText={setTyped} placeholder={t("Customer, phone or bill no.")} testID="orders-search" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+          <FilterChip label={t("All dates")} value={dateValue} onPress={() => setSheet("date")} testID="orders-filter-date" />
+          <FilterChip label={t("Payment")} value={method ? t(method) : ""} onPress={() => setSheet("method")} testID="orders-filter-method" />
+          {isOwner && <FilterChip label={t("Made by")} value={whoValue} onPress={() => setSheet("who")} testID="orders-filter-who" />}
           {filtered && (
             <Pressable onPress={() => { setTyped(""); setDateKind("all"); setMethod(""); setMadeBy(""); }}
-              style={{ minHeight: 48, justifyContent: "center", paddingHorizontal: 10 }} testID="orders-clear">
+              style={{ minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md }} testID="orders-clear">
               <T v="bold" color={colors.red}>{t("Clear all")}</T>
             </Pressable>
           )}
@@ -133,8 +123,8 @@ export function OrdersView({ start, title, onBack }: { start?: OrdersStart; titl
           onEndReachedThreshold={0.4}
           onEndReached={() => { if (list.hasNextPage && !list.isFetchingNextPage) list.fetchNextPage(); }}
           ListHeaderComponent={s ? (
-            <View style={{ marginTop: 12, padding: 14, borderRadius: radius.lg, backgroundColor: colors.greenTint, gap: 6 }} testID="orders-summary">
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <View style={{ marginTop: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.greenTint, gap: 6 }} testID="orders-summary">
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: spacing.sm }}>
                 <T v="bold" color={colors.greenDark}>{plural(s.orders, "1 order", "{{n}} orders")}</T>
                 <T v="title" color={colors.greenDark}>{formatCurrency(s.sales)}</T>
               </View>
@@ -146,18 +136,18 @@ export function OrdersView({ start, title, onBack }: { start?: OrdersStart; titl
           renderSectionHeader={({ section }) => {
             const d = s?.by_day[section.day];
             return (
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 8, paddingTop: 16, paddingBottom: 8,
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: spacing.sm, paddingTop: spacing.lg, paddingBottom: spacing.sm,
                 backgroundColor: colors.page }}>
                 <T v="bold">{dayLabelLong(section.day)}</T>
                 {!!d && <T v="label">{`${plural(d.orders, "1 order", "{{n}} orders")} · ${formatCurrency(d.sales)}`}</T>}
               </View>
             );
           }}
-          renderItem={({ item }) => <View style={{ marginBottom: 8 }}><OrderRow o={item} showBy={seesAll} /></View>}
+          renderItem={({ item }) => <View style={{ marginBottom: spacing.sm }}><OrderRow o={item} showBy={seesAll} /></View>}
           ListEmptyComponent={<EmptyState icon="receipt-text-outline" title={filtered ? t("No orders match") : t("No orders yet")}
             subtitle={filtered ? t("Try different filters, or tap Clear all.") : undefined} />}
-          ListFooterComponent={list.isFetchingNextPage ? <ActivityIndicator color={colors.green} style={{ margin: 16 }} />
-            : !list.hasNextPage && sections.length ? <T v="caption" style={{ textAlign: "center", marginTop: 8 }}>{t("That's all the orders")}</T> : null}
+          ListFooterComponent={list.isFetchingNextPage ? <ActivityIndicator color={colors.green} style={{ margin: spacing.lg }} />
+            : !list.hasNextPage && sections.length ? <T v="caption" style={{ textAlign: "center", marginTop: spacing.sm }}>{t("That's all the orders")}</T> : null}
         />
       )}
 

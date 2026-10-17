@@ -104,17 +104,17 @@ export default function NewProduct() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Add product")} close />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: 14 }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
         <Field label={t("Type the product name")} value={q} onChangeText={setQ} autoFocus autoCapitalize="words"
           placeholder={t("e.g. Money Plant, Clay pot")} testID="add-search" inputStyle={{ fontSize: 22 }} />
 
         {query.length >= 2 && sug.isLoading && <ActivityIndicator color={colors.green} />}
 
         {own.length > 0 && (
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing.sm }}>
             <T v="label">{t("Already in your products")}</T>
             {own.map((p) => (
-              <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: radius.lg, backgroundColor: colors.page }}>
+              <View key={p.id} style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.page }}>
                 <Thumb path={p.image_path} size={52} />
                 <View style={{ flex: 1 }}>
                   <T v="bold">{p.name}</T>
@@ -130,11 +130,11 @@ export default function NewProduct() {
         )}
 
         {lib.length > 0 && (
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing.sm }}>
             <T v="label">{t("From the shared catalogue")}</T>
             {lib.map((e) => (
               <Pressable key={e.id} onPress={() => fromLibrary(e)} testID={`add-lib-${e.name}`}
-                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 10, minHeight: 72, borderRadius: radius.lg,
+                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 72, borderRadius: radius.lg,
                   borderWidth: 2, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
                 <Thumb path={e.image_path} size={52} />
                 <View style={{ flex: 1 }}>
@@ -149,7 +149,7 @@ export default function NewProduct() {
 
         {query.length >= 2 && sug.data && (
           <Pressable onPress={() => setForm({ ...emptyProduct, name: query })} testID="add-create-new"
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, minHeight: 72, borderRadius: radius.lg, borderWidth: 2,
+            style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg, minHeight: 72, borderRadius: radius.lg, borderWidth: 2,
               borderStyle: "dashed", borderColor: colors.green }}>
             <Icon name="plus-circle" size={32} color={colors.green} />
             <View style={{ flex: 1 }}>

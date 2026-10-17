@@ -8,7 +8,7 @@ import { CalendarSheet, MonthSheet } from "@/src/components/calendar";
 import { Icon, Segmented, T } from "@/src/components/ui";
 import { addDays, addMonths, dayLabelLong, mondayOf, monthLabel, monthStart, rangeLabel } from "@/src/dates";
 import { todayKey } from "@/src/format";
-import { colors, radius, touch } from "@/src/theme";
+import { colors, radius, touch, spacing } from "@/src/theme";
 
 export type PeriodKind = "day" | "week" | "month";
 
@@ -39,16 +39,16 @@ export function PeriodBar({ p }: { p: Period }) {
   const navBtn = { width: touch.min, height: touch.min, borderRadius: 28, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: colors.page };
 
   return (
-    <View style={{ gap: 16 }}>
+    <View style={{ gap: spacing.lg }}>
       <Segmented value={kind} onChange={pickKind}
         options={[{ value: "day", label: t("Date") }, { value: "week", label: t("Week") }, { value: "month", label: t("Month") }]} />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
         <Pressable accessibilityLabel={t("Earlier")} onPress={() => step(-1)} style={navBtn} testID="report-prev">
           <Icon name="chevron-left" size={30} color={colors.ink} />
         </Pressable>
         <Pressable onPress={() => setPicker(true)} testID="report-pick"
-          style={({ pressed }) => ({ flex: 1, minHeight: touch.min, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-            paddingHorizontal: 10, borderRadius: radius.md, borderWidth: 2, borderColor: colors.green, backgroundColor: pressed ? colors.greenTint : colors.surface })}>
+          style={({ pressed }) => ({ flex: 1, minHeight: touch.min, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+            paddingHorizontal: spacing.md, borderRadius: radius.md, borderWidth: 2, borderColor: colors.green, backgroundColor: pressed ? colors.greenTint : colors.surface })}>
           <Icon name="calendar-month-outline" size={22} color={colors.green} />
           <T v="bold" color={colors.greenDark} style={{ textAlign: "center", flexShrink: 1 }}>{label}</T>
         </Pressable>

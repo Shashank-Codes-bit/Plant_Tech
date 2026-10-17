@@ -1,15 +1,15 @@
 // Choosing the supplier of a supplier bill: a saved one, or a new name (saved with the bill; the server
 // matches it to an existing supplier when the name, phone or GSTIN is the same, so none is duplicated).
 import { useState } from "react";
-import { ActivityIndicator, TextInput, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { apiGet } from "@/src/api";
 import { OptionRow, Sheet } from "@/src/components/sheet";
-import { Icon, T } from "@/src/components/ui";
+import { SearchBox, T } from "@/src/components/ui";
 import { formatPhone } from "@/src/format";
-import { colors, fonts, radius } from "@/src/theme";
+import { colors } from "@/src/theme";
 import type { Supplier } from "@/src/types";
 
 export type SupplierChoice = { id: string | null; name: string; phone: string; address: string; gstin: string };
@@ -34,12 +34,8 @@ export function SupplierPicker({ visible, onClose, onPick, selectedId }: {
 
   return (
     <Sheet visible={visible} onClose={onClose} title={t("Supplier")} testID="supplier-picker">
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 56, paddingHorizontal: 14, borderWidth: 2,
-        borderColor: colors.lineStrong, borderRadius: radius.md }}>
-        <Icon name="magnify" size={24} color={colors.muted} />
-        <TextInput value={q} onChangeText={setQ} placeholder={t("Search or type a new supplier")} placeholderTextColor={colors.muted}
-          autoCapitalize="words" testID="supplier-search" style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 18, color: colors.ink, minHeight: 52 }} />
-      </View>
+      <SearchBox value={q} onChangeText={setQ} placeholder={t("Search or type a new supplier")} autoCapitalize="words"
+        testID="supplier-search" />
       {!!query && !exact && (
         <OptionRow icon="plus-circle-outline" label={t("Add “{{name}}” as a new supplier", { name: q.trim() })}
           sub={t("Saved with this bill")} onPress={() => pick({ id: null, name: q.trim(), phone: "", address: "", gstin: "" })}

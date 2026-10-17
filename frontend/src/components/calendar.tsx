@@ -8,7 +8,7 @@ import { Sheet } from "@/src/components/sheet";
 import { Button, Icon, MAX_FONT_SCALE, T } from "@/src/components/ui";
 import { addDays, addMonths, dayKey, mondayOf, monthLabel, monthShort, monthStart, rangeLabel, toDate, weekdayShort } from "@/src/dates";
 import { todayKey } from "@/src/format";
-import { colors, fonts, radius } from "@/src/theme";
+import { colors, fonts, radius, spacing } from "@/src/theme";
 
 export type Range = { from: string; to: string };
 
@@ -16,7 +16,7 @@ function MonthNav({ label, onPrev, onNext, canNext }: { label: string; onPrev: (
   const { t } = useTranslation();
   const btn = { width: 52, height: 52, borderRadius: 26, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: colors.page };
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
       <Pressable accessibilityLabel={t("Earlier")} onPress={onPrev} style={btn} testID="cal-prev">
         <Icon name="chevron-left" size={30} color={colors.ink} />
       </Pressable>
@@ -111,7 +111,7 @@ export function MonthSheet({ visible, onClose, value, max, onPick }: {
   return (
     <Sheet visible={visible} onClose={onClose} title={t("Pick a month")}>
       <MonthNav label={String(year)} onPrev={() => setYear(year - 1)} onNext={() => setYear(year + 1)} canNext={`${year + 1}-01-01` <= last} />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md }}>
         {Array.from({ length: 12 }, (_, m) => {
           const k = dayKey(year, m, 1);
           const off = k > last;

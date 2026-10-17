@@ -135,8 +135,8 @@ export default function SupplierBill() {
       <Screen bg={colors.surface}>
         <Header title={t("Supplier bill")} />
         {!pages.length ? (
-          <View style={{ flex: 1, padding: spacing.lg, gap: 14, justifyContent: "center" }}>
-            <View style={{ alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <View style={{ flex: 1, padding: spacing.lg, gap: spacing.lg, justifyContent: "center" }}>
+            <View style={{ alignItems: "center", gap: spacing.md, marginBottom: spacing.md }}>
               <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.blueTint, alignItems: "center", justifyContent: "center" }}>
                 <Icon name="file-document-outline" size={50} color={colors.blue} />
               </View>
@@ -153,16 +153,16 @@ export default function SupplierBill() {
           </View>
         ) : (
           <>
-            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 14 }}>
+            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
               <T v="label">{t("Pages of this bill ({{n}} of {{max}})", { n: pages.length, max: MAX_PAGES })}</T>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md }}>
                 {pages.map((p, i) => (
                   <PageThumb key={p.key} page={p} n={i + 1} onRemove={() => setPages((l) => l.filter((x) => x.key !== p.key))}
                     onRetry={() => { setPages((l) => l.map((x) => (x.key === p.key ? { ...x, state: "uploading" } : x))); upload(p); }} />
                 ))}
               </View>
               {pages.length < MAX_PAGES && (
-                <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flexDirection: "row", gap: spacing.md }}>
                   <Button title={t("Add page")} icon="camera-plus-outline" variant="outline" size="md" style={{ flex: 1 }}
                     onPress={() => addFrom("camera")} disabled={reading} testID="sb-add-page" />
                   <Button title={t("From gallery")} icon="image-plus" variant="outline" size="md" style={{ flex: 1 }}
@@ -184,15 +184,15 @@ export default function SupplierBill() {
   return (
     <Screen bg={colors.surface}>
       <Header title={t("Review items")} onBack={() => setItems(null)} />
-      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: 12 }} bottomOffset={24}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} bottomOffset={24}>
         <SupplierCard value={supplier} onChange={setSupplier} onPick={() => setPicking(true)} />
-        <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flexDirection: "row", gap: spacing.md }}>
           <Field style={{ flex: 1 }} label={t("Bill no.")} value={number} onChangeText={setNumber} />
           <Field style={{ flex: 1 }} label={t("Bill date")} value={date} onChangeText={setDate} placeholder="12/10/2026" />
         </View>
         {items.map((it) => (
-          <View key={it.key} style={{ gap: 8, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View key={it.key} style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
               {it.product_id ? <Badge text={t("Adds to {{name}}", { name: it.matched_name })} tone="green" /> : <Badge text={t("New product")} tone="blue" />}
               <View style={{ flex: 1 }} />
               <Pressable accessibilityLabel={t("Remove")} onPress={() => setItems((l) => l!.filter((x) => x.key !== it.key))}
@@ -202,7 +202,7 @@ export default function SupplierBill() {
             </View>
             <Field value={it.name} onChangeText={(name) => set(it.key, { name })}
               placeholder={t("Item name")} autoCapitalize="words" />
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
               <Field style={{ flex: 1 }} label={t("Quantity")} value={it.quantity} onChangeText={(v) => set(it.key, { quantity: num(v) })} keyboardType="decimal-pad" />
               <Field style={{ flex: 1 }} label={t("Cost ₹ each")} value={it.purchase_price} onChangeText={(v) => set(it.key, { purchase_price: num(v) })} keyboardType="decimal-pad" />
             </View>
@@ -256,7 +256,7 @@ function SupplierCard({ value, onChange, onPick }: { value: SupplierChoice; onCh
   const { t } = useTranslation();
   if (value.id) {
     return (
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: colors.greenTint }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.greenTint }}>
         <Icon name="truck-outline" size={26} color={colors.green} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <T v="label" color={colors.greenDark}>{t("Supplier")}</T>
@@ -270,8 +270,8 @@ function SupplierCard({ value, onChange, onPick }: { value: SupplierChoice; onCh
     );
   }
   return (
-    <View style={{ gap: 10, padding: 14, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+    <View style={{ gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
         <T v="label" style={{ flex: 1 }}>{t("Supplier")}</T>
         {!!value.name && <Badge text={t("New supplier")} tone="blue" />}
       </View>

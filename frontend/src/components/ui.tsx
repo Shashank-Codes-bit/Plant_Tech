@@ -57,7 +57,7 @@ export function Header({ title, onBack, right, close, testID }: {
   const { t } = useTranslation();
   const router = useRouter();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.sm, minHeight: 68, backgroundColor: colors.surface }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.sm, minHeight: 68, backgroundColor: colors.surface }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={close ? t("Close") : t("Back")}
@@ -118,7 +118,7 @@ export function Button({ title, onPress, variant = "primary", icon, size = "lg",
         borderRadius: size === "lg" ? radius.lg : radius.md,
         backgroundColor: off && variant === "primary" ? colors.line : v.bg,
         borderWidth: v.border ? 2 : 0, borderColor: v.border, borderStyle: v.dashed ? "dashed" : "solid",
-        flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: spacing.lg,
+        flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.md, paddingHorizontal: spacing.lg,
         opacity: pressed ? 0.85 : 1,
       }, style]}
     >
@@ -130,6 +130,29 @@ export function Button({ title, onPress, variant = "primary", icon, size = "lg",
 }
 
 // ------------------------------ inputs ------------------------------
+// The one search field on every list: magnifier, text, and a clear button (or a spinner while searching).
+export function SearchBox({ value, onChangeText, placeholder, testID, autoFocus, loading, autoCapitalize = "none", ref }: {
+  value: string; onChangeText: (v: string) => void; placeholder: string; testID?: string; autoFocus?: boolean; loading?: boolean;
+  autoCapitalize?: TextInputProps["autoCapitalize"]; ref?: React.Ref<TextInput>;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: 52, paddingLeft: spacing.md, paddingRight: spacing.xs,
+      borderWidth: 2, borderColor: value ? colors.green : colors.lineStrong, borderRadius: radius.md, backgroundColor: colors.surface }}>
+      <Icon name="magnify" size={22} color={colors.muted} />
+      <TextInput ref={ref} value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted}
+        autoFocus={autoFocus} autoCapitalize={autoCapitalize} autoCorrect={false} maxFontSizeMultiplier={MAX_FONT_SCALE} testID={testID}
+        style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 18, color: colors.ink, minHeight: 48 }} />
+      {loading ? <ActivityIndicator color={colors.green} style={{ width: 44 }} /> : !!value && (
+        <Pressable accessibilityLabel={t("Clear")} onPress={() => onChangeText("")}
+          style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+          <Icon name="close-circle" size={22} color={colors.muted} />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 export function Field({ label, hint, error, style, inputStyle, ...props }: TextInputProps & {
   label?: string; hint?: string; error?: string; style?: StyleProp<ViewStyle>; inputStyle?: any;
 }) {
@@ -141,8 +164,8 @@ export function Field({ label, hint, error, style, inputStyle, ...props }: TextI
         maxFontSizeMultiplier={MAX_FONT_SCALE}
         {...props}
         style={[{ minHeight: touch.min + 2, borderWidth: 2, borderColor: error ? colors.red : colors.lineStrong, borderRadius: radius.md,
-          paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 20, color: colors.ink, backgroundColor: colors.surface },
-          props.multiline ? { paddingVertical: 12, minHeight: 96, textAlignVertical: "top" } : null, inputStyle]}
+          paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 20, color: colors.ink, backgroundColor: colors.surface },
+          props.multiline ? { paddingVertical: spacing.md, minHeight: 96, textAlignVertical: "top" } : null, inputStyle]}
       />
       {!!(error || hint) && <T v="small" color={error ? colors.red : colors.muted}>{error || hint}</T>}
     </View>
@@ -157,7 +180,7 @@ export function PhoneField({ label, value, onChangeText, error, hint, testID, st
       {!!label && <T v="label">{label}</T>}
       <View style={{ flexDirection: "row", alignItems: "stretch", minHeight: touch.min + 2, borderWidth: 2, borderColor: error ? colors.red : colors.lineStrong,
         borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.surface }}>
-        <View style={{ paddingHorizontal: 14, justifyContent: "center", backgroundColor: colors.page, borderRightWidth: 2, borderRightColor: colors.lineStrong }}>
+        <View style={{ paddingHorizontal: spacing.lg, justifyContent: "center", backgroundColor: colors.page, borderRightWidth: 2, borderRightColor: colors.lineStrong }}>
           <T v="bold" style={{ fontSize: 20 }}>+91</T>
         </View>
         <TextInput
@@ -169,7 +192,7 @@ export function PhoneField({ label, value, onChangeText, error, hint, testID, st
           maxFontSizeMultiplier={MAX_FONT_SCALE}
           placeholder="98765 43210"
           placeholderTextColor={colors.muted}
-          style={{ flex: 1, paddingHorizontal: 14, fontFamily: fonts.semibold, fontSize: 22, color: colors.ink, letterSpacing: 1 }}
+          style={{ flex: 1, paddingHorizontal: spacing.lg, fontFamily: fonts.semibold, fontSize: 22, color: colors.ink, letterSpacing: 1 }}
         />
       </View>
       {!!(error || hint) && <T v="small" color={error ? colors.red : colors.muted}>{error || hint}</T>}
@@ -182,7 +205,7 @@ export function Toggle({ title, subtitle, value, onChange, testID }: {
 }) {
   return (
     <Pressable testID={testID} accessibilityRole="switch" accessibilityState={{ checked: value }} onPress={() => onChange(!value)}
-      style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: touch.min }}>
+      style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: touch.min }}>
       <View style={{ flex: 1 }}>
         <T v="bodyLarge">{title}</T>
         {!!subtitle && <T v="small">{subtitle}</T>}
@@ -201,7 +224,7 @@ export function Chip({ label, active, onPress, right, testID, tone = "green" }: 
   const on = tone === "amber" ? colors.amber : colors.green;
   return (
     <Pressable testID={testID} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: !!active }}
-      style={{ flexDirection: "row", alignItems: "center", gap: 8, minHeight: 52, paddingHorizontal: 16, borderRadius: 26, borderWidth: 2,
+      style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: 52, paddingHorizontal: spacing.lg, borderRadius: 26, borderWidth: 2,
         borderColor: active ? on : colors.lineStrong, backgroundColor: active ? on : colors.surface }}>
       {active && tone === "green" && <Icon name="check" size={20} color={colors.white} />}
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: fonts.bold, fontSize: 17, color: active ? colors.white : colors.ink }}>{label}</Text>
@@ -217,7 +240,7 @@ export function Segmented<V extends string>({ options, value, onChange }: {
     <View style={{ flexDirection: "row", gap: 6, padding: 5, borderRadius: radius.md + 2, backgroundColor: "#E3EBE5" }}>
       {options.map((o) => (
         <Pressable key={o.value} testID={`seg-${o.value}`} onPress={() => onChange(o.value)} accessibilityRole="tab" accessibilityState={{ selected: o.value === value }}
-          style={{ flex: 1, minHeight: 50, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 12, alignItems: "center", justifyContent: "center",
+          style={{ flex: 1, minHeight: 50, paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: 12, alignItems: "center", justifyContent: "center",
             backgroundColor: o.value === value ? colors.green : "transparent" }}>
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE}
             style={{ fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, textAlign: "center", color: o.value === value ? colors.white : colors.ink }}>{o.label}</Text>
@@ -233,7 +256,7 @@ export function Stepper({ value, onChange, min = 1, max = 9999, testID }: {
   const { t } = useTranslation();
   const btn = { width: touch.min, height: 52, borderRadius: 14, alignItems: "center" as const, justifyContent: "center" as const };
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
       <Pressable testID={testID ? `${testID}-minus` : undefined} accessibilityLabel={t("Decrease quantity")} onPress={() => onChange(Math.max(min, value - 1))}
         style={[btn, { borderWidth: 2, borderColor: colors.lineStrong, backgroundColor: colors.surface }]}>
         <Icon name="minus" size={24} color={colors.ink} />
@@ -280,7 +303,7 @@ const BADGE = {
 };
 export function Badge({ text, tone = "green" }: { text: string; tone?: keyof typeof BADGE }) {
   return (
-    <View style={{ alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: BADGE[tone].bg }}>
+    <View style={{ alignSelf: "flex-start", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: 12, backgroundColor: BADGE[tone].bg }}>
       <Text style={{ fontFamily: fonts.extrabold, fontSize: 14, color: BADGE[tone].fg }}>{text}</Text>
     </View>
   );
@@ -291,7 +314,7 @@ export function Row({ title, subtitle, left, right, onPress, testID, chevron }: 
 }) {
   return (
     <Pressable testID={testID} disabled={!onPress} onPress={onPress}
-      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 10, minHeight: 68,
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, minHeight: 68,
         borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
       {left}
       <View style={{ flex: 1, minWidth: 0 }}>

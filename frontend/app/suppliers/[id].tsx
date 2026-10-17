@@ -47,8 +47,8 @@ export default function SupplierDetail() {
     <Screen bg={colors.surface}>
       <Header title={t("Supplier")} right={isOwner && s ? <Button title={t("Edit")} icon="pencil" variant="outline" size="md" onPress={() => setEditing(true)} testID="supplier-edit" /> : undefined} />
       {!s ? (q.isError ? <ErrorView message={(q.error as Error).message} onRetry={q.refetch} /> : <LoadingView />) : (
-        <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: 16 }}>
-          <View style={{ gap: 4 }}>
+        <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
+          <View style={{ gap: spacing.xs }}>
             <T v="title">{s.name}</T>
             {!!s.phone && <T v="body" color={colors.inkSoft}>{formatPhone(s.phone)}</T>}
             {!!s.gstin && <T v="small">{t("GSTIN {{gstin}}", { gstin: s.gstin })}</T>}
@@ -56,7 +56,7 @@ export default function SupplierDetail() {
             {!!s.notes && <T v="small" color={colors.inkSoft}>{s.notes}</T>}
           </View>
           {digits.length >= 6 && (
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
               <Button title={t("Call")} icon="phone" variant="outline" size="md" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${s.phone}`)} />
               {digits.length >= 10 && (
                 <Button title={t("WhatsApp")} icon="whatsapp" variant="whatsapp" size="md" style={{ flex: 1 }}
@@ -64,22 +64,22 @@ export default function SupplierDetail() {
               )}
             </View>
           )}
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, backgroundColor: colors.page }}>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <View style={{ flex: 1, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.page }}>
               <T v="label">{t("Total bought")}</T>
               <T v="title">{formatCurrency(s.total)}</T>
             </View>
-            <View style={{ flex: 1, padding: 14, borderRadius: radius.lg, backgroundColor: colors.page }}>
+            <View style={{ flex: 1, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.page }}>
               <T v="label">{t("Bills")}</T>
               <T v="title">{s.bills}</T>
             </View>
           </View>
 
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing.sm }}>
             <T v="label" style={{ fontSize: 18 }}>{t("Supplier bills")}</T>
             {s.purchases.length ? s.purchases.map((b) => (
               <Pressable key={b.id} onPress={() => setBill(b)} testID={`supplier-bill-${b.invoice_number}`}
-                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, padding: 12, minHeight: 68, borderRadius: radius.lg,
+                style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, minHeight: 68, borderRadius: radius.lg,
                   borderWidth: 1, borderColor: colors.line, opacity: pressed ? 0.85 : 1 })}>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <T v="bold">{[b.invoice_number && t("Bill {{no}}", { no: b.invoice_number }), formatDate(b.created_at)].filter(Boolean).join(" · ")}</T>
@@ -97,7 +97,7 @@ export default function SupplierDetail() {
         {bill && (
           <>
             {!!bill.image_paths.length && (
-              <ScrollView horizontal contentContainerStyle={{ gap: 10 }}>
+              <ScrollView horizontal contentContainerStyle={{ gap: spacing.md }}>
                 {bill.image_paths.map((p) => (
                   <Pressable key={p} onPress={() => Linking.openURL(fileUrl(p)!)} accessibilityLabel={t("Open page photo")}>
                     <Image source={{ uri: fileUrl(p) }} style={{ width: 120, height: 160, borderRadius: radius.md, backgroundColor: colors.page }} contentFit="cover" />
@@ -106,12 +106,12 @@ export default function SupplierDetail() {
               </ScrollView>
             )}
             {bill.items.map((it, i) => (
-              <View key={i} style={{ flexDirection: "row", gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderColor: colors.line }}>
+              <View key={i} style={{ flexDirection: "row", gap: spacing.md, paddingVertical: 6, borderBottomWidth: 1, borderColor: colors.line }}>
                 <T v="body" style={{ flex: 1 }}>{it.name}</T>
                 <T v="small">{formatQty(it.quantity)} × {formatCurrency(it.purchase_price)}</T>
               </View>
             ))}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: 4 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingTop: spacing.xs }}>
               <T v="bold">{t("Total")}</T>
               <T v="bold">{formatCurrency(bill.total)}</T>
             </View>
